@@ -76,6 +76,9 @@ ratatoskr-web/
 Of that tree, `src/components/` (shadcn's generated `ui/` and one composed view), `src/lib/` and
 `src/test/` exist. The rest arrives with the slices that need it.
 
+[`DESIGN.md`](DESIGN.md) is the authority on the visual identity — palette, type scale, shape,
+surfaces — and its values are tokens in `src/index.css`.
+
 The framework, build tool, component base, and icon policy are decided and recorded:
 [ADR-0001](docs/adr/0001-framework-and-build.md),
 [ADR-0002](docs/adr/0002-shadcn-base-ui.md) and

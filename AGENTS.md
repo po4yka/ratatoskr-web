@@ -364,11 +364,27 @@ improve answers a question with several and blocks nothing.
 
 ## Styling
 
+**`DESIGN.md` is the authority on what this client looks like.** Read it before writing a component.
+It carries the palette, the type scale, the two radii, the surface stack, and a Deviations section
+recording every place it disagrees with the reference it came from and why.
+
+Where `DESIGN.md` and this file disagree, **this file wins** — that rule is what produced three of
+the deviations, including the focus ring.
+
+
 - Tailwind CSS 4 with no `tailwind.config.js`. The theme is in `src/index.css` under `@theme inline`,
   and the CSS variables under `:root` and `.dark`. That is the file to edit for a theme change.
 - Use the semantic tokens the theme defines — `bg-background`, `text-muted-foreground`,
   `border-border` — not raw palette classes. A raw `bg-neutral-900` is invisible in one of the two
-  themes and no test catches it.
+  themes and no test catches it. The tokens carry `DESIGN.md`'s values under shadcn's names, so a
+  component installed by `shadcn add` inherits the identity without being told about it.
+- Use the type scale: `text-caption`, `text-body`, `text-body-lg`, `text-subheading`,
+  `text-heading-sm`, `text-heading`, `text-heading-lg`, `text-display`. Each carries its own line
+  height and tracking. Do not hand-set `text-sm` with a `leading-*` beside it.
+- Two radii and nothing between them: `rounded-lg` (18px) on anything interactive, `rounded-xl`
+  (24px) on containers. No square corners.
+- The reader view is the one place the density scale is broken on purpose: `text-body-lg` minimum,
+  measure capped near 70 characters. Everywhere else, `text-body`.
 - Compose classes with `cn()` from `@/lib/utils`. Concatenating class strings by hand defeats
   `tailwind-merge` and produces a component whose override silently loses.
 - The font is self-hosted through `@fontsource-variable/geist`. Do not add a Google Fonts link, a CDN

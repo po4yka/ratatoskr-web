@@ -8,6 +8,38 @@
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: "Geist Variable", sans-serif;
+
+  /* Type scale — DESIGN.md. Tracking tightens with size and loosens on small uppercase. */
+  --text-caption: 12px;
+  --text-caption--line-height: 1.33;
+  --text-caption--letter-spacing: 0.6px;
+  --text-body: 14px;
+  --text-body--line-height: 1.43;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 1.5;
+  --text-subheading: 18px;
+  --text-subheading--line-height: 1.56;
+  --text-heading-sm: 24px;
+  --text-heading-sm--line-height: 1.33;
+  --text-heading-sm--letter-spacing: -0.6px;
+  --text-heading: 30px;
+  --text-heading--line-height: 1.2;
+  --text-heading--letter-spacing: -0.75px;
+  --text-heading-lg: 36px;
+  --text-heading-lg--line-height: 1.11;
+  --text-heading-lg--letter-spacing: -0.9px;
+  --text-display: 48px;
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -2.4px;
+
+  /* Containers are 24px, interactive elements 18px. Pinned rather than derived, because the
+     multiplicative scale puts `xl` at 25.2px and the system has exactly two values. */
+  --radius-xl: 1.5rem;
+
+  /* Card elevation: a 1px hairline plus two barely-perceptible layers. */
+  --shadow-subtle:
+    0 0 0 1px rgb(23 23 23 / 0.05), 0 1px 3px rgb(0 0 0 / 0.1),
+    0 1px 2px -1px rgb(0 0 0 / 0.1);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,38 +81,59 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Surfaces — canvas / sidebar / paper, the three-tone stack from DESIGN.md */
+  --background: #f5f5f5;
+  --card: #ffffff;
+  --popover: #ffffff;
+  --sidebar: #fafafa;
+
+  /* Ink */
+  --foreground: #0a0a0a;
+  --card-foreground: #0a0a0a;
+  --popover-foreground: #0a0a0a;
+  --sidebar-foreground: #0a0a0a;
+
+  /* Filled action: dark on light. The only inversion in the system. */
+  --primary: #0a0a0a;
+  --primary-foreground: #fafafa;
+  --sidebar-primary: #0a0a0a;
+  --sidebar-primary-foreground: #fafafa;
+
+  /* Tonal siblings: same shape and type as primary, differing only in lightness */
+  --secondary: #f5f5f5;
+  --secondary-foreground: #0a0a0a;
+  --accent: #f5f5f5;
+  --accent-foreground: #0a0a0a;
+  --sidebar-accent: #f5f5f5;
+  --sidebar-accent-foreground: #0a0a0a;
+
+  --muted: #f5f5f5;
+  /* #707070, not the reference's #737373. Measured: #737373 on the #f5f5f5 canvas is 4.35:1, under
+     WCAG AA for body text, and muted text on the page background is exactly where it lands.
+     #707070 is 4.54 on canvas, 4.95 on paper, 4.74 on sidebar — passing on all three. */
+  --muted-foreground: #707070;
+
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --sidebar-border: #e5e5e5;
+
+  /* Focus. The reference specifies a #e5e5e5 ring, which is 1.26:1 on paper — invisible, and
+     AGENTS.md requires visible focus. Ink instead: 19.8:1. Recorded as a deviation in DESIGN.md. */
+  --ring: #0a0a0a;
+  --sidebar-ring: #0a0a0a;
+
+  /* The one hue in the system, and only for destructive states */
+  --destructive: #e7000b;
+
+  /* Not specified by the reference. Greys until a view needs charts; see DESIGN.md. */
+  --chart-1: #d4d4d4;
+  --chart-2: #a3a3a3;
+  --chart-3: #707070;
+  --chart-4: #525252;
+  --chart-5: #262626;
+
+  /* 18px. rounded-lg lands on it, rounded-xl is pinned to 24px in the theme block above. */
+  --radius: 1.125rem;
 }
 
 .dark {

@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button"
 export function App() {
   return (
     <main className="mx-auto flex min-h-svh max-w-prose flex-col gap-4 p-6">
-      <h1 className="text-lg font-medium">Ratatoskr Web</h1>
-      <p className="text-sm leading-relaxed text-muted-foreground">
+      <h1 className="text-heading-sm font-semibold">Ratatoskr Web</h1>
+      <p className="text-body text-muted-foreground">
         The toolchain is in place and nothing else is. There is no router, no
         API client, and no view yet — see{" "}
         <code>docs/IMPLEMENTATION_PLAN.md</code> for the order in which they

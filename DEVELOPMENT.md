@@ -54,6 +54,15 @@ are. If they drift, this file is the one that is wrong.
 `npm audit --omit=dev --audit-level=high` runs after them. It asks about what a user actually
 downloads; the build tooling is covered by Dependabot alerts.
 
+## The design
+
+`DESIGN.md` is the authority on the visual identity, and its values live in `src/index.css` mapped
+onto shadcn's token names. Read it before building a view; read its Deviations section before
+changing a colour.
+
+Two gaps are open and named there: dark is not designed yet (it works, it is simply shadcn's
+generated palette rather than one derived from this document), and the chart palette is grey.
+
 ## Auditing
 
 Two audits, and they answer different questions. Neither replaces a review.
