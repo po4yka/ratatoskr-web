@@ -44,9 +44,15 @@ we write ourselves. The two cover different paths and neither replaces the other
 
 ## Consequences
 
-- `motion` is now a runtime dependency and ships to the browser. It is the largest thing this client
-  carries that is not React, which is the cost side of this decision and the reason the icons are an
-  exception rather than the default.
+- `motion` is now a runtime dependency and ships to the browser, and the cost was measured rather
+  than estimated. The production bundle went from 231.40 kB to 361.64 kB raw, and from 73.45 kB to
+  116.13 kB gzipped — roughly 43 kB gzipped, which is about what React and React DOM cost together.
+  That is the whole reason the icons are an exception and not a default, and it is the number to
+  re-measure before the second animation library anyone proposes.
+- Today the error boundary is the only call site and it is in the root bundle, so every visitor
+  downloads `motion` to see one hover animation on a failure screen. Route splitting
+  (`docs/ARCHITECTURE.md` section 15) is what fixes that, and it is worth doing before the reader
+  view ships rather than after.
 - The registry fetch happens at `shadcn add` time, not at runtime. Nothing in the serving path talks
   to `itshover.com`, so `SECURITY.md`'s no-third-party-host rule is untouched.
 - The icons are **Apache-2.0** while this repository is BSD 3-Clause. The repository README of
