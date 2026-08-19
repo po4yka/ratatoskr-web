@@ -20,12 +20,31 @@ clause that changes what a public repository may do, and one states no licence a
 |---|---|---|
 | `thinking-orbs` 0.3.1 | npm dependency, installed | MIT |
 | `liquid-gooey` 0.1.0 | npm dependency, installed | MIT |
-| Canvas UI | registry in `components.json`, nothing vendored | MIT + Commons Clause |
-| AIcss | documented endpoint, nothing vendored | **none stated** |
+| Canvas UI | registry in `components.json`, vendored into `src/components/canvasui/` | MIT + Commons Clause |
+| AIcss | `npm run ui:add:aicss`, vendored into `src/components/aicss/` | none stated |
 
-The split is the decision. Installing an MIT package with no runtime dependencies costs nothing and
-commits to nothing. Copying source into a public repository is publication, and two of these four
-cannot be published here without a decision that is not mine to make.
+All four are connected. The mechanisms differ because the libraries do: two are npm packages, one is
+a shadcn registry, and one is a bespoke JSON API with no CLI, which is why `scripts/add-aicss.mjs`
+exists.
+
+### The licence question, and how it was settled
+
+This document first recorded Canvas UI and AIcss as connected-but-not-vendored, pending a decision
+about what may live in a public tree. That decision was made on 2026-08-19: Ratatoskr is not sold and
+is not offered as a paid or hosted service, and both libraries are vendored on that basis.
+
+The reasoning is worth keeping, because it is narrower than it looks. The Commons Clause withdraws
+one right — to **Sell**, meaning to charge for the software or for a product or service whose value
+derives substantially from it. It says nothing about publishing source that is not being sold. Canvas
+UI's FAQ words its restriction more broadly than the clause it cites, and the clause governs. So the
+condition is not "this repository is public" but "Ratatoskr is not sold", and **it is a condition
+that can stop being true**. If Ratatoskr is ever sold, offered as a paid or hosted service, or
+bundled into something that is, `src/components/canvasui/` has to come out before that happens.
+
+AIcss states no licence at all — no licence file, no terms page, no repository, nothing in the
+payload. "Free to use UI components" on a homepage is the author's stated intent rather than a grant
+with terms, so what is vendored is deliberately small and confined to one directory, where it can be
+identified and removed. Asking the author for an explicit licence stays on the follow-up list.
 
 ## The two that are installed
 
@@ -47,22 +66,22 @@ Two things about `liquid-gooey` are worth knowing before reaching for it. It is 
 is not settled. And it declares the `LiquidItem` type but does not export the component: the
 supported form is `Liquid.Item`.
 
-## Canvas UI: connected, not vendored
+## Canvas UI
 
-Canvas UI is a shadcn registry, so `@canvas-ui` is in `components.json` and
-`shadcn view @canvas-ui/<name>` resolves. That is configuration; it publishes nothing.
+`@canvas-ui` is a registry in `components.json`, so components install the same way shadcn's own do:
 
-`shadcn add` would publish something. **Canvas UI is MIT + Commons Clause**, and Commons Clause is
-not an open-source licence — it removes the right to sell, defined broadly. The project's own FAQ
-puts it as: "The only restriction is reselling or redistributing the components themselves, whether
-alone, in a bundle, or as a port." `ratatoskr-web` is a public repository, so a vendored component
-sits in a public tree under a licence that restricts redistribution, next to a BSD-3-Clause `LICENSE`
-that grants it.
+```bash
+npm run ui:add -- @canvas-ui/ripple-react
+```
 
-Whether that is acceptable is a decision for whoever owns the repository, and it has to be made
-before the first `add`, not discovered after. Until then the registry is a bookmark.
+Files land in `src/components/canvasui/`, which is generated and governed by the same
+never-hand-edit rule as `src/components/ui/`. `Ripple` is vendored as the first one, deliberately:
+its registry entry declares no dependencies, it respects `prefers-reduced-motion` in its own source,
+it marks its output canvas `aria-hidden`, and it degrades to plain interactive HTML when WebGL2 or
+the html-in-canvas capability is missing. Six of the 35 React components pull `three.js`; those are a
+separate dependency decision each time, not covered by this ADR.
 
-Two technical constraints belong with that decision:
+Two technical constraints apply to every one of them:
 
 - The html-in-canvas components rely on an experimental capability that is Chrome-behind-a-flag
   today. Everywhere else the content renders as ordinary HTML and the effect runs as a WebGL overlay.
@@ -71,20 +90,36 @@ Two technical constraints belong with that decision:
   html-in-canvas for content outright. Effects as an overlay on real DOM are the only admissible use,
   and `docs/THREAT_MODEL.md` and the accessibility rules in `AGENTS.md` still apply on top.
 
-## AIcss: documented, not connected
+## AIcss
 
-AIcss serves components from `https://www.aicss.dev/r/{slug}` — its own JSON shape, not the shadcn
-registry-item schema, and without a `.json` suffix. There is no CLI path, so it cannot be a
-`components.json` registry; the components are copy-paste.
+AIcss serves its own JSON shape from `https://www.aicss.dev/r/{slug}` — not the shadcn registry-item
+schema, and without a `.json` suffix — so `shadcn add` cannot reach it and `components.json` cannot
+hold it. `scripts/add-aicss.mjs` is the install path instead:
 
-**It states no licence.** The homepage says "Free to use UI components"; there is no licence page, no
-terms page, no public repository, and the registry payload carries no licence field. Copying source
-of unknown licence into a public repository is not a thing to do quietly, so nothing is vendored and
-the endpoint is documented instead.
+```bash
+npm run ui:add:aicss -- thinking-state
+```
 
-There is also a styling mismatch worth knowing: AIcss ships plain CSS modules with custom properties
-and themes off `[data-theme]`, while this client themes off a `.dark` class and Tailwind tokens. A
-component taken from there needs its theming rewritten, not just its file copied.
+It fetches the payload, keeps the React flavour, and writes into `src/components/aicss/`, which is
+generated under the same rules as the other two vendored directories.
+
+What arrives needs three things it does not bring, and the first two are supplied by
+`src/components/aicss-block.tsx`, which every vendored AIcss component is rendered through:
+
+1. **Reduced motion.** `ThinkingState.module.css` runs `animation: label-shine 2.25s … infinite` with
+   no `prefers-reduced-motion` query anywhere in the file. `AicssBlock` sets `data-vendored-motion`,
+   which the backstop in `src/index.css` targets — the same mechanism the itshover icons use, one
+   selector rather than one per library.
+2. **Live-region semantics.** The component is a `<span>` reading "Thinking". A screen reader is
+   never told the system started working, which for a status indicator is the entire point of it.
+   `AicssBlock status` supplies `role="status"`. One caveat no wrapper can fix: a live region
+   announces a *change*, not its initial content, so it has to be mounted before the message appears.
+3. **Theme tokens.** These components hard-code hex values — `#a1a1a1` — rather than reading the
+   theme, and `ThinkingState`'s `prefers-color-scheme: dark` block is a byte-for-byte copy of its
+   light one, so it has no dark mode at all despite appearing to. This is not fixable in place, since
+   the directory is regenerated. A component adopted for real use gets copied out into
+   `src/components/` and its module CSS rewritten against the tokens, at which point it stops being
+   vendored and becomes ours.
 
 ## Where each one fits, and where it does not
 
@@ -105,6 +140,11 @@ itshover icons already answer to.
 
 ## Consequences
 
+- `src/components/` now has three generated directories — `ui/`, `canvasui/`, `aicss/` — and
+  `eslint.config.js` disables `react-refresh/only-export-components` and `no-empty` across all three
+  in one block. Both rules are tripped by vendored source and stay on wherever a person writes code.
+- `src/components/ui/NOTICE.md` is the record of what is vendored and under which licence, including
+  the condition under which the Canvas UI source has to be removed.
 - Two dependencies are installed and unused. `src/test/design-libraries.test.tsx` is what stops that
   from rotting silently: it mounts both, so a version of React or TypeScript that breaks them fails
   the gate rather than surprising whoever first reaches for one.
@@ -117,8 +157,9 @@ itshover icons already answer to.
 
 ## Follow-up
 
-Ask the repository owner whether MIT + Commons Clause source may live in this public tree. If yes,
-vendor Canvas UI components normally and extend `src/components/ui/NOTICE.md`. If no, the registry
-entry should be removed rather than left as a trap.
+Ask AIcss for an explicit licence. Until then, keep what is vendored from it small and in one
+directory.
 
-For AIcss, ask its author for an explicit licence before copying anything.
+Re-read the Canvas UI condition before any change to how Ratatoskr is distributed. "Not sold" is a
+fact about today, not a property of the code, and it is the only thing holding that vendored source
+in place.

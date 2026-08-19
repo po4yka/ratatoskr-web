@@ -153,29 +153,55 @@ Rules that follow:
 Four are connected, on three different footings. ADR-0004 has the reasoning; this is the operating
 rule.
 
-| Library | Status | How to reach it |
+| Library | How to reach it | Wrapper |
 |---|---|---|
-| `thinking-orbs` | installed, MIT | `import { ThinkingOrb } from "thinking-orbs"` |
-| `liquid-gooey` | installed, MIT | `import { Liquid } from "liquid-gooey"`, then `Liquid.Item` |
-| Canvas UI | registry only, **do not vendor** | `npm run ui:add -- @canvas-ui/<name>` — blocked, read below |
-| AIcss | endpoint only, **do not vendor** | `https://www.aicss.dev/r/<slug>` — blocked, read below |
+| `thinking-orbs` | `import { ThinkingOrb } from "thinking-orbs"` | none needed |
+| `liquid-gooey` | `import { Liquid } from "liquid-gooey"`, then `Liquid.Item` | none needed |
+| Canvas UI | `npm run ui:add -- @canvas-ui/<name>-react` | none needed |
+| AIcss | `npm run ui:add:aicss -- <slug>` | **always** `AicssBlock` |
 
-### The two that are blocked, and why it is not taste
+`src/components/canvasui/` and `src/components/aicss/` are generated, exactly like
+`src/components/ui/`. Never hand-edit them; to own a component, copy it out into `src/components/`
+under a new name.
 
-**Canvas UI is MIT + Commons Clause.** Commons Clause is not an open-source licence: it removes the
-right to sell, and the project reads it as forbidding redistribution of the components "alone, in a
-bundle, or as a port". This repository is public, so `shadcn add @canvas-ui/...` puts restricted
-source in a public tree beside a BSD-3-Clause `LICENSE` that grants what the clause withholds. The
-registry entry in `components.json` is a bookmark and publishes nothing; the `add` is the step that
-needs a human decision first.
+### The licence condition you must not quietly break
 
-**AIcss states no licence.** "Free to use" on a homepage is not a grant. There is no licence page, no
-terms, no repository, and nothing in the payload. Do not copy an AIcss component into this tree.
+Canvas UI is MIT + **Commons Clause**. The clause withdraws one right: to **Sell** — to charge for
+the software, or for a product or service whose value derives substantially from it. It is vendored
+here on the basis that Ratatoskr is not sold and is not offered as a paid or hosted service.
 
-If you believe either is fine to vendor, say so and ask — do not decide it inside a task about
-something else.
+That is a fact about today, not a property of the code. **If this project is ever sold, offered as a
+paid or hosted service, or bundled into something that is, `src/components/canvasui/` must be removed
+first.** If a task moves in that direction, stop and say so rather than deciding it in passing.
 
-### Rules for the two that are installed
+AIcss states no licence at all. What is vendored from it is kept small and in one directory on
+purpose. Do not grow it without asking.
+
+### AIcss components always go through `AicssBlock`
+
+```tsx
+import { AicssBlock } from "@/components/aicss-block"
+import { ThinkingState } from "@/components/aicss/ThinkingState"
+
+<AicssBlock status>
+  <ThinkingState />
+</AicssBlock>
+```
+
+They arrive without two things this repository requires, and neither is fixable in place:
+
+- **no reduced-motion handling** — the CSS runs `animation: … infinite` with no media query.
+  `AicssBlock` sets `data-vendored-motion`, which the backstop in `src/index.css` targets;
+- **no live-region semantics** — a status that never announces is not a status. `status` adds
+  `role="status"`. Mount the region before the message changes: a live region announces a change, not
+  its initial content. Leave `status` off for a table or a code block, which are read on demand.
+
+The third gap is yours to handle when you adopt one: these components hard-code hex colours and
+`ThinkingState`'s dark-mode block is a copy of its light one, so it has no dark mode despite
+appearing to. Copy the component out of `src/components/aicss/` and rewrite its module CSS against
+the theme tokens.
+
+### Rules for the two npm packages
 
 - Nothing imports them yet, deliberately. `src/test/design-libraries.test.tsx` mounts both so the
   dependency cannot rot unnoticed; if you remove the last usage, keep that test.

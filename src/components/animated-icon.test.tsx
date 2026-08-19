@@ -33,11 +33,17 @@ test("carries the attribute the reduced-motion backstop targets", () => {
 test("the reduced-motion backstop is still in the stylesheet", () => {
   // A rule nothing references is a rule someone deletes while tidying. This is the check that
   // notices, and it is deliberately crude: jsdom has no cascade to assert against.
-  const block = cssText
-    .slice(cssText.indexOf("@media (prefers-reduced-motion: reduce)"))
-    .slice(0, 600)
+  const start = cssText.indexOf("@media (prefers-reduced-motion: reduce)")
+  expect(start).toBeGreaterThan(-1)
+
+  // To the media block's own closing brace, not a fixed number of characters. The first version
+  // sliced 600 bytes and broke the day a comment grew inside the block — a guard that fails for a
+  // reason unrelated to what it guards teaches people to delete it.
+  const end = cssText.indexOf("\n}", start)
+  const block = cssText.slice(start, end)
 
   expect(block).toContain("[data-animated-icon]")
+  expect(block).toContain("[data-vendored-motion]")
   expect(block).toContain("animation: none !important")
   expect(block).toContain("transform: none !important")
 })

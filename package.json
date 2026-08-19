@@ -18,7 +18,8 @@
     "test:watch": "vitest",
     "ui:add": "shadcn add",
     "audit:ui": "shadscan --no-interactive --no-roast",
-    "audit:ui:json": "shadscan --no-interactive --json"
+    "audit:ui:json": "shadscan --no-interactive --json",
+    "ui:add:aicss": "node scripts/add-aicss.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

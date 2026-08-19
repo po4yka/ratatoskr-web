@@ -17,7 +17,7 @@ The toolchain is in place. No router, API client, view, or end-to-end suite is.
 | Font | `@fontsource-variable/geist` | Self-hosted. A Google Fonts link would be a third-party request from a self-hosted deployment |
 | Icons | `lucide-react` | The static default, imported by every generated component |
 | Animated icons | itshover via `@itshover` registry, on `motion` 13 | The exception, where motion carries meaning. ADR-0003 |
-| Design libraries | `thinking-orbs` 0.3, `liquid-gooey` 0.1 installed; Canvas UI and AIcss registered but not vendored | ADR-0004. Two are blocked on a licence decision |
+| Design libraries | `thinking-orbs` 0.3, `liquid-gooey` 0.1 as npm packages; Canvas UI and AIcss vendored | ADR-0004. Canvas UI's licence is conditional on Ratatoskr not being sold |
 | Lint | ESLint 10 with `typescript-eslint` 8 | |
 | Format | Prettier 3.9 with `prettier-plugin-tailwindcss` | Source and configuration only. Prose is hand-wrapped and Prettier would reflow every document |
 | Test | Vitest 4 with Testing Library and jsdom | |
@@ -132,6 +132,25 @@ Reduced motion is handled in two places and neither is optional:
 - a CSS block in `src/index.css` scoped to `[data-animated-icon]`, for the imperative `animate()`
   these icons use, which `MotionConfig` does not reach. That gap was measured;
   `src/components/animated-icon.test.tsx` is the measurement.
+
+## Adding a component from the other registries
+
+```bash
+npm run ui:add -- @canvas-ui/ripple-react     # Canvas UI, a shadcn registry
+npm run ui:add:aicss -- thinking-state        # AIcss, its own JSON API
+```
+
+Both write into generated directories — `src/components/canvasui/` and `src/components/aicss/` —
+that follow the same never-hand-edit rule as `src/components/ui/`. `src/components/ui/NOTICE.md`
+records what is vendored and under which licence.
+
+Every AIcss component is rendered through `AicssBlock`: they ship without reduced-motion handling and
+without live-region semantics, and `src/components/aicss-block.tsx` supplies both. `AGENTS.md` has
+the rules and ADR-0004 the reasoning.
+
+One condition worth knowing before you extend the Canvas UI directory: it is MIT + Commons Clause,
+vendored on the basis that Ratatoskr is not sold and not offered as a paid service. That is a fact
+about today. If it changes, that directory comes out first.
 
 ## Adding a shadcn component
 

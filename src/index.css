@@ -137,9 +137,15 @@
      `MotionConfig reducedMotion="user"` is mounted in `main.tsx` and covers the declarative
      `motion` components we write ourselves; it does not reach this path. That was measured, not
      assumed — `src/components/animated-icon.test.tsx` records the measurement. CSS is the backstop
-     no JavaScript can route around. */
+     no JavaScript can route around.
+
+     `[data-vendored-motion]` is the same job for everything else that arrives generated: AIcss
+     components ship a bare `animation: ... infinite` with no media query at all. `AicssBlock` sets
+     the attribute; the rule is one selector rather than one per library on purpose. */
   [data-animated-icon],
-  [data-animated-icon] * {
+  [data-animated-icon] *,
+  [data-vendored-motion],
+  [data-vendored-motion] * {
     animation: none !important;
     transform: none !important;
     transition: none !important;

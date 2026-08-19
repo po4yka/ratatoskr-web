@@ -20,16 +20,25 @@ export default defineConfig([
     },
   },
   {
-    // `src/components/ui` is written by `shadcn add`, not by hand. Its components export a `cva`
-    // variants object beside the component, which `react-refresh/only-export-components` rejects —
-    // shadcn's own generated button fails shadcn's own generated config on a clean install.
+    // Vendored source. Every directory here is written by a generator — `shadcn add` for `ui` and
+    // `canvasui`, `npm run ui:add:aicss` for `aicss` — and re-running it overwrites whatever was
+    // edited. A lint fix applied inside these files is therefore a fix that comes back, with the
+    // commit that made it gone. See `src/components/ui/NOTICE.md` for what is vendored and under
+    // which licence.
     //
-    // The rule is off for this directory rather than fixed in the files, because a fix there is
-    // overwritten by the next `shadcn add` of the same component and the error returns with nothing
-    // to show for the edit. The rule stays on everywhere a person actually writes a component.
-    files: ["src/components/ui/**/*.{ts,tsx}"],
+    // The two rules disabled here are the ones this vendored code actually trips:
+    // `only-export-components` because shadcn components export a `cva` variants object beside the
+    // component and Canvas UI exports its imperative factory beside its wrapper; `no-empty` because
+    // Canvas UI swallows a WebGL error with a bare `catch {}`. Both stay on everywhere a person
+    // writes code.
+    files: [
+      "src/components/ui/**/*.{ts,tsx}",
+      "src/components/canvasui/**/*.{ts,tsx}",
+      "src/components/aicss/**/*.{ts,tsx}",
+    ],
     rules: {
       "react-refresh/only-export-components": "off",
+      "no-empty": "off",
     },
   },
   {
