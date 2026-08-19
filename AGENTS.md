@@ -148,6 +148,60 @@ Rules that follow:
 - add a second animation library. `motion` is here for these icons and is the largest dependency this
   client carries after React.
 
+## Design libraries
+
+Four are connected, on three different footings. ADR-0004 has the reasoning; this is the operating
+rule.
+
+| Library | Status | How to reach it |
+|---|---|---|
+| `thinking-orbs` | installed, MIT | `import { ThinkingOrb } from "thinking-orbs"` |
+| `liquid-gooey` | installed, MIT | `import { Liquid } from "liquid-gooey"`, then `Liquid.Item` |
+| Canvas UI | registry only, **do not vendor** | `npm run ui:add -- @canvas-ui/<name>` — blocked, read below |
+| AIcss | endpoint only, **do not vendor** | `https://www.aicss.dev/r/<slug>` — blocked, read below |
+
+### The two that are blocked, and why it is not taste
+
+**Canvas UI is MIT + Commons Clause.** Commons Clause is not an open-source licence: it removes the
+right to sell, and the project reads it as forbidding redistribution of the components "alone, in a
+bundle, or as a port". This repository is public, so `shadcn add @canvas-ui/...` puts restricted
+source in a public tree beside a BSD-3-Clause `LICENSE` that grants what the clause withholds. The
+registry entry in `components.json` is a bookmark and publishes nothing; the `add` is the step that
+needs a human decision first.
+
+**AIcss states no licence.** "Free to use" on a homepage is not a grant. There is no licence page, no
+terms, no repository, and nothing in the payload. Do not copy an AIcss component into this tree.
+
+If you believe either is fine to vendor, say so and ask — do not decide it inside a task about
+something else.
+
+### Rules for the two that are installed
+
+- Nothing imports them yet, deliberately. `src/test/design-libraries.test.tsx` mounts both so the
+  dependency cannot rot unnoticed; if you remove the last usage, keep that test.
+- `liquid-gooey` is `0.1.0`. Its API is not settled, and it declares the `LiquidItem` type without
+  exporting the component — use `Liquid.Item`.
+- `liquid-gooey`'s value is that the filter runs on a silhouette layer and the content stays real
+  DOM. Never put content into the filtered layer; the test asserts that boundary.
+- `thinking-orbs` reads the theme from the `.dark` class already on the tree. Do not add a theme prop
+  to make it match.
+
+### Where they may be used
+
+This client reads an archive. It is not a chat surface, and three of these four were designed for
+one.
+
+- `thinking-orbs` — the `Analysing` phase of a long operation. Not page furniture.
+- `liquid-gooey` — one tab indicator or one merging menu. Not a house style.
+- AIcss — `streaming-text`, `task-list`, `code-block` if summary output ever streams. Its `orbs` and
+  `thinking-state` overlap `thinking-orbs`; pick one.
+- Canvas UI — decoration on `/status` or login at most. **Never under content**: anything drawn into
+  a canvas is not in the DOM, so it cannot be selected, found by in-page search, or read by a screen
+  reader. For a reading client that is disqualifying, not a trade-off.
+
+None of them may carry information that is unavailable without them, and none may be the only
+feedback for an interaction — the same rule the itshover icons answer to.
+
 ## The two audits
 
 Both are in this repository, both are for you, and they are not interchangeable.

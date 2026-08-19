@@ -8,6 +8,13 @@ their own licences, which survive being copied here.
 | [shadcn/ui](https://ui.shadcn.com) on the Base UI base | `button.tsx` | MIT |
 | [itshover](https://github.com/itshover/itshover) | `*-icon.tsx`, `types.ts` | Apache-2.0 |
 
+Two further registries are configured but nothing from them is vendored, and both are blocked on
+a licence decision rather than on taste — see [ADR-0004](../../docs/adr/0004-design-libraries.md).
+[Canvas UI](https://canvasui.dev) is MIT + Commons Clause, which restricts redistribution, and this
+repository is public. [AIcss](https://www.aicss.dev) states no licence at all. Do not run
+`shadcn add @canvas-ui/...` and do not copy an AIcss component into this tree until that is
+settled; add the row here in the same commit that does.
+
 The itshover repository's README says MIT; its `LICENSE` file is Apache License 2.0, and the file
 governs. Apache-2.0 permits this use and requires the licence and attribution be preserved, which is
 what this file does. If a build ever produces a distributable archive rather than a served bundle,

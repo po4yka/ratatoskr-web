@@ -17,6 +17,7 @@ The toolchain is in place. No router, API client, view, or end-to-end suite is.
 | Font | `@fontsource-variable/geist` | Self-hosted. A Google Fonts link would be a third-party request from a self-hosted deployment |
 | Icons | `lucide-react` | The static default, imported by every generated component |
 | Animated icons | itshover via `@itshover` registry, on `motion` 13 | The exception, where motion carries meaning. ADR-0003 |
+| Design libraries | `thinking-orbs` 0.3, `liquid-gooey` 0.1 installed; Canvas UI and AIcss registered but not vendored | ADR-0004. Two are blocked on a licence decision |
 | Lint | ESLint 10 with `typescript-eslint` 8 | |
 | Format | Prettier 3.9 with `prettier-plugin-tailwindcss` | Source and configuration only. Prose is hand-wrapped and Prettier would reflow every document |
 | Test | Vitest 4 with Testing Library and jsdom | |
