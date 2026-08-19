@@ -93,15 +93,23 @@ It can also check a rendered page — `npx shadscan --check-ui http://localhost:
 contrast, pointer-target size, and mobile overflow stop being advisory. That is not wired into CI
 because there is nothing to render yet; it belongs with the end-to-end suite.
 
-### Design and motion skills — advisory, not in the gate
+### Project skills — advisory, not in the gate
 
-Six skills from [emilkowalski/skills](https://github.com/emilkowalski/skills) are installed for the
-UI work ahead: `emil-design-eng`, `apple-design`, `animate`, `review-animations`,
-`find-animation-opportunities` and `animation-vocabulary`. `AGENTS.md` lists what each is for, which
-five were left out, and the rule that this repository's own constraints win when a skill disagrees.
+Ten are installed, all MIT, pinned in `skills-lock.json`: six on design and motion from
+[emilkowalski/skills](https://github.com/emilkowalski/skills), two on engineering from
+[addyosmani/agent-skills](https://github.com/addyosmani/agent-skills), `stop-slop` for prose, and
+`improve`. `AGENTS.md` lists what each is for, which ones were rejected and why, and the rule that
+this repository's own constraints win when a skill disagrees.
 
-The two worth knowing before the first view: `animate` for building motion in the order the decisions
-matter, and `apple-design` §15 for typography on the reader view — optical sizing, tracking, leading.
+Three worth knowing before the first view: `animate` for building motion in the order the decisions
+matter, `apple-design` §15 for typography on the reader view, and `frontend-ui-engineering` for the
+loading, empty and error states this repository requires with every view rather than after it.
+
+Restore them in a fresh clone with:
+
+```bash
+npx skills experimental_install
+```
 
 ### improve — advisory, not in the gate
 

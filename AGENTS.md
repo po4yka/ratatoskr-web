@@ -228,15 +228,16 @@ one.
 None of them may carry information that is unavailable without them, and none may be the only
 feedback for an interaction — the same rule the itshover icons answer to.
 
-## Design and motion skills
+## Project skills
 
-Six skills from [emilkowalski/skills](https://github.com/emilkowalski/skills) (MIT) are installed as
-project skills alongside `improve`, pinned in `skills-lock.json` and linked into `.claude/skills/`.
-Restore them with `npx skills experimental_install`.
+Ten skills are installed as project skills, pinned in `skills-lock.json` and linked into
+`.claude/skills/`. Restore them with `npx skills experimental_install`. All are MIT.
 
 They are here because this client is read first and clicked second, and the difference between a
 reading surface that feels right and one that does not is made of decisions too small to argue about
 one at a time.
+
+### Design and motion — [emilkowalski/skills](https://github.com/emilkowalski/skills)
 
 | Skill | Use it for |
 |---|---|
@@ -246,6 +247,24 @@ one at a time.
 | `review-animations` | Checking motion against ten non-negotiable standards. Approval is earned |
 | `find-animation-opportunities` | Surveying what could animate — and, required, what should not |
 | `animation-vocabulary` | Naming an effect someone described but could not name |
+
+### Engineering — [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
+
+| Skill | Use it for |
+|---|---|
+| `frontend-ui-engineering` | Component architecture, WCAG 2.1 AA, loading and transition states, and its Red Flags list |
+| `performance-optimization` | Core Web Vitals, a performance budget, and finding out what is actually slow before changing it |
+
+`performance-optimization` has a specific job here that is already waiting for it:
+`docs/ARCHITECTURE.md` section 15 makes reader performance a requirement, `motion` costs about 43 kB
+gzipped, and route splitting is an open follow-up in ADR-0003. Measure before and after, not instead
+of.
+
+### Prose — [hardikpandya/stop-slop](https://github.com/hardikpandya/stop-slop)
+
+`stop-slop` removes the tells that make agent-written prose read as agent-written. Nearly every word
+in this repository is documentation, and documentation nobody wants to read is documentation nobody
+reads. It complements the ASD-STE100 rule rather than replacing it.
 
 Two of them earn their place beyond motion. `apple-design` §15 is about optical sizing, tracking and
 leading — the reader view is the surface where that shows, and it is the one this client exists for.
@@ -268,7 +287,8 @@ wrote in the same turn and call it approved.
 
 ### What was deliberately not installed
 
-Five of the eleven were left out, and the reasons are worth keeping so they are not re-litigated:
+Five of `emilkowalski/skills`' eleven were left out, and the reasons are worth keeping so they are
+not re-litigated:
 
 - **`animate-expo`** — React Native and Expo. That is `ratatoskr-mobile`'s repository, not this one.
 - **`pick-ui-library`** — the choice is made and recorded in ADR-0002, ADR-0003 and ADR-0004. A skill
@@ -280,6 +300,21 @@ Five of the eleven were left out, and the reasons are worth keeping so they are 
   Install it in the commit that adds Sonner, not before.
 - **`prototype`** — builds several versions of a component behind a picker. Useful, and it writes
   throwaway code into the tree. Ask before adding it.
+
+Three more were considered from elsewhere and rejected:
+
+- **`Jpisnice/shadcn-ui-mcp-server`** — an MCP that gives an agent shadcn component context, which
+  sounds like the exact fix for the failure mode this file warns about hardest. It could equally be
+  the cause: Base UI became shadcn's default only in July 2026, and nothing in that project states
+  which base its data describes. A context server that confidently returns Radix APIs would make the
+  Radix-versus-Base-UI mistake *more* likely, not less. Verify what base it serves before installing
+  it.
+- **`mattpocock/skills`** — 35 good skills, most of which are already available in the environment
+  (`codebase-design`, `domain-modeling`, `tdd`, `research`, `prototype`, `diagnosing-bugs`). A
+  project-scoped copy of a skill the agent already has is a second version to keep in step.
+- **`pbakaus/impeccable`** — a design language for AI harnesses, and a good one. Two design languages
+  are worse than one, and `emil-design-eng` plus `apple-design` are already installed and already
+  agree with each other.
 
 ## The two audits
 
