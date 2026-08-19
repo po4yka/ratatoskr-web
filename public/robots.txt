@@ -1,0 +1,5 @@
+# Every route except /status is behind authentication, and /status describes one private
+# self-hosted deployment. There is nothing here for a crawler to index, and a sitemap would
+# advertise the shape of someone's personal archive.
+User-agent: *
+Disallow: /

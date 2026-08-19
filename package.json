@@ -16,7 +16,9 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,js,json}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ui:add": "shadcn add"
+    "ui:add": "shadcn add",
+    "audit:ui": "shadscan --no-interactive --no-roast",
+    "audit:ui:json": "shadscan --no-interactive --json"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -34,6 +36,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@shadscan/cli": "^0.17.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^24.13.3",

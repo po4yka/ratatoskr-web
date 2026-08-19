@@ -2,9 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>vite-app</title>
+    <title>Ratatoskr</title>
+    <meta
+      name="description"
+      content="Read, search and operate your own Ratatoskr archive: articles, repositories, social sources, AI exports and the backups behind them."
+    />
+    <!-- Every route except /status is behind authentication, and this is one self-hosted
+         deployment. `robots.txt` says the same thing for crawlers that never load the document. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <!-- No Open Graph or Twitter card. Nothing here is meant to be shared to a link preview, and a
+         preview image would be one more thing a third party gets to fetch. -->
+    <meta name="color-scheme" content="light dark" />
   </head>
   <body>
     <div id="root"></div>

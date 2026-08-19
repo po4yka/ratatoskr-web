@@ -19,6 +19,8 @@ The toolchain is in place. No router, API client, view, or end-to-end suite is.
 | Lint | ESLint 10 with `typescript-eslint` 8 | |
 | Format | Prettier 3.9 with `prettier-plugin-tailwindcss` | Source and configuration only. Prose is hand-wrapped and Prettier would reflow every document |
 | Test | Vitest 4 with Testing Library and jsdom | |
+| UI audit | `@shadscan/cli` 0.17 | Deterministic check for the UI fundamentals a shadcn app should have. In the gate |
+| Agent audit | `shadcn/improve`, in `.agents/skills/` | Read-only advisor that writes plans. Not in the gate — see [Auditing](#auditing) |
 
 ## Getting started
 
@@ -41,6 +43,7 @@ npm run lint
 npm run format:check
 npm run test
 npm run build
+npm run audit:ui -- --fail-under 68
 ```
 
 This list and the one in `.github/workflows/ci.yml` are the same list, and the gate checks that they
@@ -48,6 +51,63 @@ are. If they drift, this file is the one that is wrong.
 
 `npm audit --omit=dev --audit-level=high` runs after them. It asks about what a user actually
 downloads; the build tooling is covered by Dependabot alerts.
+
+## Auditing
+
+Two audits, and they answer different questions. Neither replaces a review.
+
+### shadscan — deterministic, in the gate
+
+```bash
+npm run audit:ui            # human report
+npm run audit:ui:json       # machine-readable, for an agent or a diff
+```
+
+It reads the tree and reports missing UI fundamentals: error states without a wired retry, absent
+document metadata, missing keyboard entry points, contrast and pointer-target risks. CI runs it with
+`--fail-under 68`.
+
+**That number is a ratchet, not a target.** It is the score this tree already has. The step fails on a
+regression, not on the views that do not exist yet. When the score legitimately moves, move the number
+in the same commit and say which finding changed.
+
+Two things it reports today are deliberate, and neither is a defect to fix:
+
+- **`toast-provider-*` and `command-menu-*`** — waived until there is a user action to report and a
+  search to open. shadscan's own remediation says not to mount unused infrastructure for the score,
+  and that advice is correct here. Revisit at implementation-plan steps 6 and 8.
+- **`social-preview-present`** — waived permanently. Every route except `/status` is behind
+  authentication; there is no link preview to build, and an `og:image` is one more thing a third
+  party gets to fetch. `index.html` says so in a comment and `public/robots.txt` says the same to
+  crawlers.
+
+One is a false negative:
+
+- **`theme-hotkey-present`** — the shortcut exists. `src/components/theme-provider.tsx` binds `d`,
+  ignores modifier chords and guards editable targets, which is exactly what the remediation asks
+  for. shadscan does not find it there. Do not add a second handler to satisfy the detector.
+
+It can also check a rendered page — `npx shadscan --check-ui http://localhost:5173` — which is where
+contrast, pointer-target size, and mobile overflow stop being advisory. That is not wired into CI
+because there is nothing to render yet; it belongs with the end-to-end suite.
+
+### improve — advisory, not in the gate
+
+Installed as a project skill in `.agents/skills/improve/`, pinned by `skills-lock.json`, and linked
+into `.claude/skills/`. Restore it with `npx skills experimental_install`.
+
+```
+/improve            audit, then plans in plans/
+/improve branch     scoped to what this branch changes
+/improve security   one category
+```
+
+It is read-only on source and never implements anything; the plan is what it produces. Use it before
+a large change, or before a pull request with `/improve branch`. Its plans are plain markdown and are
+meant to be reviewed, not executed unread.
+
+Nothing here runs it automatically. An advisor whose output nobody reads is worse than no advisor,
+and a judgement-based audit in a required check would block a merge on an opinion.
 
 ## Adding a shadcn component
 

@@ -91,6 +91,52 @@ component and the base together.
 after initialization** — changing them means deleting and re-installing every component. Do not edit
 those fields to make one component look different.
 
+## The two audits
+
+Both are in this repository, both are for you, and they are not interchangeable.
+
+### shadscan — run it, believe it
+
+```bash
+npm run audit:ui            # human report
+npm run audit:ui:json       # machine-readable
+```
+
+Deterministic and in the gate at `--fail-under 68`. Run it after changing anything a user sees, not
+only before a commit.
+
+Three rules about it:
+
+- **The threshold is a ratchet.** It is the score the tree already has. Raise it in the same commit
+  that raises the score, and name the finding that moved. Never lower it to make a red run go green —
+  that converts a regression into a permanently weaker gate, which is the whole failure mode a
+  ratchet exists to prevent.
+- **Do not implement infrastructure for the score.** shadscan says this itself, and it is right. A
+  toast provider mounted with nothing to report, or a command menu with nothing to search, is dead
+  code that scores well. `DEVELOPMENT.md` records which findings are waived and why.
+- **A finding can be wrong.** `theme-hotkey-present` fails while the shortcut exists and is correctly
+  guarded in `src/components/theme-provider.tsx`. Read the evidence before acting on a finding, and
+  when it is a false negative, write that down instead of adding a second implementation.
+
+Its `--check-ui <url>` mode renders the page and turns contrast, pointer-target size, and mobile
+overflow from advisory into measured. Use it when you have a route to point at.
+
+### improve — read it, do not obey it
+
+`/improve` is a project skill in `.agents/skills/improve/`. It audits and writes plans in `plans/`;
+it never edits source. It is deliberately **not** in the gate.
+
+- Use it for the judgement-shaped questions: what is worth doing next, what this branch broke that
+  the gate does not check, where the tech debt actually is.
+- `/improve branch` before a substantial pull request.
+- Its output is a proposal. A plan it wrote is not authority to change this repository's invariants —
+  if a plan contradicts `AGENTS.md`, `AGENTS.md` wins and the plan is wrong.
+- Do not run `/improve execute` against this repository without saying so. It dispatches another
+  model, and one writer per repository per task is a workspace rule, not a preference.
+
+The division is the point: shadscan answers a question with one right answer and blocks the merge;
+improve answers a question with several and blocks nothing.
+
 ## Styling
 
 - Tailwind CSS 4 with no `tailwind.config.js`. The theme is in `src/index.css` under `@theme inline`,
