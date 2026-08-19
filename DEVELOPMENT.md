@@ -93,6 +93,16 @@ It can also check a rendered page — `npx shadscan --check-ui http://localhost:
 contrast, pointer-target size, and mobile overflow stop being advisory. That is not wired into CI
 because there is nothing to render yet; it belongs with the end-to-end suite.
 
+### Design and motion skills — advisory, not in the gate
+
+Six skills from [emilkowalski/skills](https://github.com/emilkowalski/skills) are installed for the
+UI work ahead: `emil-design-eng`, `apple-design`, `animate`, `review-animations`,
+`find-animation-opportunities` and `animation-vocabulary`. `AGENTS.md` lists what each is for, which
+five were left out, and the rule that this repository's own constraints win when a skill disagrees.
+
+The two worth knowing before the first view: `animate` for building motion in the order the decisions
+matter, and `apple-design` §15 for typography on the reader view — optical sizing, tracking, leading.
+
 ### improve — advisory, not in the gate
 
 Installed as a project skill in `.agents/skills/improve/`, pinned by `skills-lock.json`, and linked

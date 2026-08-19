@@ -228,6 +228,59 @@ one.
 None of them may carry information that is unavailable without them, and none may be the only
 feedback for an interaction — the same rule the itshover icons answer to.
 
+## Design and motion skills
+
+Six skills from [emilkowalski/skills](https://github.com/emilkowalski/skills) (MIT) are installed as
+project skills alongside `improve`, pinned in `skills-lock.json` and linked into `.claude/skills/`.
+Restore them with `npx skills experimental_install`.
+
+They are here because this client is read first and clicked second, and the difference between a
+reading surface that feels right and one that does not is made of decisions too small to argue about
+one at a time.
+
+| Skill | Use it for |
+|---|---|
+| `emil-design-eng` | The philosophy the rest derive from. Component design, polish, the invisible details |
+| `apple-design` | Interruptibility, springs, materials, **reduced motion (§14) and typography (§15)** |
+| `animate` | Building one animation, in the order the decisions actually matter |
+| `review-animations` | Checking motion against ten non-negotiable standards. Approval is earned |
+| `find-animation-opportunities` | Surveying what could animate — and, required, what should not |
+| `animation-vocabulary` | Naming an effect someone described but could not name |
+
+Two of them earn their place beyond motion. `apple-design` §15 is about optical sizing, tracking and
+leading — the reader view is the surface where that shows, and it is the one this client exists for.
+§14 is reduced motion, which this repository already enforces in two places and now has a standard to
+enforce it against.
+
+### How they interact with the rules already here
+
+They do not override anything. If a skill proposes motion that breaks a rule in this file, the rule
+wins:
+
+- motion is never the only feedback for an interaction;
+- an animation never carries information unavailable without it;
+- reduced motion is honoured — `MotionConfig` for declarative motion, the CSS backstop for vendored;
+- keyboard operability, visible focus and contrast are not tradeable against feel.
+
+`review-animations` and `find-animation-opportunities` do not run on their own; invoke them
+deliberately. Author and review stay separate passes: do not run `review-animations` over motion you
+wrote in the same turn and call it approved.
+
+### What was deliberately not installed
+
+Five of the eleven were left out, and the reasons are worth keeping so they are not re-litigated:
+
+- **`animate-expo`** — React Native and Expo. That is `ratatoskr-mobile`'s repository, not this one.
+- **`pick-ui-library`** — the choice is made and recorded in ADR-0002, ADR-0003 and ADR-0004. A skill
+  whose job is to pick a UI library is a skill for re-opening a settled decision.
+- **`improve-animations`** — the same shape as `improve`, which is already installed: survey, then
+  write plans for other agents. One planner is enough; use `improve` and say the audit is about
+  motion.
+- **`ask-sonner`** — toasts are deliberately waived until there is a user action worth reporting.
+  Install it in the commit that adds Sonner, not before.
+- **`prototype`** — builds several versions of a component behind a picker. Useful, and it writes
+  throwaway code into the tree. Ask before adding it.
+
 ## The two audits
 
 Both are in this repository, both are for you, and they are not interchangeable.
