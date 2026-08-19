@@ -54,12 +54,13 @@ jobs:
       # shadscan audits the tree for the UI fundamentals a shadcn app is supposed to have: error
       # states with a wired retry, document metadata, keyboard entry points, contrast and target
       # sizes. `--fail-under` is a ratchet, not a target — it is the score this tree already has, so
-      # the step fails on a regression and not on the views that have not been built yet.
+      # the step fails on a regression and not on the views that have not been built yet. It went
+      # 68 -> 69 when the animated icons landed with their reduced-motion backstop.
       #
       # When the number legitimately moves, move it in the same commit as the change that moved it,
       # and say which finding changed. A ruleset update can also move it: shadscan is pinned by the
       # lockfile, so that happens only on a deliberate bump.
-      - run: npm run audit:ui -- --fail-under 68
+      - run: npm run audit:ui -- --fail-under 69
 
       # Every dependency here ships to a browser, so the tree is the supply chain. `--omit=dev` asks
       # about what a user actually downloads; the build tooling is audited by the unfiltered run that

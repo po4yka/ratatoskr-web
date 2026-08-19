@@ -91,6 +91,63 @@ component and the base together.
 after initialization** — changing them means deleting and re-installing every component. Do not edit
 those fields to make one component look different.
 
+## Icons
+
+Two sets, one rule.
+
+**`lucide-react` is the default.** Every generated shadcn component imports it, it is static, and it
+costs nothing beyond the icons actually used. Reach for it first, and for almost everything.
+
+**[itshover](https://github.com/itshover/itshover) is the exception**, for the places where motion
+carries something: feedback on an action, a state that changed, an affordance worth pointing at.
+Never for decoration on a page that is only being read. See ADR-0003.
+
+```bash
+npm run ui:add -- @itshover/<name>-icon     # e.g. @itshover/refresh-icon
+```
+
+The registry is already in `components.json`. The CLI writes the icon and `types.ts` into
+`src/components/ui/`, which is generated — the same rules apply as for any shadcn component.
+
+### Always render them through the wrapper
+
+```tsx
+import { AnimatedIcon } from "@/components/animated-icon"
+import RefreshIcon from "@/components/ui/refresh-icon"
+
+<AnimatedIcon icon={RefreshIcon} size={16} data-icon="inline-start" />   // decorative
+<AnimatedIcon icon={RefreshIcon} label="Refresh" />                      // carries meaning
+```
+
+Never import an itshover icon straight into a view. The generated component destructures `size`,
+`color`, `strokeWidth` and `className` and **drops every other prop**, so `aria-hidden`, `aria-label`,
+`role` and `data-*` cannot reach the `svg` at all. `AnimatedIcon` is the element that carries them.
+
+Rules that follow:
+
+- **Decorative by default.** No `label` means `aria-hidden`. Pass `label` only when the icon is the
+  only thing conveying its meaning — an icon beside the word "Retry" is decorative, and a name there
+  is read twice.
+- **`data-icon="inline-start"` on an icon inside a `Button`.** The shadcn Button takes its inline
+  spacing from that attribute. shadscan checks it.
+- **The motion is never the only feedback.** These icons animate on hover, so a keyboard user never
+  sees the animation. That is fine while it means nothing, and a defect the moment it means
+  something.
+- **Do not add a reduced-motion check at a call site.** It is handled in two places already and a
+  third would rot: `MotionConfig reducedMotion="user"` in `main.tsx` for declarative motion, and a
+  CSS block in `index.css` scoped to `[data-animated-icon]` for the imperative `animate()` the
+  generated icons use. `MotionConfig` does not cover that second path — measured, and the measurement
+  is a test.
+
+### Do not
+
+- mix an itshover icon and a lucide icon in the same row or control group — the stroke and grid
+  differ and it reads as a mistake;
+- reach for an animated icon because a static one is available in itshover too. lucide is smaller and
+  already there;
+- add a second animation library. `motion` is here for these icons and is the largest dependency this
+  client carries after React.
+
 ## The two audits
 
 Both are in this repository, both are for you, and they are not interchangeable.
@@ -102,7 +159,7 @@ npm run audit:ui            # human report
 npm run audit:ui:json       # machine-readable
 ```
 
-Deterministic and in the gate at `--fail-under 68`. Run it after changing anything a user sees, not
+Deterministic and in the gate at `--fail-under 69`. Run it after changing anything a user sees, not
 only before a commit.
 
 Three rules about it:

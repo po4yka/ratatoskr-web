@@ -1,6 +1,8 @@
 import { Component, type ErrorInfo, type ReactNode } from "react"
 
+import { AnimatedIcon } from "@/components/animated-icon"
 import { Button } from "@/components/ui/button"
+import RefreshIcon from "@/components/ui/refresh-icon"
 
 type Props = {
   children: ReactNode
@@ -58,6 +60,9 @@ export class ErrorBoundary extends Component<Props, State> {
           region; if it fails again, reload the page.
         </p>
         <Button variant="outline" size="sm" onClick={this.reset}>
+          {/* No label: the word "Retry" is right beside it, and a name here would be read twice.
+              The motion is decoration on a button that already says what it does. */}
+          <AnimatedIcon icon={RefreshIcon} size={16} data-icon="inline-start" />
           Retry
         </Button>
       </div>

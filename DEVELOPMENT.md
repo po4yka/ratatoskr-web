@@ -15,7 +15,8 @@ The toolchain is in place. No router, API client, view, or end-to-end suite is.
 | Build | Vite 8.2 | |
 | Styling | Tailwind CSS 4.3, via `@tailwindcss/vite` | No `tailwind.config.js`; the theme lives in `src/index.css` under `@theme inline` |
 | Font | `@fontsource-variable/geist` | Self-hosted. A Google Fonts link would be a third-party request from a self-hosted deployment |
-| Icons | `lucide-react` | The shadcn default |
+| Icons | `lucide-react` | The static default, imported by every generated component |
+| Animated icons | itshover via `@itshover` registry, on `motion` 13 | The exception, where motion carries meaning. ADR-0003 |
 | Lint | ESLint 10 with `typescript-eslint` 8 | |
 | Format | Prettier 3.9 with `prettier-plugin-tailwindcss` | Source and configuration only. Prose is hand-wrapped and Prettier would reflow every document |
 | Test | Vitest 4 with Testing Library and jsdom | |
@@ -43,7 +44,7 @@ npm run lint
 npm run format:check
 npm run test
 npm run build
-npm run audit:ui -- --fail-under 68
+npm run audit:ui -- --fail-under 69
 ```
 
 This list and the one in `.github/workflows/ci.yml` are the same list, and the gate checks that they
@@ -65,7 +66,7 @@ npm run audit:ui:json       # machine-readable, for an agent or a diff
 
 It reads the tree and reports missing UI fundamentals: error states without a wired retry, absent
 document metadata, missing keyboard entry points, contrast and pointer-target risks. CI runs it with
-`--fail-under 68`.
+`--fail-under 69`.
 
 **That number is a ratchet, not a target.** It is the score this tree already has. The step fails on a
 regression, not on the views that do not exist yet. When the score legitimately moves, move the number
@@ -108,6 +109,28 @@ meant to be reviewed, not executed unread.
 
 Nothing here runs it automatically. An advisor whose output nobody reads is worse than no advisor,
 and a judgement-based audit in a required check would block a merge on an opinion.
+
+## Adding an icon
+
+`lucide-react` is the default and needs no ceremony: import it. For an animated one:
+
+```bash
+npm run ui:add -- @itshover/refresh-icon
+```
+
+The `@itshover` registry is already in `components.json`, so the namespaced form works. The icon and
+`types.ts` land in `src/components/ui/`, and `motion` is already a dependency.
+
+Render it through `AnimatedIcon`, never directly — the generated component drops every prop except
+`size`, `color`, `strokeWidth` and `className`, so accessibility attributes cannot reach it.
+`AGENTS.md` has the rules and ADR-0003 has the reasoning.
+
+Reduced motion is handled in two places and neither is optional:
+
+- `MotionConfig reducedMotion="user"` in `src/main.tsx`, for declarative `motion` components;
+- a CSS block in `src/index.css` scoped to `[data-animated-icon]`, for the imperative `animate()`
+  these icons use, which `MotionConfig` does not reach. That gap was measured;
+  `src/components/animated-icon.test.tsx` is the measurement.
 
 ## Adding a shadcn component
 

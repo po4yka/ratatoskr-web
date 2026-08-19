@@ -76,10 +76,11 @@ ratatoskr-web/
 Of that tree, `src/components/` (shadcn's generated `ui/` and one composed view), `src/lib/` and
 `src/test/` exist. The rest arrives with the slices that need it.
 
-The framework, build tool, and component base are decided and recorded:
-[ADR-0001](docs/adr/0001-framework-and-build.md) and
-[ADR-0002](docs/adr/0002-shadcn-base-ui.md). `DEVELOPMENT.md` carries the version table and the
-command list.
+The framework, build tool, component base, and icon policy are decided and recorded:
+[ADR-0001](docs/adr/0001-framework-and-build.md),
+[ADR-0002](docs/adr/0002-shadcn-base-ui.md) and
+[ADR-0003](docs/adr/0003-icons.md). `DEVELOPMENT.md` carries the version table and the command
+list.
 
 ## Contract-generated API client
 
