@@ -1,6 +1,8 @@
 # Web implementation plan
 
-1. Scaffold the project with lint, typecheck, test, build, CSP, and `ci.yml`.
+1. ~~Scaffold the project with lint, typecheck, test, build, and `ci.yml`.~~ Done. React 19,
+   TypeScript 6, Vite 8, Tailwind 4, shadcn/ui on Base UI, ESLint, Prettier, Vitest. CSP is not
+   set yet: it belongs with the first served page, not with the build.
 2. Generate API types from the pinned contract and fail the build on drift.
 3. Build the fetch gateway: refresh, retry, error normalization, and query keys.
 4. Implement session boot, the protected shell, sign-out, and the unauthorized state.

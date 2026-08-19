@@ -25,18 +25,90 @@ Core principles:
 
 ## Current phase
 
-The repository is in architecture bootstrap. Do not assume a framework, router, build tool, design
-system, API client, test runner, or CI command exists unless it is present in the checkout.
+The toolchain exists and nothing else does. React 19, TypeScript 6, Vite 8, Tailwind 4, shadcn/ui on
+the Base UI base, ESLint, Prettier, Vitest, and a CI gate are in the tree. A router, an API client, a
+state cache, a view, and an end-to-end suite are not — do not assume any of them exists until it is
+in the checkout. `DEVELOPMENT.md` is the authority on the toolchain and `docs/IMPLEMENTATION_PLAN.md`
+on the order the rest arrives in.
 
-When creating the initial implementation:
+What remains true while building the first slices:
 
-- decide the framework, build tool, and design-system dependency in an ADR before the lockfile;
 - put the fetch gateway, refresh, and error normalization in one place before writing a second view;
 - generate API types from the pinned contract in the same commit that first calls the API;
-- add `.github/workflows/ci.yml` in the commit that adds the first manifest. `fleet.yml` fails
-  closed when a manifest exists without a gate, and that is deliberate;
 - build the shell, the empty state, the error state, and the loading state together. A view that
-  exists only in its happy path is not done.
+  exists only in its happy path is not done;
+- a dependency addition is its own commit with its own justification. Everything here ships to a
+  browser.
+
+## shadcn/ui
+
+The component base is **Base UI**, recorded in `components.json` as `"style": "base-nova"`. shadcn is
+not a component library that gets imported — the CLI copies source into this repository and that
+source is then ours to run but not to hand-edit.
+
+### The generated directory
+
+`src/components/ui/` is written by `shadcn add`. Treat it as generated:
+
+- **Never hand-edit a file there to satisfy a linter or a type error.** The next `shadcn add` of that
+  component overwrites the edit, the problem returns, and the diff that fixed it is gone.
+- To change behavior, compose around the component, or copy it out to `src/components/` under a new
+  name and own it from there.
+- `eslint.config.js` disables `react-refresh/only-export-components` for that directory alone,
+  because shadcn components export a `cva` variants object beside the component. shadcn's own
+  generated button fails shadcn's own generated ESLint config on a clean install; this is that, not a
+  defect in the tree.
+
+### The base cannot be mixed
+
+shadcn ships three bases — Base UI, Radix, React Aria — and a component is generated against exactly
+one of them. This matters more than it sounds for an agent:
+
+- most shadcn material on the internet is written against **Radix**, because it was the only base
+  until 2026. A snippet copied from a blog post, an older answer, or memory will import
+  `@radix-ui/react-*` and will not work here;
+- the import to expect is `@base-ui/react`;
+- if a component seems to need a Radix primitive, the answer is the Base UI equivalent, not a second
+  base added to `package.json`.
+
+Check the Base UI documentation for the component before writing against it. Do not infer its API
+from a Radix example.
+
+### Adding a component
+
+```bash
+npm run ui:add -- <name>
+```
+
+Let the CLI add it. Do not hand-write a file into `src/components/ui/`, and do not add a
+`@base-ui/react` primitive to `package.json` by hand — the CLI resolves the dependency set for the
+component and the base together.
+
+### What is frozen
+
+`components.json` records `style`, `tailwind.baseColor` (`neutral`) and `tailwind.cssVariables`
+(`true`). The shadcn documentation states that `baseColor` and `cssVariables` **cannot be changed
+after initialization** — changing them means deleting and re-installing every component. Do not edit
+those fields to make one component look different.
+
+## Styling
+
+- Tailwind CSS 4 with no `tailwind.config.js`. The theme is in `src/index.css` under `@theme inline`,
+  and the CSS variables under `:root` and `.dark`. That is the file to edit for a theme change.
+- Use the semantic tokens the theme defines — `bg-background`, `text-muted-foreground`,
+  `border-border` — not raw palette classes. A raw `bg-neutral-900` is invisible in one of the two
+  themes and no test catches it.
+- Compose classes with `cn()` from `@/lib/utils`. Concatenating class strings by hand defeats
+  `tailwind-merge` and produces a component whose override silently loses.
+- The font is self-hosted through `@fontsource-variable/geist`. Do not add a Google Fonts link, a CDN
+  stylesheet, or any other third-party host — see the privacy rules below.
+
+## TypeScript version
+
+TypeScript is pinned to `~6.0.3` while 7.0.2 is the latest release, because no published
+`typescript-eslint` supports 7 (`peerDependencies.typescript` is `>=4.8.4 <6.1.0`). Taking 7 means
+giving up type-aware linting. Do not raise it as a routine dependency bump; raise it in one commit
+with `typescript-eslint`, once that package's peer range admits 7.x.
 
 ## Sources of truth
 

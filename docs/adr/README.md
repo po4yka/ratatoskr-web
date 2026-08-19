@@ -5,8 +5,13 @@ impact, accessibility impact, contract and compatibility impact, validation, and
 
 Initial backlog:
 
-- ADR-0001: Framework, build tool, and rendering strategy.
-- ADR-0002: Design-system dependency and theming.
+Accepted:
+
+- [ADR-0001](0001-framework-and-build.md): React, TypeScript, Vite.
+- [ADR-0002](0002-shadcn-base-ui.md): shadcn/ui on the Base UI base.
+
+Backlog:
+
 - ADR-0003: API type generation from the pinned contract and drift enforcement.
 - ADR-0004: Session token storage and the refresh model.
 - ADR-0005: Server-state cache, query keys, and invalidation.

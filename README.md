@@ -5,8 +5,9 @@ searches, organizes, and operates their own archive: articles, GitHub repositori
 Threads sources, ChatGPT and Claude exports, Git Vault snapshots, and the operations that produced
 them.
 
-> **Status:** architecture bootstrap. No application, build, router, API client, design system
-> integration, or CI is implemented yet.
+> **Status:** the toolchain is in place and nothing else is. React 19, TypeScript 6, Vite 8,
+> Tailwind 4, shadcn/ui on the Base UI base, ESLint, Prettier, Vitest and a CI gate are in the
+> tree. No router, API client, state cache, view, or end-to-end suite exists yet.
 
 This repository reuses the `ratatoskr-web` name from the retired client of the first Ratatoskr
 generation. It shares no history and no code with it. The retired client is a local read-only
@@ -72,8 +73,13 @@ ratatoskr-web/
 └── tooling/
 ```
 
-The first scaffold decides the framework, the build tool, and the design-system dependency, and it
-records that decision as an ADR rather than as a lockfile entry alone.
+Of that tree, `src/components/` (shadcn's generated `ui/` and one composed view), `src/lib/` and
+`src/test/` exist. The rest arrives with the slices that need it.
+
+The framework, build tool, and component base are decided and recorded:
+[ADR-0001](docs/adr/0001-framework-and-build.md) and
+[ADR-0002](docs/adr/0002-shadcn-base-ui.md). `DEVELOPMENT.md` carries the version table and the
+command list.
 
 ## Contract-generated API client
 
@@ -153,7 +159,7 @@ density are requirements rather than polish:
 
 ## Initial milestones
 
-1. Scaffold the project, lint, typecheck, test, build, and `ci.yml`.
+1. ~~Scaffold the project, lint, typecheck, test, build, and `ci.yml`.~~ Done.
 2. Generate the API client from the pinned contract and fail the build on drift.
 3. Implement session boot, refresh, protected shell, and sign-out.
 4. Implement search and the article reader against a local Platform.
@@ -177,5 +183,7 @@ live deployment.
 
 ## Project status
 
-This README defines the intended browser client. No application, API client, view, or test exists
-yet.
+This README defines the intended browser client. What exists is the toolchain and one generated
+shadcn component; the API client, the routes, and every view described above do not. See
+`DEVELOPMENT.md` for the toolchain and `docs/IMPLEMENTATION_PLAN.md` for the order the rest
+arrives in.
