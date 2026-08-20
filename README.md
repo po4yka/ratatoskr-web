@@ -1,6 +1,6 @@
 # Ratatoskr Web
 
-`ratatoskr-web` is the browser client for Ratatoskr Next. It is the surface on which a user reads,
+`ratatoskr-web` is the browser client for Ratatoskr. It is the surface on which a user reads,
 searches, organizes, and operates their own archive: articles, GitHub repositories, X, Instagram and
 Threads sources, ChatGPT and Claude exports, Git Vault snapshots, and the operations that produced
 them.
@@ -9,11 +9,22 @@ them.
 > Tailwind 4, shadcn/ui on the Base UI base, ESLint, Prettier, Vitest and a CI gate are in the
 > tree. No router, API client, state cache, view, or end-to-end suite exists yet.
 
+> [!IMPORTANT]
+> **Ratatoskr is in development.** No database holds data that has to survive a schema change.
+> While this status holds, these two rules replace what the documents below plan:
+>
+> - the API and the database keep their first version. There is no `v2` and no later major
+>   version.
+> - the database has no migrations. One schema definition exists, and a schema change edits it in
+>   place.
+>
+> Only the repository owner changes this status.
+
 This repository reuses the `ratatoskr-web` name from the retired client of the first Ratatoskr
 generation. It shares no history and no code with it. The retired client is a local read-only
 archive in `ratatoskr-workspace` and has no Git remote.
 
-## Role in Ratatoskr Next
+## Role in Ratatoskr
 
 Mobile and the browser extension are capture surfaces first. Web is the opposite: it is the surface
 where the archive is read and administered. It answers questions the capture clients deliberately do
