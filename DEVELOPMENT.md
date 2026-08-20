@@ -1,7 +1,7 @@
 # Developing Ratatoskr Web
 
 > Status: Proposed  
-> Last reviewed: 2026-08-19
+> Last reviewed: 2026-08-20
 
 The toolchain is in place. No router, API client, view, or end-to-end suite is.
 
@@ -245,3 +245,22 @@ raising a number here: a raised number applies to code nobody has written yet.
 
 No provider token, real archive fixture, or production endpoint is ever required to run this
 repository.
+
+## What a clone needs before you plan a change
+
+A change is planned with OpenSpec, which is a CLI a clone installs for itself. Use the version
+`.github/workflows/openspec.yml` pins, so your terminal and the gate answer the same:
+
+```bash
+npm install --global @fission-ai/openspec@1.10.0
+```
+
+Cross-repository behaviour lives in a store, and registering one is per-machine state that no
+repository can turn on for you — the same kind of step as `git config core.hooksPath .githooks`:
+
+```bash
+git clone git@github.com:po4yka/ratatoskr-workspace.git <path>
+openspec store register <path> --id ratatoskr-workspace
+```
+
+`openspec doctor` reports whether both are in place.
