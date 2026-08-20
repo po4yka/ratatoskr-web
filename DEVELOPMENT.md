@@ -217,6 +217,23 @@ same reason.
 Re-check when `typescript-eslint` publishes a release whose peer range admits 7.x, and raise both in
 one commit.
 
+## Code size limits
+
+`eslint.config.js` carries them, at severity `error` and not `warn`: `npm run lint` is a bare
+`eslint .` with no `--max-warnings`, and that command exits 0 on a warning, so a size rule set to
+`warn` would be a gate that never closes. The numbers are 200 lines in a file, 120 lines in a
+function, cyclomatic complexity 8, and 2 parameters. Blank lines and comments do not count.
+
+Each number is the worst case in hand-written code on the day it was written, so the gate fails on a
+regression and not on work that has not been done yet. `src/components/theme-provider.tsx` sets three
+of the four: 184 code lines in the file, 115 in `ThemeProvider`, complexity 7 in its keydown handler.
+The generator-owned directories — `src/components/ui`, `src/components/canvasui`,
+`src/components/aicss` — are exempt from all four, for the reason the config records beside them.
+
+Take the exception at the site, as `// eslint-disable-next-line <rule> -- <reason>`, and never by
+raising a number here: a raised number applies to code nobody has written yet.
+`ratatoskr-workspace/docs/QUALITY_GATES.md` records each measurement and the command behind it.
+
 ## Workflow
 
 1. Build the fetch gateway, refresh, and error normalization once, before the second view.
