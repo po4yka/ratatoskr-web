@@ -1,6 +1,6 @@
 # Developing Ratatoskr Web
 
-> Status: Proposed  
+> Status: Toolchain implemented; product features proposed
 > Last reviewed: 2026-08-20
 
 The toolchain is in place. No router, API client, view, or end-to-end suite is.
@@ -241,7 +241,8 @@ raising a number here: a raised number applies to code nobody has written yet.
 3. Build loading, empty, error, partial, and unauthorized states with every view, not after it.
 4. Query by role and accessible name in tests. A control that exists only as a styled `div` passes a
    snapshot and fails a user.
-5. Test against a local mock Platform or the workspace Compose profile, never a live deployment.
+5. Test against a local mock Platform. Add the planned workspace Compose profile to this gate only
+   after the workspace harness implements it; never target a live deployment.
 
 No provider token, real archive fixture, or production endpoint is ever required to run this
 repository.

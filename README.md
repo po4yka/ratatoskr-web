@@ -187,14 +187,15 @@ density are requirements rather than polish:
 
 ## Workspace integration
 
-`ratatoskr-workspace` pins this repository together with a compatible `ratatoskr-platform` and
-`ratatoskr-contracts`. It mounts at `repos/clients/web/` under the workspace key `web`, with the role
-`client`. In a cross-repository changeset the client is last in the rollout order and first in the
-rollback order, because a client may depend on a deployed contract but nothing deployed depends on
-the client.
+The planned workspace harness will pin this repository together with compatible
+`ratatoskr-platform` and `ratatoskr-contracts` commits. Its intended mount is
+`repos/clients/web/`, under the workspace key `web` with the role `client`. The harness, repository
+pin and mount do not exist yet. In a future cross-repository changeset the client is last in the
+rollout order and first in the rollback order, because a client may depend on a deployed contract
+but nothing deployed depends on the client.
 
-End-to-end tests run the built client against an isolated Compose profile rather than against a
-live deployment.
+End-to-end tests against an isolated workspace Compose profile are also planned; no such profile or
+end-to-end suite exists today. They will not target a live deployment.
 
 ## Project status
 

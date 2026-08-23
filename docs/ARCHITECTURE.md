@@ -1,8 +1,8 @@
 # Ratatoskr Web Architecture
 
-> Status: target architecture. This repository is in architecture bootstrap; the document defines the
-> intended shell, routing, API gateway, state, capability, rendering, and security boundaries. No
-> application exists yet.
+> Status: target architecture. The application scaffold, toolchain, CI gate, and generated shell
+> component exist; the document defines the intended routing, API gateway, state, capability,
+> rendering, and security boundaries. No API client, route, or product view exists yet.
 
 ## 1. Purpose
 
@@ -331,8 +331,8 @@ both themes.
 ### End-to-end
 
 Sign in, search, read, curate, capture, watch an operation to completion, revoke a device — against a
-mock Platform or the workspace Compose profile. Never a live deployment, a real provider account, or
-a real archive.
+mock Platform and, once the workspace harness provides it, the planned Compose profile. Never a live
+deployment, a real provider account, or a real archive.
 
 ## 19. Build and release
 
@@ -340,8 +340,8 @@ A deterministic production build, served by the deployment described in
 `ratatoskr-workspace/docs/DEPLOYMENT_TARGET.md`. One machine, one origin, one client bundle. There is
 no CDN, no edge runtime, and no third-party host in the serving path.
 
-`.github/workflows/ci.yml` arrives in the same commit as the first manifest. `fleet.yml` fails closed
-on a manifest without a gate, and that is the intended behavior rather than an obstacle.
+`.github/workflows/ci.yml` is present with the current manifest and runs the repository gate.
+`fleet.yml` fails closed on a manifest without that gate.
 
 ## 20. Architectural invariants
 

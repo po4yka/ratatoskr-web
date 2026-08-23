@@ -18,8 +18,9 @@ Required tests:
 - End-to-end: sign in, search, read, curate, capture, watch an operation to completion, revoke a
   device.
 
-Tests use a local mock Platform or the workspace Compose profile. Never a live deployment, a real
-provider account, or a real user archive.
+Current tests use local fixtures and mocks. The planned end-to-end suite will use a local mock
+Platform and, after the workspace harness implements it, an isolated Compose profile. It will never
+use a live deployment, a real provider account, or a real user archive.
 
 ## Test-first
 
