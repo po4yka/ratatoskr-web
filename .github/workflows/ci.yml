@@ -45,6 +45,10 @@ jobs:
       # quietly rewriting it, which is the only reason to commit a lockfile at all.
       - run: npm ci
 
+      # Generated types against pinned bytes: fails before later steps compile
+      # against a module that has drifted.
+      - run: npm run api:check
+
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check

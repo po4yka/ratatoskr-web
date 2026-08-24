@@ -40,6 +40,7 @@ Every command CI runs, in the order it runs them:
 
 ```bash
 npm ci
+npm run api:check
 npm run typecheck
 npm run lint
 npm run format:check
