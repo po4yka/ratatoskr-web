@@ -16,6 +16,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,js,json}\"",
     "test": "vitest run",
     "test:watch": "vitest",
+    "api:gen": "openapi-typescript openapi/openapi.json -o src/api/generated/schema.ts",
+    "api:check": "node scripts/check-api.mjs",
     "ui:add": "shadcn add",
     "audit:ui": "shadscan --no-interactive --no-roast",
     "audit:ui:json": "shadscan --no-interactive --json",

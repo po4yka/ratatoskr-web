@@ -3,8 +3,10 @@ coverage/
 .pnpm-store/
 pnpm-lock.yaml
 package-lock.json
-pnpm-lock.yaml
 yarn.lock
+
+# Generated API types (npm run api:gen)
+src/api/generated/
 
 # Agent tooling state, not tracked
 .omc/
