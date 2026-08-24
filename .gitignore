@@ -37,3 +37,6 @@ blob-report/
 # Logs
 *.log
 npm-debug.log*
+
+# Agent worktrees
+.worktrees/
