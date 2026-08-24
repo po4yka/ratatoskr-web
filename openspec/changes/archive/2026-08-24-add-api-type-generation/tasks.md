@@ -31,5 +31,5 @@ These tasks cannot start from a failing test: they are prose documents, validati
 - [x] 6.2 Strike through README milestone 2 and check off IMPLEMENTATION_PLAN item 2. Verify both documents show the completed state.
 - [x] 6.3 Stage conventional commits per concern: the devDependency addition alone, the pinned contract plus generated module plus scripts plus tests together, the gate parity edit, documentation last. Verify `git log --oneline` shows the separation.
 - [x] 6.4 Run the full gate: `npm run typecheck`, `lint`, `format:check`, `test`, `build`, `audit:ui -- --fail-under 69`, plus `npm audit --omit=dev --audit-level=high`. Verify every exit code is zero.
-- [ ] 6.5 Validate and archive: `openspec validate --change add-api-type-generation --strict`, then archive the change, confirming the delta lands in `openspec/specs/api-type-generation/spec.md` and `openspec validate --archived` stays clean.
-- [ ] 6.6 Integrate: merge the branch into `main`, push `origin main`, delete the worktree and the feature branch. Verify `git worktree list` no longer lists it and the remote tip advanced.
+- [x] 6.5 Validate and archive: `openspec validate --change add-api-type-generation --strict`, then archive the change, confirming the delta lands in `openspec/specs/api-type-generation/spec.md` and `openspec validate --archived` stays clean.
+- [x] 6.6 Integrate: merge the branch into `main`, push `origin main`, delete the worktree and the feature branch. Verify `git worktree list` no longer lists it and the remote tip advanced.
