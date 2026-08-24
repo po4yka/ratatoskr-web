@@ -175,7 +175,7 @@ density are requirements rather than polish:
 ## Initial milestones
 
 1. ~~Scaffold the project, lint, typecheck, test, build, and `ci.yml`.~~ Done.
-2. Generate the API client from the pinned contract and fail the build on drift.
+2. ~~Generate the API client from the pinned contract and fail the build on drift.~~ Done.
 3. Implement session boot, refresh, protected shell, and sign-out.
 4. Implement search and the article reader against a local Platform.
 5. Add collections and tags.

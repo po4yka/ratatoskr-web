@@ -3,7 +3,7 @@
 1. ~~Scaffold the project with lint, typecheck, test, build, and `ci.yml`.~~ Done. React 19,
    TypeScript 6, Vite 8, Tailwind 4, shadcn/ui on Base UI, ESLint, Prettier, Vitest. CSP is not
    set yet: it belongs with the first served page, not with the build.
-2. Generate API types from the pinned contract and fail the build on drift.
+2. ~~Generate API types from the pinned contract and fail the build on drift.~~ Done. Types are generated from a digest-pinned copy of the platform contract, and `api:check` fails the gate when the pin or the generated output drifts.
 3. Build the fetch gateway: refresh, retry, error normalization, and query keys.
 4. Implement session boot, the protected shell, sign-out, and the unauthorized state.
 5. Implement capability discovery and the gating rules that follow from it.

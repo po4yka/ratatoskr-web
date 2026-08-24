@@ -11,10 +11,10 @@ Accepted:
 - [ADR-0004](0004-design-libraries.md): four design libraries, connected on different terms.
   Includes the licence decision: vendoring MIT + Commons Clause source is conditional on
   Ratatoskr not being sold.
+- [ADR-0005](0005-api-type-generation.md): API type generation from the pinned contract and
+  drift enforcement.
 
 Backlog:
-
-- ADR-0005: API type generation from the pinned contract and drift enforcement.
 - ADR-0006: Session token storage and the refresh model.
 - ADR-0007: Server-state cache, query keys, and invalidation.
 - ADR-0008: Capability discovery and gating.
