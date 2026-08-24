@@ -43,7 +43,11 @@ jobs:
 
       # `ci` rather than `install`: it fails on a lockfile that disagrees with package.json instead of
       # quietly rewriting it, which is the only reason to commit a lockfile at all.
-      - run: npm ci
+      #
+      # `--legacy-peer-deps`: openapi-typescript@7.13.0 (latest) still declares `peer typescript@^5.x`
+      # while this tree pins ~6.0.3, which typescript-eslint caps below 6.1.0. Drop this flag when
+      # upstream widens the range.
+      - run: npm ci --legacy-peer-deps
 
       # Generated types against pinned bytes: fails before later steps compile
       # against a module that has drifted.
