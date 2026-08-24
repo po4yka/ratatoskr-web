@@ -7,39 +7,41 @@ The toolchain is in place. No router, API client, view, or end-to-end suite is.
 
 ## Toolchain
 
-| Part | Choice | Why it is this one |
-|---|---|---|
-| Language | TypeScript 6.0.3 | Not 7.0.2. See [The TypeScript ceiling](#the-typescript-ceiling) |
-| UI | React 19.2 | |
-| Components | shadcn/ui 4.18 on the Base UI base | ADR-0002 |
-| Build | Vite 8.2 | |
-| Styling | Tailwind CSS 4.3, via `@tailwindcss/vite` | No `tailwind.config.js`; the theme lives in `src/index.css` under `@theme inline` |
-| Font | `@fontsource-variable/geist` | Self-hosted. A Google Fonts link would be a third-party request from a self-hosted deployment |
-| Icons | `lucide-react` | The static default, imported by every generated component |
-| Animated icons | itshover via `@itshover` registry, on `motion` 13 | The exception, where motion carries meaning. ADR-0003 |
-| Design libraries | `thinking-orbs` 0.3, `liquid-gooey` 0.1 as npm packages; Canvas UI and AIcss vendored | ADR-0004. Canvas UI's licence is conditional on Ratatoskr not being sold |
-| Lint | ESLint 10 with `typescript-eslint` 8 | |
-| Format | Prettier 3.9 with `prettier-plugin-tailwindcss` | Source and configuration only. Prose is hand-wrapped and Prettier would reflow every document |
-| Test | Vitest 4 with Testing Library and jsdom | |
-| UI audit | `@shadscan/cli` 0.17 | Deterministic check for the UI fundamentals a shadcn app should have. In the gate |
-| Agent audit | `shadcn/improve`, in `.agents/skills/` | Read-only advisor that writes plans. Not in the gate — see [Auditing](#auditing) |
+| Part             | Choice                                                                                | Why it is this one                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Language         | TypeScript 6.0.3                                                                      | Not 7.0.2. See [The TypeScript ceiling](#the-typescript-ceiling)                              |
+| UI               | React 19.2                                                                            |                                                                                               |
+| Components       | shadcn/ui 4.18 on the Base UI base                                                    | ADR-0002                                                                                      |
+| Build            | Vite 8.2                                                                              |                                                                                               |
+| Styling          | Tailwind CSS 4.3, via `@tailwindcss/vite`                                             | No `tailwind.config.js`; the theme lives in `src/index.css` under `@theme inline`             |
+| Font             | `@fontsource-variable/geist`                                                          | Self-hosted. A Google Fonts link would be a third-party request from a self-hosted deployment |
+| Icons            | `lucide-react`                                                                        | The static default, imported by every generated component                                     |
+| Animated icons   | itshover via `@itshover` registry, on `motion` 13                                     | The exception, where motion carries meaning. ADR-0003                                         |
+| Design libraries | `thinking-orbs` 0.3, `liquid-gooey` 0.1 as npm packages; Canvas UI and AIcss vendored | ADR-0004. Canvas UI's licence is conditional on Ratatoskr not being sold                      |
+| Lint             | ESLint 10 with `typescript-eslint` 8                                                  |                                                                                               |
+| Format           | Prettier 3.9 with `prettier-plugin-tailwindcss`                                       | Source and configuration only. Prose is hand-wrapped and Prettier would reflow every document |
+| Test             | Vitest 4 with Testing Library and jsdom                                               |                                                                                               |
+| UI audit         | `@shadscan/cli` 0.17                                                                  | Deterministic check for the UI fundamentals a shadcn app should have. In the gate             |
+| Agent audit      | `shadcn/improve`, in `.agents/skills/`                                                | Read-only advisor that writes plans. Not in the gate — see [Auditing](#auditing)              |
 
 ## Getting started
 
 ```bash
-npm ci
+npm ci --legacy-peer-deps
 npm run dev
 ```
 
 `npm ci` rather than `npm install`: it fails on a lockfile that disagrees with `package.json` instead
-of quietly rewriting it, which is the only reason to commit a lockfile at all.
+of quietly rewriting it, which is the only reason to commit a lockfile at all. The flag is there
+because openapi-typescript@7.13.0 still declares its TypeScript peer as `^5.x` while this tree pins
+~6.0.3, which typescript-eslint caps below 6.1.0; drop it when upstream widens the range.
 
 ### The gate
 
 Every command CI runs, in the order it runs them:
 
 ```bash
-npm ci
+npm ci --legacy-peer-deps
 npm run api:check
 npm run typecheck
 npm run lint
