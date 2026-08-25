@@ -1,6 +1,6 @@
 import { RouterProvider } from "react-router/dom"
 import { useMemo } from "react"
-import { createAppRouter } from "@/app/router"
+import { createAppRouter, type RouteModules } from "@/app/router"
 import { AuthProvider, useAuth } from "@/auth/auth-context"
 import type { SessionWiring } from "@/auth/session-gateway"
 import { wireSessions } from "@/auth/session-gateway"
@@ -20,6 +20,8 @@ export interface AppProps {
    * inject doubles so no test ever reaches a network.
    */
   wiring?: SessionWiring
+  /** Route-module overrides; a test seam production never uses. */
+  routeModules?: RouteModules
 }
 
 /**
@@ -28,7 +30,7 @@ export interface AppProps {
  * renders a boot failure with retry, and everything else hands the tree to
  * the router, which gates routes by the session.
  */
-export function App({ wiring }: AppProps) {
+export function App({ wiring, routeModules }: AppProps) {
   const session = useMemo(
     () => wiring ?? wireSessions({ baseUrl: API_BASE_URL }),
     [wiring]
@@ -37,18 +39,22 @@ export function App({ wiring }: AppProps) {
   return (
     <ThemeProvider>
       <AuthProvider wiring={session}>
-        <AppSession />
+        <AppSession routeModules={routeModules} />
       </AuthProvider>
     </ThemeProvider>
   )
 }
 
-function AppSession() {
+function AppSession({ routeModules }: { routeModules?: RouteModules }) {
   const { state, retryBoot } = useAuth()
 
   const router = useMemo(
-    () => createAppRouter(state.status === "authenticated"),
-    [state.status]
+    () =>
+      createAppRouter(
+        state.status === "authenticated",
+        routeModules
+      ),
+    [state.status, routeModules]
   )
 
   if (state.status === "booting") {

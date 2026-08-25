@@ -81,6 +81,6 @@ Every route except `/login` SHALL render inside the authenticated shell — a na
 - **WHEN** the user opens the user menu from the keyboard
 - **THEN** sign-out is reachable and activatable without a pointer, with visible focus throughout
 
-#### Scenario: A lazily loaded route has a loading state
-- **WHEN** a feature route's view code is still arriving after navigation
-- **THEN** a designed pending state renders in place of the route region, not a blank area
+#### Scenario: A lazily loaded route never blanks the page
+- **WHEN** a feature route's view code is still arriving after a cold entry such as a deep link or reload
+- **THEN** a designed pending state renders in place of the route region, and when arriving from another route the previously rendered view is held until the new one is ready — either way the page is never blank
