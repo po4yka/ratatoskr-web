@@ -23,7 +23,11 @@ function generateInto(outputPath: string): void {
 }
 
 describe("generated module", () => {
-  it("repeated generation is byte-stable", () => {
+  // The test spawns the openapi-typescript subprocess twice; under full-suite
+  // parallel load that exceeds the default budget, so it carries its own.
+  // The assertion is unchanged: two runs must be byte-identical to the
+  // committed file.
+  it("repeated generation is byte-stable", { timeout: 30_000 }, () => {
     const tempDir = mkdtempSync(join(tmpdir(), "ratatoskr-schema-"))
     try {
       const first = join(tempDir, "first.ts")

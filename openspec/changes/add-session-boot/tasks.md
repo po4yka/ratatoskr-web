@@ -17,8 +17,8 @@
 
 ## 4. React integration
 
-- [ ] 4.1 RED: add `src/auth/auth-context.test.tsx`: "renders the designed pending state while boot is unresolved", "renders the shell when boot resolves authenticated", "renders the unauthorized surface when boot resolves unauthenticated", "renders a boot-failure state with a working retry when the backend is unreachable" — confirm failures because the context does not exist.
-- [ ] 4.2 GREEN: implement `src/auth/auth-context.tsx` mounting the boot resolver behind one context exposing status, retry, signIn, signOut; render outcomes through the router; migrate the existing App test.
+- [x] 4.1 RED: add `src/auth/auth-context.test.tsx`: "renders the designed pending state while boot is unresolved", "renders the shell when boot resolves authenticated", "renders the unauthorized surface when boot resolves unauthenticated", "renders a boot-failure state with a working retry when the backend is unreachable" — confirm failures because the context does not exist.
+- [x] 4.2 GREEN: implement `src/auth/auth-context.tsx` mounting the boot resolver behind one context exposing status, retry, signIn, signOut; render outcomes through the router; migrate the existing App test.
 - [ ] 4.3 RED: add `src/features/login/login-page.test.tsx`: "a usable credential signs the user in", "an unusable credential shows refusal without taking custody", "an unreachable backend renders a distinct retryable failure" — confirm failure because the page does not exist.
 - [ ] 4.4 GREEN: implement `src/features/login/` functional form until 4.3 passes.
 - [ ] 4.5 RED: add `src/components/shell/shell.test.tsx` for deep-link return: "opening /collections while signed out offers sign-in and lands on /collections after signing in" — confirm it fails because the shell does not gate routes yet.
@@ -26,7 +26,7 @@
 
 ## 5. Shell surface
 
-- [ ] 5.1 Add generated shadcn components via `npm run ui:add -- dropdown-menu input` (generated files; no failing test applies).
+- [x] 5.1 Add generated shadcn components via `npm run ui:add -- dropdown-menu input` (generated files; no failing test applies).
 - [ ] 5.2 RED: add `src/components/shell/shell.test.tsx` structural tests: "shell exposes a skip link that targets the main region", "navigation skeleton carries landmark roles", "theme switcher offers light, dark, and system and persists the choice", "user menu reaches sign-out by keyboard with visible focus" — confirm failures against the missing shell markup.
 - [ ] 5.3 GREEN: implement `src/components/shell/` (nav skeleton, theme switcher, user menu) until 5.2 passes.
 - [ ] 5.4 RED: add `src/components/shell/lazy-route.test.tsx` with test "a lazily loaded feature route shows its pending state while its module arrives, then its view" — confirm it fails because feature routes are not lazily loaded.

@@ -3,14 +3,14 @@ import { expect, test } from "vitest"
 
 import { App } from "./App"
 
-// The one thing worth asserting on a tree with no features: the stack renders a shadcn component,
-// and it renders it as something a keyboard and a screen reader can reach. A control that exists
-// only as a styled div passes a snapshot and fails a user, so the query is by role and name.
-test("renders a shadcn button with an accessible name", () => {
+// The root composition with its production wiring must render a designed
+// surface on first paint — never a blank tree and never a network call that
+// decides what may show. The pending state is synchronous; whatever the
+// session answer turns out to be arrives later through the same seam.
+test("boots into the designed pending state before any session answer", () => {
   render(<App />)
 
-  expect(screen.getByRole("heading", { name: "Ratatoskr Web" })).toBeVisible()
-  expect(
-    screen.getByRole("button", { name: "Nothing to do yet" })
-  ).toBeEnabled()
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Checking your session…"
+  )
 })
