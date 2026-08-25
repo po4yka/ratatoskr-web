@@ -19,10 +19,10 @@
 
 - [x] 4.1 RED: add `src/auth/auth-context.test.tsx`: "renders the designed pending state while boot is unresolved", "renders the shell when boot resolves authenticated", "renders the unauthorized surface when boot resolves unauthenticated", "renders a boot-failure state with a working retry when the backend is unreachable" — confirm failures because the context does not exist.
 - [x] 4.2 GREEN: implement `src/auth/auth-context.tsx` mounting the boot resolver behind one context exposing status, retry, signIn, signOut; render outcomes through the router; migrate the existing App test.
-- [ ] 4.3 RED: add `src/features/login/login-page.test.tsx`: "a usable credential signs the user in", "an unusable credential shows refusal without taking custody", "an unreachable backend renders a distinct retryable failure" — confirm failure because the page does not exist.
-- [ ] 4.4 GREEN: implement `src/features/login/` functional form until 4.3 passes.
-- [ ] 4.5 RED: add `src/components/shell/shell.test.tsx` for deep-link return: "opening /collections while signed out offers sign-in and lands on /collections after signing in" — confirm it fails because the shell does not gate routes yet.
-- [ ] 4.6 GREEN: implement the protected route wrapper capturing location state and returning the user to the requested URL after sign-in, until 4.5 passes.
+- [x] 4.3 RED: add `src/features/login/login-page.test.tsx`: "a usable credential signs the user in", "an unusable credential shows refusal without taking custody", "an unreachable backend renders a distinct retryable failure" — confirm failure because the page does not exist.
+- [x] 4.4 GREEN: implement `src/features/login/` functional form until 4.3 passes.
+- [x] 4.5 RED: add `src/components/shell/shell.test.tsx` for deep-link return: "opening /collections while signed out offers sign-in and lands on /collections after signing in" — confirm it fails because the shell does not gate routes yet.
+- [x] 4.6 GREEN: implement the protected route wrapper capturing location state and returning the user to the requested URL after sign-in, until 4.5 passes.
 
 ## 5. Shell surface
 
