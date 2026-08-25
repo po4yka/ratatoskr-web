@@ -10,7 +10,5 @@ import { App } from "./App"
 test("boots into the designed pending state before any session answer", () => {
   render(<App />)
 
-  expect(screen.getByRole("status")).toHaveTextContent(
-    "Checking your session…"
-  )
+  expect(screen.getByRole("status")).toHaveTextContent("Checking your session…")
 })

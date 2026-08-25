@@ -41,5 +41,5 @@
 
 ## 7. Gate
 
-- [ ] 7.1 Run the full DEVELOPMENT.md command list — api:check, typecheck, lint, format:check, test, build, audit:ui --fail-under 69 — and confirm green.
-- [ ] 7.2 Run `openspec validate --change add-session-boot --strict` and confirm the change validates; archive only after every task above is ticked.
+- [x] 7.1 Run the full DEVELOPMENT.md command list — api:check, typecheck, lint, format:check, test, build, audit:ui --fail-under 69 — and confirm green.
+- [x] 7.2 Run `openspec validate --change add-session-boot --strict` and confirm the change validates; archive only after every task above is ticked.

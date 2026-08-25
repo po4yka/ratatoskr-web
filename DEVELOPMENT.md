@@ -48,7 +48,7 @@ npm run lint
 npm run format:check
 npm run test
 npm run build
-npm run audit:ui -- --fail-under 69
+npm run audit:ui -- --fail-under 79
 ```
 
 This list and the one in `.github/workflows/ci.yml` are the same list, and the gate checks that they
@@ -79,11 +79,15 @@ npm run audit:ui:json       # machine-readable, for an agent or a diff
 
 It reads the tree and reports missing UI fundamentals: error states without a wired retry, absent
 document metadata, missing keyboard entry points, contrast and pointer-target risks. CI runs it with
-`--fail-under 69`.
+`--fail-under 79`.
 
 **That number is a ratchet, not a target.** It is the score this tree already has. The step fails on a
 regression, not on the views that do not exist yet. When the score legitimately moves, move the number
-in the same commit and say which finding changed.
+in the same commit and say which finding changed. The move from 69 to 79 came with session boot:
+`async-action-pending-state` (the sign-in action names its pending state conventionally and disables
+its trigger), `validation-wired-to-form` (native validation runs instead of being suppressed),
+`personal-data-autocomplete-present` (the credential field declares its autocomplete purpose), and
+`theme-provider-mounted-in-shell` restored after the provider briefly left the composition root.
 
 Two things it reports today are deliberate, and neither is a defect to fix:
 

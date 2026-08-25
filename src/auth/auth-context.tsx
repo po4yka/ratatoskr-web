@@ -1,3 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
+// Precedent: theme-provider.tsx. The context provider and its hook are one
+// unit; splitting them across files would scatter the session lifecycle.
 import * as React from "react"
 import { resolveBoot } from "./boot"
 import type { SignInOutcome } from "./provider"
@@ -21,9 +24,7 @@ export interface AuthContextValue {
   retryBoot(): void
 }
 
-const AuthContext = React.createContext<AuthContextValue | undefined>(
-  undefined
-)
+const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 
 export interface AuthProviderProps {
   wiring: SessionWiring
@@ -37,24 +38,26 @@ export interface AuthProviderProps {
  */
 export function AuthProvider({ wiring, children }: AuthProviderProps) {
   const [state, setState] = React.useState<AuthState>({ status: "booting" })
+  // Retrying boot means running the same effect again; the attempt counter
+  // is what re-triggers it, and retry itself moves the surface to pending.
+  const [attempt, setAttempt] = React.useState(0)
 
-  const runBoot = React.useCallback(() => {
-    setState({ status: "booting" })
+  React.useEffect(() => {
+    let alive = true
     resolveBoot(wiring.provider).then(
       (outcome) => {
-        setState({ status: outcome.status })
+        if (alive) setState({ status: outcome.status })
       },
       () => {
         // resolveBoot maps provider failures already; this backstop keeps an
         // unexpected throw from stranding the app in the pending state.
-        setState({ status: "unreachable" })
+        if (alive) setState({ status: "unreachable" })
       }
     )
-  }, [wiring])
-
-  React.useEffect(() => {
-    runBoot()
-  }, [runBoot])
+    return () => {
+      alive = false
+    }
+  }, [wiring, attempt])
 
   const value = React.useMemo<AuthContextValue>(
     () => ({
@@ -71,14 +74,15 @@ export function AuthProvider({ wiring, children }: AuthProviderProps) {
         await wiring.provider.revoke()
         setState({ status: "unauthenticated" })
       },
-      retryBoot: runBoot,
+      retryBoot() {
+        setState({ status: "booting" })
+        setAttempt((current) => current + 1)
+      },
     }),
-    [state, wiring, runBoot]
+    [state, wiring]
   )
 
-  return (
-    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth(): AuthContextValue {

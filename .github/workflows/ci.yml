@@ -68,7 +68,7 @@ jobs:
       # When the number legitimately moves, move it in the same commit as the change that moved it,
       # and say which finding changed. A ruleset update can also move it: shadscan is pinned by the
       # lockfile, so that happens only on a deliberate bump.
-      - run: npm run audit:ui -- --fail-under 69
+      - run: npm run audit:ui -- --fail-under 79
 
       # Every dependency here ships to a browser, so the tree is the supply chain. `--omit=dev` asks
       # about what a user actually downloads; the build tooling is audited by the unfiltered run that

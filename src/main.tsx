@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client"
 import "./index.css"
 import App from "./App.tsx"
 import { ErrorBoundary } from "@/app/error-boundary.tsx"
+import { ThemeProvider } from "@/components/theme-provider.tsx"
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -14,9 +15,11 @@ createRoot(document.getElementById("root")!).render(
       block in `index.css` is what covers those. Both are needed and neither replaces the other.
     */}
     <MotionConfig reducedMotion="user">
-      <ErrorBoundary region="app">
-        <App />
-      </ErrorBoundary>
+      <ThemeProvider>
+        <ErrorBoundary region="app">
+          <App />
+        </ErrorBoundary>
+      </ThemeProvider>
     </MotionConfig>
   </StrictMode>
 )

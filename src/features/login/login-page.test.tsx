@@ -10,7 +10,9 @@ import type { SessionWiring } from "@/auth/session-gateway"
 import { AuthProvider } from "@/auth/auth-context"
 import LoginPage from "./login-page"
 
-function gatewayOf(run: (request: GatewayRequest) => Promise<unknown>): Gateway {
+function gatewayOf(
+  run: (request: GatewayRequest) => Promise<unknown>
+): Gateway {
   return {
     request: run as unknown as Gateway["request"],
   }

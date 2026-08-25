@@ -52,22 +52,24 @@ export default function LoginPage() {
     setStatus(outcome.status)
   }
 
-  const submitting = status === "submitting"
+  const isSubmitting = status === "submitting"
 
   return (
     <main className="mx-auto flex min-h-svh max-w-md flex-col justify-center gap-6 p-6">
       <h1 className="text-heading-sm font-semibold">Sign in to Ratatoskr</h1>
 
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      {/* Native validation runs: an empty submit is answered by the browser
+          before this handler fires. */}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="credential">Platform credential</Label>
           <Input
             id="credential"
             name="credential"
             type="password"
-            autoComplete="off"
-            required
-            disabled={submitting}
+            autoComplete="current-password"
+            required={true}
+            disabled={isSubmitting}
           />
           <p className="text-caption text-muted-foreground">
             Paste an existing Platform session credential. It is checked with
@@ -77,8 +79,8 @@ export default function LoginPage() {
 
         {status === "refused" && (
           <p role="alert" className="text-body text-destructive">
-            That credential was not accepted. Nothing was kept; check it and
-            try again.
+            That credential was not accepted. Nothing was kept; check it and try
+            again.
           </p>
         )}
         {status === "unreachable" && (
@@ -88,8 +90,8 @@ export default function LoginPage() {
           </p>
         )}
 
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Signing in…" : "Sign in"}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Signing in…" : "Sign in"}
         </Button>
         {status === "unreachable" && (
           <Button

@@ -13,9 +13,7 @@ export type SessionStatus = "authenticated" | "unauthenticated" | "unreachable"
 
 /** How a sign-in attempt ended. Refusal and failure stay distinct. */
 export type SignInOutcome =
-  | { status: "signed-in" }
-  | { status: "refused" }
-  | { status: "unreachable" }
+  { status: "signed-in" } | { status: "refused" } | { status: "unreachable" }
 
 /**
  * What the injected credential refresh reported, shaped for the gateway's
@@ -23,9 +21,7 @@ export type SignInOutcome =
  * refresh endpoint, so the only truthful answer today is "rejected".
  */
 export type RefreshResult =
-  | { status: "refreshed" }
-  | { status: "rejected" }
-  | { status: "network" }
+  { status: "refreshed" } | { status: "rejected" } | { status: "network" }
 
 /**
  * One interface over the session operations the client performs. Modes sit
@@ -66,9 +62,7 @@ export interface PresentedCredentialProviderDeps {
 const PROBE_PATH: keyof paths = "/v1/capabilities"
 
 type AskOutcome =
-  | { verdict: "accepted" }
-  | { verdict: "refused" }
-  | { verdict: "unreachable" }
+  { verdict: "accepted" } | { verdict: "refused" } | { verdict: "unreachable" }
 
 /**
  * The one mode the pinned contract supports end to end today: a user

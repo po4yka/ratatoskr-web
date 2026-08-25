@@ -1,19 +1,9 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
-import type { Gateway, GatewayRequest } from "@/api/gateway/client"
 import { storeCustody } from "@/auth/custody"
-import { createPresentedCredentialProvider } from "@/auth/provider"
-import App from "@/App"
+import { gatewayOf, renderApp } from "@/test/app-harness"
 
-function gatewayOf(run: (request: GatewayRequest) => Promise<unknown>): Gateway {
-  return {
-    request: run as unknown as Gateway["request"],
-  }
-}
-
-const accepting: Gateway = gatewayOf(() =>
-  Promise.resolve({ capabilities: [] })
-)
+const accepting = () => Promise.resolve({ capabilities: [] })
 
 describe("lazily loaded feature routes", () => {
   beforeEach(() => {
@@ -38,15 +28,10 @@ describe("lazily loaded feature routes", () => {
         () => ({ default: () => <p>failed</p> })
       )
 
-    render(
-      <App
-        wiring={{
-          gateway: accepting,
-          provider: createPresentedCredentialProvider({ gateway: accepting }),
-        }}
-        routeModules={{ search: slowSearch }}
-      />
-    )
+    renderApp({
+      gateway: gatewayOf(accepting),
+      routeModules: { search: slowSearch },
+    })
 
     await waitFor(() => {
       expect(screen.getByRole("banner")).toBeInTheDocument()
@@ -78,15 +63,10 @@ describe("lazily loaded feature routes", () => {
         default: () => <p>collections arrived</p>,
       }))
 
-    render(
-      <App
-        wiring={{
-          gateway: accepting,
-          provider: createPresentedCredentialProvider({ gateway: accepting }),
-        }}
-        routeModules={{ collections: slowCollections }}
-      />
-    )
+    renderApp({
+      gateway: gatewayOf(accepting),
+      routeModules: { collections: slowCollections },
+    })
 
     await waitFor(() => {
       expect(screen.getByRole("banner")).toBeInTheDocument()

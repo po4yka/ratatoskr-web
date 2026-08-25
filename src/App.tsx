@@ -5,7 +5,6 @@ import { AuthProvider, useAuth } from "@/auth/auth-context"
 import type { SessionWiring } from "@/auth/session-gateway"
 import { wireSessions } from "@/auth/session-gateway"
 import { Button } from "@/components/ui/button"
-import { ThemeProvider } from "@/components/theme-provider"
 
 /**
  * Where the API answers. Same-origin by default: the deployment fronts the
@@ -37,11 +36,9 @@ export function App({ wiring, routeModules }: AppProps) {
   )
 
   return (
-    <ThemeProvider>
-      <AuthProvider wiring={session}>
-        <AppSession routeModules={routeModules} />
-      </AuthProvider>
-    </ThemeProvider>
+    <AuthProvider wiring={session}>
+      <AppSession routeModules={routeModules} />
+    </AuthProvider>
   )
 }
 
@@ -49,11 +46,7 @@ function AppSession({ routeModules }: { routeModules?: RouteModules }) {
   const { state, retryBoot } = useAuth()
 
   const router = useMemo(
-    () =>
-      createAppRouter(
-        state.status === "authenticated",
-        routeModules
-      ),
+    () => createAppRouter(state.status === "authenticated", routeModules),
     [state.status, routeModules]
   )
 
@@ -75,8 +68,8 @@ function AppSession({ routeModules }: { routeModules?: RouteModules }) {
         </h1>
         <p className="text-body text-muted-foreground">
           Platform did not answer when the client asked whether a session is
-          standing. Nothing has been decided about your sign-in; check that
-          the deployment is running and try again.
+          standing. Nothing has been decided about your sign-in; check that the
+          deployment is running and try again.
         </p>
         <div>
           <Button variant="outline" onClick={retryBoot}>

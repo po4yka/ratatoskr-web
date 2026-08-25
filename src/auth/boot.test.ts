@@ -5,7 +5,9 @@ import { readCustody, storeCustody } from "./custody"
 import { createPresentedCredentialProvider } from "./provider"
 import { resolveBoot } from "./boot"
 
-function gatewayOf(run: (request: GatewayRequest) => Promise<unknown>): Gateway {
+function gatewayOf(
+  run: (request: GatewayRequest) => Promise<unknown>
+): Gateway {
   return {
     request: run as unknown as Gateway["request"],
   }
@@ -27,7 +29,9 @@ describe("session boot decision matrix", () => {
     storeCustody("credential-1")
 
     await expect(
-      resolveBoot(providerOver(gatewayOf(() => Promise.resolve({ capabilities: [] }))))
+      resolveBoot(
+        providerOver(gatewayOf(() => Promise.resolve({ capabilities: [] })))
+      )
     ).resolves.toEqual({ status: "authenticated" })
   })
 

@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ComponentType } from "react"
-import { Navigate, createBrowserRouter, useLocation } from "react-router"
+import { createBrowserRouter } from "react-router"
+import { RedirectToLogin, RouteNotFound } from "@/app/gate-surfaces"
 import { Shell } from "@/components/shell/shell"
 import { RoutePending } from "@/components/shell/route-pending"
 import LoginPage from "@/features/login/login-page"
@@ -29,16 +30,14 @@ const defaultCollections = () =>
  * else renders inside the protected shell, and a visitor without a session
  * is redirected to `/login` carrying the URL they asked for. Feature views
  * load lazily inside their Suspense region, so a slow chunk holds one
- * pending region while the shell stays put.
+ * pending region on cold entry while the shell stays put.
  */
 export function createAppRouter(
   authenticated: boolean,
   routeModules: RouteModules = {}
 ) {
   const SearchRoute = lazy(routeModules.search ?? defaultSearch)
-  const CollectionsRoute = lazy(
-    routeModules.collections ?? defaultCollections
-  )
+  const CollectionsRoute = lazy(routeModules.collections ?? defaultCollections)
 
   return createBrowserRouter([
     { path: "/login", element: <LoginPage /> },
@@ -66,21 +65,4 @@ export function createAppRouter(
       ],
     },
   ])
-}
-
-function RedirectToLogin() {
-  const location = useLocation()
-  const from = `${location.pathname}${location.search}${location.hash}`
-  return <Navigate to="/login" replace state={{ from }} />
-}
-
-function RouteNotFound() {
-  return (
-    <section>
-      <h1 className="text-heading-sm font-semibold">Nothing lives here</h1>
-      <p className="text-body text-muted-foreground">
-        The address does not match a page in this client.
-      </p>
-    </section>
-  )
 }

@@ -26,7 +26,7 @@ export function ThemeSwitcher() {
           type="button"
           aria-pressed={theme === option.value}
           onClick={() => setTheme(option.value)}
-          className="rounded-md px-2 py-1 text-caption font-medium text-muted-foreground aria-[pressed=true]:bg-background aria-[pressed=true]:text-foreground hover:text-foreground"
+          className="rounded-md px-2 py-1 text-caption font-medium text-muted-foreground hover:text-foreground aria-[pressed=true]:bg-background aria-[pressed=true]:text-foreground"
         >
           {option.label}
         </button>

@@ -1,39 +1,31 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import type { Gateway, GatewayRequest } from "@/api/gateway/client"
 import { readCustody, storeCustody } from "@/auth/custody"
 import {
   createPresentedCredentialProvider,
   type PresentedCredentialProvider,
 } from "@/auth/provider"
-import type { SessionWiring } from "@/auth/session-gateway"
-import App from "@/App"
+import { gatewayOf, renderApp } from "@/test/app-harness"
 
-function gatewayOf(run: (request: GatewayRequest) => Promise<unknown>): Gateway {
+const accepting = () => Promise.resolve({ capabilities: [] })
+
+function spiedRevoke(): PresentedCredentialProvider {
+  const real: PresentedCredentialProvider = createPresentedCredentialProvider({
+    gateway: gatewayOf(accepting),
+  })
   return {
-    request: run as unknown as Gateway["request"],
-  }
-}
-
-const accepting: Gateway = gatewayOf(() =>
-  Promise.resolve({ capabilities: [] })
-)
-
-function wiringWithSpiedRevoke(): SessionWiring {
-  const real: PresentedCredentialProvider =
-    createPresentedCredentialProvider({ gateway: accepting })
-  const provider: PresentedCredentialProvider = {
     ...real,
     revoke: vi.fn(real.revoke.bind(real)),
   }
-
-  return { gateway: accepting, provider }
 }
 
 async function renderSignedIn() {
   storeCustody("credential-1")
-  const wiring = wiringWithSpiedRevoke()
-  render(<App wiring={wiring} />)
+  const provider = spiedRevoke()
+  const { wiring } = renderApp({
+    gateway: gatewayOf(accepting),
+    provider,
+  })
 
   await waitFor(() => {
     expect(screen.getByRole("banner")).toBeInTheDocument()

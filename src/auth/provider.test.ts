@@ -8,7 +8,9 @@ import {
 import { readCustody, storeCustody } from "./custody"
 
 /** A Gateway double whose request function returns whatever the test needs. */
-function gatewayOf(run: (request: GatewayRequest) => Promise<unknown>): Gateway {
+function gatewayOf(
+  run: (request: GatewayRequest) => Promise<unknown>
+): Gateway {
   return {
     request: run as unknown as Gateway["request"],
   }

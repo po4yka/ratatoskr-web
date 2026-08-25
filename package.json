@@ -19,7 +19,7 @@
     "api:gen": "openapi-typescript openapi/openapi.json -o src/api/generated/schema.ts",
     "api:check": "node scripts/check-api.mjs",
     "ui:add": "shadcn add",
-    "audit:ui": "shadscan --no-interactive --no-roast",
+    "audit:ui": "shadscan --no-interactive --no-roast --fail-under 79",
     "audit:ui:json": "shadscan --no-interactive --json",
     "ui:add:aicss": "node scripts/add-aicss.mjs"
   },
