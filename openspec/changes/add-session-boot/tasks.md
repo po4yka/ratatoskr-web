@@ -31,8 +31,8 @@
 - [x] 5.3 GREEN: implement `src/components/shell/` (nav skeleton, theme switcher, user menu) until 5.2 passes.
 - [x] 5.4 RED: add `src/components/shell/lazy-route.test.tsx` with tests "a cold entry into a feature route shows its pending state while its module arrives, then its view" and "navigating between feature routes holds the previous view until the next one is ready, never blanking the page" — confirmed failing against statically imported routes.
 - [x] 5.5 GREEN: convert feature routes to lazy route modules with designed pending states until 5.4 passes.
-- [ ] 5.6 RED: add `src/features/signout/sign-out.test.tsx` with tests "sign-out invokes the provider revoke exactly once, discards custody, and lands on the unauthorized surface" and "the confirmation says the session ends on this device and never claims server-side revocation" — confirm failure.
-- [ ] 5.7 GREEN: wire the sign-out flow and truthful confirmation copy until 5.6 passes.
+- [x] 5.6 RED: add `src/features/signout/sign-out.test.tsx` with tests "sign-out invokes the provider revoke exactly once, discards custody, and lands on the unauthorized surface" and "the confirmation says the session ends on this device and never claims server-side revocation" — both passed immediately on first run because the flow landed with the shell surface work; they are kept as the regression pin for that behavior rather than claimed as red-green drivers.
+- [x] 5.7 GREEN: wire the sign-out flow and truthful confirmation copy until 5.6 passes.
 
 ## 6. Documentation and ADR
 
