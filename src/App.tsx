@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from "@/auth/auth-context"
 import type { SessionWiring } from "@/auth/session-gateway"
 import { wireSessions } from "@/auth/session-gateway"
 import { Button } from "@/components/ui/button"
+import { ThemeProvider } from "@/components/theme-provider"
 
 /**
  * Where the API answers. Same-origin by default: the deployment fronts the
@@ -34,9 +35,11 @@ export function App({ wiring }: AppProps) {
   )
 
   return (
-    <AuthProvider wiring={session}>
-      <AppSession />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider wiring={session}>
+        <AppSession />
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
 
