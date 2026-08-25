@@ -142,12 +142,17 @@ elapsed time, and it never reports success it has not been told about.
 
 ## Authentication and session
 
-- session established against Platform, with a short-lived access token;
-- refresh handled in one place in the API gateway, with a single in-flight refresh;
-- tokens never written to `localStorage` when the approved storage ADR says otherwise;
+- boot probes the session through an authenticated read before any route renders; the decision is
+  authenticated, unauthenticated, or backend-unreachable, each with its own designed surface;
+- the presented credential is held in `sessionStorage` per
+  [ADR-0006](docs/adr/0006-credential-custody.md) and discarded on sign-out or refusal;
+- refresh is answered by one provider implementation behind the gateway's single-flight
+  coordinator; in this contract version it truthfully reports that no mechanism exists;
+- sign-out always confirms first, runs through the provider's revoke operation once, and claims
+  only what the client performs — server-side revocation arrives with a Platform endpoint for it;
 - provider tokens are never delivered to the browser at all;
-- an explicit sign-out revokes the session server-side, not only in the tab;
-- every session and paired device is listed and individually revocable.
+- every session and paired device will be listed and individually revocable from settings (item
+  11).
 
 ## Truthfulness invariants
 
@@ -176,7 +181,10 @@ density are requirements rather than polish:
 
 1. ~~Scaffold the project, lint, typecheck, test, build, and `ci.yml`.~~ Done.
 2. ~~Generate the API client from the pinned contract and fail the build on drift.~~ Done.
-3. Implement session boot, refresh, protected shell, and sign-out.
+3. ~~Implement session boot, refresh, protected shell, and sign-out.~~ Done: boot gate, protected
+   shell with lazy routes, presented-credential sign-in, sign-out, unauthorized surface. The
+   credentials-mint, refresh, and revocation endpoints this needs from Platform are recorded as a
+   workspace-changeset prerequisite.
 4. Implement search and the article reader against a local Platform.
 5. Add collections and tags.
 6. Add operation tracking with streaming and a polling fallback.

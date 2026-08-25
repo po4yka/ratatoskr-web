@@ -177,11 +177,11 @@ truthful absence until the next refresh.
 
 Three kinds, kept separate:
 
-| Kind | Owner | Example |
-|---|---|---|
-| Server state | the cache, keyed by contract-derived keys | search results, a document, a snapshot list |
-| Session state | the auth module | token, expiry, identity, capability set |
-| View state | the component | an open panel, a form draft, a selection |
+| Kind          | Owner                                     | Example                                     |
+| ------------- | ----------------------------------------- | ------------------------------------------- |
+| Server state  | the cache, keyed by contract-derived keys | search results, a document, a snapshot list |
+| Session state | the auth module                           | token, expiry, identity, capability set     |
+| View state    | the component                             | an open panel, a form draft, a selection    |
 
 Server state is never copied into view state to "keep it handy" — that is how a stale render becomes
 indistinguishable from a live one.
@@ -236,10 +236,18 @@ submit -> operation ID -> stream phases -> terminal state
 
 ## 11. Session and identity
 
-- boot resolves to authenticated or unauthenticated before the shell renders, so no view flashes;
-- token storage follows the approved storage ADR, which is where the trade-off is argued;
-- sign-out revokes server-side; a cleared local token is not a sign-out;
-- sessions and paired devices are listable and individually revocable from here;
+- boot resolves to authenticated, unauthenticated, or backend-unreachable before the shell renders,
+  so no view flashes; the decision is one probe against an authenticated read;
+- token storage follows [ADR-0006](adr/0006-credential-custody.md): sessionStorage under one key,
+  discarded on sign-out, refusal, and confirmed revocation;
+- sign-out goes through the provider's revoke operation once and confirms first; in this contract
+  version it says the session ended on this device, because Platform exposes no revocation endpoint
+  to perform a server-side revoke — that endpoint is the workspace-changeset prerequisite recorded
+  in the session-boot change;
+- refresh is answered behind the gateway's single-flight coordinator; this contract version has no
+  refresh mechanism, so the provider truthfully reports rejection and the client resolves to
+  re-authentication;
+- sessions and paired devices will be listable and individually revocable from settings (item 11);
 - provider tokens never reach the browser at all.
 
 ## 12. Truthful rendering
