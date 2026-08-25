@@ -13,9 +13,10 @@ Accepted:
   Ratatoskr not being sold.
 - [ADR-0005](0005-api-type-generation.md): API type generation from the pinned contract and
   drift enforcement.
+- [ADR-0006](0006-credential-custody.md): credential custody in sessionStorage, with the
+  refresh-cookie landing as the revisit trigger.
 
 Backlog:
-- ADR-0006: Session token storage and the refresh model.
 - ADR-0007: Server-state cache, query keys, and invalidation.
 - ADR-0008: Capability discovery and gating.
 - ADR-0009: Operation streaming transport and polling recovery.

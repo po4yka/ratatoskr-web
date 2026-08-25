@@ -36,8 +36,8 @@
 
 ## 6. Documentation and ADR
 
-- [ ] 6.1 Write `docs/adr/0006-credential-custody.md` recording the sessionStorage decision, rejected alternatives, residual XSS risk, and the revisit trigger (documentation; no failing test applies).
-- [ ] 6.2 Update `README.md` authentication section and `docs/ARCHITECTURE.md` section 11 pointers to match shipped reality (documentation; no failing test applies).
+- [x] 6.1 Write `docs/adr/0006-credential-custody.md` recording the sessionStorage decision, rejected alternatives, residual XSS risk, and the revisit trigger (documentation; no failing test applies).
+- [x] 6.2 Update `README.md` authentication section and `docs/ARCHITECTURE.md` section 11 pointers to match shipped reality (documentation; no failing test applies).
 
 ## 7. Gate
 
