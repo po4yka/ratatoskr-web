@@ -1,9 +1,9 @@
 ## 1. Custody and provider core
 
-- [ ] 1.1 RED: add `src/auth/custody.test.ts` with test "stores, reads, and completely discards one credential" — assert `readCustody()` returns the stored value after `store()` and `null` after `discard()`; run it and confirm it fails because `src/auth/custody.ts` does not exist.
-- [ ] 1.2 GREEN: implement `src/auth/custody.ts` (sessionStorage-backed store/read/discard under one key) until 1.1 passes.
-- [ ] 1.3 RED: add `src/auth/provider.test.ts` with tests for the presented-credential mode over an injected gateway double: "probe maps success to authenticated", "probe maps refused and revoked answers to unauthenticated", "probe maps offline to unreachable", "signIn probes before taking custody and refuses without storing" — confirm they fail because the provider module does not exist.
-- [ ] 1.4 GREEN: implement `src/auth/provider.ts` (provider interface plus presented-credential mode whose refresh reports rejected and revoke clears custody) until 1.3 passes.
+- [x] 1.1 RED: add `src/auth/custody.test.ts` with test "stores, reads, and completely discards one credential" — assert `readCustody()` returns the stored value after `store()` and `null` after `discard()`; run it and confirm it fails because `src/auth/custody.ts` does not exist.
+- [x] 1.2 GREEN: implement `src/auth/custody.ts` (sessionStorage-backed store/read/discard under one key) until 1.1 passes.
+- [x] 1.3 RED: add `src/auth/provider.test.ts` with tests for the presented-credential mode over an injected gateway double: "probe maps success to authenticated", "probe maps refused and revoked answers to unauthenticated", "probe maps offline to unreachable", "signIn probes before taking custody and refuses without storing" — confirm they fail because the provider module does not exist.
+- [x] 1.4 GREEN: implement `src/auth/provider.ts` (provider interface plus presented-credential mode whose refresh reports rejected and revoke clears custody) until 1.3 passes.
 
 ## 2. Boot decision matrix
 
