@@ -7,13 +7,13 @@
 
 ## 2. Boot decision matrix
 
-- [ ] 2.1 RED: add `src/auth/boot.test.ts` covering the matrix in one resolver: "valid custody resolves authenticated", "refused credential resolves unauthenticated and discards custody", "no stored custody resolves unauthenticated without sending a request", "offline probe resolves unreachable" — confirm each fails because the boot module does not exist.
-- [ ] 2.2 GREEN: implement `src/auth/boot.ts` (promise-based resolver returning authenticated | unauthenticated | unreachable) until 2.1 passes.
+- [x] 2.1 RED: add `src/auth/boot.test.ts` covering the matrix in one resolver: "valid custody resolves authenticated", "refused credential resolves unauthenticated and discards custody", "no stored custody resolves unauthenticated without sending a request", "offline probe resolves unreachable" — confirm each fails because the boot module does not exist.
+- [x] 2.2 GREEN: implement `src/auth/boot.ts` (promise-based resolver returning authenticated | unauthenticated | unreachable) until 2.1 passes.
 
 ## 3. Gateway wiring
 
-- [ ] 3.1 RED: add `src/auth/session-gateway.test.ts` with test "a mid-use refusal ends the session through the revocation callback and clears custody" — build the wired gateway from the session composition module over fetch doubles answering 401 then asserting the callback fired and custody is null; confirm it fails because no wiring exists.
-- [ ] 3.2 GREEN: implement `src/auth/session-gateway.ts` composing token source from custody, refresher from the provider, and the revocation callback into `createGateway`, until 3.1 passes.
+- [x] 3.1 RED: add `src/auth/session-gateway.test.ts` with test "a mid-use refusal ends the session through the revocation callback and clears custody" — build the wired gateway from the session composition module over fetch doubles answering 401 then asserting the callback fired and custody is null; confirm it fails because no wiring exists.
+- [x] 3.2 GREEN: implement `src/auth/session-gateway.ts` composing token source from custody, refresher from the provider, and the revocation callback into `createGateway`, until 3.1 passes.
 
 ## 4. React integration
 
