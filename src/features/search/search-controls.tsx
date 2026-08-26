@@ -3,14 +3,18 @@ import { Input } from "@/components/ui/input"
 
 interface SearchControlsProps {
   modes: readonly SearchMode[]
-  onChange: (change: Partial<Pick<SearchState, "query" | "mode">>) => void
+  onChange: (
+    change: Partial<Pick<SearchState, "query" | "mode" | "tag">>
+  ) => void
   state: SearchState
+  tags: readonly string[]
 }
 
 export function SearchControls({
   modes,
   onChange,
   state,
+  tags,
 }: SearchControlsProps) {
   return (
     <section
@@ -43,6 +47,22 @@ export function SearchControls({
           {modes.map((mode) => (
             <option key={mode} value={mode}>
               {mode}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex flex-col gap-1.5" htmlFor="search-tag">
+        <span className="text-caption font-medium">Tag filter</span>
+        <select
+          className="h-8 rounded-lg border border-input bg-background px-2.5 text-body outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          id="search-tag"
+          onChange={(event) => onChange({ tag: event.target.value })}
+          value={state.tag}
+        >
+          <option value="">All tags</option>
+          {tags.map((tag) => (
+            <option key={tag} value={tag}>
+              {tag}
             </option>
           ))}
         </select>

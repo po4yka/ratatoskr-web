@@ -34,6 +34,12 @@ async function renderSignedIn() {
   return wiring
 }
 
+function openAccountMenu() {
+  fireEvent.mouseDown(screen.getByRole("button", { name: /account/i }), {
+    button: 0,
+  })
+}
+
 describe("the sign-out flow", () => {
   beforeEach(() => {
     sessionStorage.clear()
@@ -43,7 +49,7 @@ describe("the sign-out flow", () => {
   it("revokes through the provider exactly once, discards custody, and lands signed out", async () => {
     const wiring = await renderSignedIn()
 
-    fireEvent.click(screen.getByRole("button", { name: /account/i }))
+    openAccountMenu()
     fireEvent.click(await screen.findByRole("menuitem", { name: /sign out/i }))
     fireEvent.click(
       await screen.findByRole("button", {
@@ -63,7 +69,7 @@ describe("the sign-out flow", () => {
   it("confirms first and claims only what the client performs", async () => {
     await renderSignedIn()
 
-    fireEvent.click(screen.getByRole("button", { name: /account/i }))
+    openAccountMenu()
     fireEvent.click(await screen.findByRole("menuitem", { name: /sign out/i }))
 
     const dialog = await screen.findByRole("alertdialog")

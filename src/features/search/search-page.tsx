@@ -32,30 +32,36 @@ export default function SearchPage({
   const navigate = useNavigate()
   const state = parseSearchState(location.search, SEARCH_MODES)
   const [attempt, setAttempt] = useState(0)
-  const requestKey = `${state.query}\u0000${state.mode}\u0000${state.page}\u0000${attempt}`
+  const requestKey = `${state.query}\u0000${state.mode}\u0000${state.tag}\u0000${state.page}\u0000${attempt}`
   const [load, setLoad] = useState<SearchLoad>({
     kind: "loading",
     requestKey,
   })
   const activeLoad: SearchLoad =
     load.requestKey === requestKey ? load : { kind: "loading", requestKey }
-  const { mode, page, query } = state
+  const { mode, page, query, tag } = state
 
   useEffect(() => {
     let current = true
     source
-      .search({ query, mode, page })
+      .search({ query, mode, tag, page })
+      // eslint-disable-next-line complexity -- URL recovery keeps each invalid field distinct.
       .then((searchPage) => {
         if (!current) return
         setLoad({ kind: "ready", page: searchPage, requestKey })
-        if (searchPage.page !== page || !searchPage.modes.includes(mode)) {
+        if (
+          searchPage.page !== page ||
+          !searchPage.modes.includes(mode) ||
+          (tag !== "" && !searchPage.tags.includes(tag))
+        ) {
           const safeMode = searchPage.modes.includes(mode)
             ? mode
             : searchPage.modes[0]
+          const safeTag = searchPage.tags.includes(tag) ? tag : ""
           if (safeMode) {
             navigate(
               searchStateHref(
-                { query, mode: safeMode, page: searchPage.page },
+                { query, mode: safeMode, tag: safeTag, page: searchPage.page },
                 {}
               ),
               {
@@ -72,7 +78,7 @@ export default function SearchPage({
     return () => {
       current = false
     }
-  }, [mode, navigate, page, query, requestKey, source])
+  }, [mode, navigate, page, query, requestKey, source, tag])
 
   function updateSearch(change: SearchStateChange) {
     navigate(searchStateHref(state, change))
@@ -80,6 +86,7 @@ export default function SearchPage({
 
   const availableModes =
     activeLoad.kind === "ready" ? activeLoad.page.modes : SEARCH_MODES
+  const availableTags = activeLoad.kind === "ready" ? activeLoad.page.tags : []
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 sm:p-6">
@@ -94,6 +101,7 @@ export default function SearchPage({
         modes={availableModes}
         onChange={updateSearch}
         state={state}
+        tags={availableTags}
       />
 
       {activeLoad.kind === "loading" ? <SearchLoading /> : null}

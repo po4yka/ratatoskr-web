@@ -26,4 +26,5 @@ export interface NavEntry {
 export const NAV_ENTRIES: readonly NavEntry[] = [
   { id: "search", label: "Search", path: "/" },
   { id: "collections", label: "Collections", path: "/collections" },
+  { id: "tags", label: "Tags", path: "/tags" },
 ]

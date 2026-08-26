@@ -5,10 +5,13 @@ export type SearchMode = (typeof SEARCH_MODES)[number]
 export interface SearchState {
   query: string
   mode: SearchMode
+  tag: string
   page: number
 }
 
-export type SearchStateChange = Partial<Pick<SearchState, "query" | "mode">> &
+export type SearchStateChange = Partial<
+  Pick<SearchState, "query" | "mode" | "tag">
+> &
   Pick<Partial<SearchState>, "page">
 
 export function parseSearchState(
@@ -20,6 +23,7 @@ export function parseSearchState(
   return {
     query: parameters.get("q")?.trim() ?? "",
     mode: availableMode(parameters.get("mode"), modes),
+    tag: parameters.get("tag")?.trim() ?? "",
     page: positivePage(parameters.get("page")),
   }
 }
@@ -38,6 +42,7 @@ function positivePage(requested: string | null): number {
   return Number.isInteger(page) && page > 0 ? page : 1
 }
 
+// eslint-disable-next-line complexity -- each independently addressable field resets pagination.
 export function searchStateHref(
   current: SearchState,
   change: SearchStateChange
@@ -46,11 +51,13 @@ export function searchStateHref(
   const changedQuery =
     change.query !== undefined && change.query !== current.query
   const changedMode = change.mode !== undefined && change.mode !== current.mode
-  const page = changedQuery || changedMode ? 1 : (state.page ?? 1)
+  const changedTag = change.tag !== undefined && change.tag !== current.tag
+  const page = changedQuery || changedMode || changedTag ? 1 : (state.page ?? 1)
   const parameters = new URLSearchParams()
 
   if (state.query) parameters.set("q", state.query)
   parameters.set("mode", state.mode)
+  if (state.tag) parameters.set("tag", state.tag)
   if (page > 1) parameters.set("page", String(page))
 
   return `/?${parameters.toString()}`

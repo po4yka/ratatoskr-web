@@ -29,4 +29,21 @@ describe("document reader route", () => {
     ).toBeInTheDocument()
     expect(window.location.pathname).toBe("/documents/document-ir")
   })
+
+  it("opens the protected tags fixture route", async () => {
+    window.history.replaceState(null, "", "/tags")
+    storeCustody("credential-1")
+    const routeModules = {
+      tags: () =>
+        Promise.resolve({ default: () => <h1>Tags fixture arrived</h1> }),
+    } as RouteModules
+    renderApp({
+      gateway: gatewayOf(() => Promise.resolve({ capabilities: [] })),
+      routeModules,
+    })
+
+    expect(
+      await screen.findByRole("heading", { name: /tags fixture arrived/i })
+    ).toBeInTheDocument()
+  })
 })
