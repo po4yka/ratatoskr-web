@@ -65,10 +65,12 @@ describe("CollectionsPage", () => {
       await screen.findByRole("button", { name: /delete collection/i })
     )
 
-    expect(screen.getByRole("alertdialog")).toHaveTextContent(
+    expect(await screen.findByRole("alertdialog")).toHaveTextContent(
       /delete reading and remove its saved item list/i
     )
-    fireEvent.click(screen.getByRole("button", { name: /delete reading/i }))
+    fireEvent.click(
+      await screen.findByRole("button", { name: /delete reading/i })
+    )
 
     expect(
       await screen.findByRole("heading", { name: /^collections$/i })
