@@ -26,7 +26,7 @@ const degradedDocument: ArchiveDocument = {
 function sourceFor(document: ArchiveDocument): ArchiveSource {
   return {
     async search() {
-      return { modes: ["auto"], page: 1, pageCount: 1, results: [] }
+      return { modes: ["auto"], tags: [], page: 1, pageCount: 1, results: [] }
     },
     async read() {
       return document

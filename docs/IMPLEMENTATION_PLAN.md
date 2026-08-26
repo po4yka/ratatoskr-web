@@ -11,7 +11,14 @@
    navigation and routes through one typed rule; an absent capability renders an explained absence,
    a failed read its own retryable state.
 6. Implement search and the article reader with provenance and warnings.
-7. Add collections and tags.
+7. ~~Add collections and tags.~~ Done as a fixture-backed first slice: the
+   protected collections list/detail and tags routes support curation flows,
+   optimistic rollback, merge review, and URL-addressable tag filtering.
+   Integration is pending: Knowledge prompt 6 still needs owner approval and
+   the generated Edge contract declares neither the user-content operations nor
+   their capability names, so the client does not invent either. Nested and
+   smart collections, public links, and collaborators remain deferred
+   server-side follow-ups.
 8. Add capture by URL and operation tracking with streaming and polling recovery.
 9. Add the GitHub catalog and Git Vault views, including restore verification evidence.
 10. Add social and AI-archive browsing with truthful provenance.

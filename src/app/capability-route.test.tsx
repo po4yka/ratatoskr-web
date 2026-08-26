@@ -1,11 +1,13 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import type { NavEntry } from "@/app/navigation"
+import { NAV_ENTRIES } from "@/app/navigation"
 import type { GatewayRequest } from "@/api/gateway/client"
 import {
   emptyDeployment,
   fullDeployment,
 } from "@/capabilities/capability-fixtures"
+import { KNOWN_CAPABILITIES } from "@/capabilities/vocabulary"
 import { storeCustody } from "@/auth/custody"
 import { gatewayOf, renderApp } from "@/test/app-harness"
 
@@ -194,5 +196,21 @@ describe("capability-gated routes", () => {
       ).toBeInTheDocument()
     })
     expect(requests).toHaveLength(0)
+  })
+
+  it("does not assign ungenerated collection or tag capabilities", () => {
+    const curationEntries = NAV_ENTRIES.filter((entry) =>
+      ["collections", "tags"].includes(entry.id)
+    )
+
+    expect(curationEntries.map((entry) => entry.id)).toEqual([
+      "collections",
+      "tags",
+    ])
+    expect(curationEntries.every((entry) => entry.requires === undefined)).toBe(
+      true
+    )
+    expect(KNOWN_CAPABILITIES).not.toContain("collections.manage")
+    expect(KNOWN_CAPABILITIES).not.toContain("tags.manage")
   })
 })

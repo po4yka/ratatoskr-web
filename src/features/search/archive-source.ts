@@ -10,6 +10,7 @@ export interface ArchiveSearchResult {
 
 export interface ArchiveSearchPage {
   modes: readonly SearchMode[]
+  tags: readonly string[]
   page: number
   pageCount: number
   results: readonly ArchiveSearchResult[]
@@ -118,14 +119,21 @@ function documentMatches(document: ArchiveDocument, query: string): boolean {
 
 export const fixtureArchiveSource: ArchiveSource = {
   async search(state) {
-    const matches = state.query
+    const tags = [
+      ...new Set(documents.flatMap((document) => document.tags)),
+    ].sort()
+    const matchingQuery = state.query
       ? documents.filter((document) => documentMatches(document, state.query))
       : documents
+    const matches = state.tag
+      ? matchingQuery.filter((document) => document.tags.includes(state.tag))
+      : matchingQuery
     const pageCount = Math.max(1, Math.ceil(matches.length / 10))
     const page = Math.min(state.page, pageCount)
 
     return {
       modes: ["auto", "keyword", "semantic"],
+      tags,
       page,
       pageCount,
       results: matches.slice((page - 1) * 10, page * 10).map(resultFor),

@@ -21,6 +21,7 @@ export interface RouteModules {
   search?: FeatureModuleLoader
   collections?: FeatureModuleLoader
   reader?: FeatureModuleLoader
+  tags?: FeatureModuleLoader
 }
 
 /**
@@ -37,12 +38,15 @@ const defaultSearch = () => import("@/features/search/search-page")
 const defaultCollections = () =>
   import("@/features/collections/collections-page")
 const defaultReader = () => import("@/features/reader/reader-page")
+const defaultTags = () => import("@/features/tags/tags-page")
 
+// eslint-disable-next-line complexity -- this mirrors the fixed lazy-route registry.
 function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
   return {
     search: seams.routeModules?.search ?? defaultSearch,
     collections: seams.routeModules?.collections ?? defaultCollections,
     reader: seams.routeModules?.reader ?? defaultReader,
+    tags: seams.routeModules?.tags ?? defaultTags,
   }
 }
 
@@ -64,6 +68,7 @@ export function createAppRouter(
   const SearchRoute = lazy(modules.search)
   const CollectionsRoute = lazy(modules.collections)
   const ReaderRoute = lazy(modules.reader)
+  const TagsRoute = lazy(modules.tags)
 
   return createBrowserRouter([
     { path: "/login", element: <LoginPage /> },
@@ -90,6 +95,24 @@ export function createAppRouter(
             <FeatureRoute
               entry={navEntries.find((entry) => entry.id === "collections")}
               view={CollectionsRoute}
+            />
+          ),
+        },
+        {
+          path: "collections/:collectionId",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "collections")}
+              view={CollectionsRoute}
+            />
+          ),
+        },
+        {
+          path: "tags",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "tags")}
+              view={TagsRoute}
             />
           ),
         },

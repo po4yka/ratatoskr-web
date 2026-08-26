@@ -8,6 +8,7 @@ const pageSource: ArchiveSource = {
   async search(state) {
     return {
       modes: ["auto", "keyword", "semantic"],
+      tags: ["contracts", "provenance"],
       page: state.page,
       pageCount: 3,
       results: [
@@ -68,7 +69,13 @@ describe("SearchPage", () => {
     const emptySource: ArchiveSource = {
       ...pageSource,
       async search() {
-        return { modes: ["auto"], page: 1, pageCount: 1, results: [] }
+        return {
+          modes: ["auto"],
+          tags: [],
+          page: 1,
+          pageCount: 1,
+          results: [],
+        }
       },
     }
     const empty = renderSearch(emptySource)
@@ -88,5 +95,23 @@ describe("SearchPage", () => {
       /could not load/i
     )
     expect(screen.getByRole("button", { name: /try again/i })).toBeEnabled()
+  })
+
+  it("clearing a tag filter removes it from the URL", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?q=document&mode=auto&tag=contracts"
+    )
+    renderSearch(pageSource)
+
+    expect(await screen.findByLabelText(/tag filter/i)).toHaveValue("contracts")
+    fireEvent.change(screen.getByLabelText(/tag filter/i), {
+      target: { value: "" },
+    })
+
+    await waitFor(() => {
+      expect(window.location.search).toBe("?q=document&mode=auto")
+    })
   })
 })
