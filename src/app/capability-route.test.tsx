@@ -27,6 +27,7 @@ const collectionsModule = {
   default: () => <p>collections arrived</p>,
 }
 
+// eslint-disable-next-line max-lines-per-function -- grouped route-state scenarios share one cleanup hook and registry fixture.
 describe("capability-gated routes", () => {
   beforeEach(() => {
     sessionStorage.clear()

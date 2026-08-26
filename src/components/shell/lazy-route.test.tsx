@@ -74,7 +74,9 @@ describe("lazily loaded feature routes", () => {
     // The default route modules are dynamic imports too, so the index view
     // arrives asynchronously as well.
     await waitFor(() => {
-      expect(screen.getByText(/search arrives/i)).toBeInTheDocument()
+      expect(
+        screen.getByRole("heading", { name: /search your archive/i })
+      ).toBeInTheDocument()
     })
 
     fireEvent.click(screen.getByRole("link", { name: /collections/i }))

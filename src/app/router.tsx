@@ -1,10 +1,9 @@
-import { lazy, Suspense, type ComponentType } from "react"
+import { lazy, type ComponentType } from "react"
 import { createBrowserRouter } from "react-router"
 import { RedirectToLogin, RouteNotFound } from "@/app/gate-surfaces"
-import { GatedRoute } from "@/app/gated-route"
+import FeatureRoute from "@/app/feature-route"
 import { NAV_ENTRIES, type NavEntry } from "@/app/navigation"
 import { Shell } from "@/components/shell/shell"
-import { RoutePending } from "@/components/shell/route-pending"
 import LoginPage from "@/features/login/login-page"
 
 /** A feature view's module shape: the default export is what renders. */
@@ -21,6 +20,7 @@ export type FeatureModuleLoader = () => Promise<FeatureModule>
 export interface RouteModules {
   search?: FeatureModuleLoader
   collections?: FeatureModuleLoader
+  reader?: FeatureModuleLoader
 }
 
 /**
@@ -36,6 +36,15 @@ export interface RouterSeams {
 const defaultSearch = () => import("@/features/search/search-page")
 const defaultCollections = () =>
   import("@/features/collections/collections-page")
+const defaultReader = () => import("@/features/reader/reader-page")
+
+function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
+  return {
+    search: seams.routeModules?.search ?? defaultSearch,
+    collections: seams.routeModules?.collections ?? defaultCollections,
+    reader: seams.routeModules?.reader ?? defaultReader,
+  }
+}
 
 /**
  * The route tree. `/login` is the one unauthenticated surface; everything
@@ -50,25 +59,11 @@ export function createAppRouter(
   authenticated: boolean,
   seams: RouterSeams = {}
 ) {
-  const navEntries = seams.navEntries ?? NAV_ENTRIES
-  const SearchRoute = lazy(seams.routeModules?.search ?? defaultSearch)
-  const CollectionsRoute = lazy(
-    seams.routeModules?.collections ?? defaultCollections
-  )
-
-  /**
-   * Wrap a feature region in the gate its registry entry declares. The lookup
-   * is the contract every new route keeps: an id the registry carries is gated
-   * by that entry's requirement, and an id it does not carry is ungated by
-   * declaration — features declare their gates here, so a route added without
-   * a registry entry is claiming to belong to every deployment, and review
-   * should read that claim as deliberate.
-   */
-  function gated(id: string, children: React.ReactElement): React.ReactElement {
-    const entry = navEntries.find((candidate) => candidate.id === id)
-    if (entry === undefined) return children
-    return <GatedRoute entry={entry}>{children}</GatedRoute>
-  }
+  const navEntries = resolveNavigation(seams)
+  const modules = resolveRouteModules(seams)
+  const SearchRoute = lazy(modules.search)
+  const CollectionsRoute = lazy(modules.collections)
+  const ReaderRoute = lazy(modules.reader)
 
   return createBrowserRouter([
     { path: "/login", element: <LoginPage /> },
@@ -82,24 +77,32 @@ export function createAppRouter(
       children: [
         {
           index: true,
-          element: gated(
-            "search",
-            <Suspense fallback={<RoutePending />}>
-              <SearchRoute />
-            </Suspense>
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "search")}
+              view={SearchRoute}
+            />
           ),
         },
         {
           path: "collections",
-          element: gated(
-            "collections",
-            <Suspense fallback={<RoutePending />}>
-              <CollectionsRoute />
-            </Suspense>
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "collections")}
+              view={CollectionsRoute}
+            />
           ),
+        },
+        {
+          path: "documents/:documentId",
+          element: <FeatureRoute view={ReaderRoute} />,
         },
         { path: "*", element: <RouteNotFound /> },
       ],
     },
   ])
+}
+
+function resolveNavigation(seams: RouterSeams): readonly NavEntry[] {
+  return seams.navEntries ?? NAV_ENTRIES
 }

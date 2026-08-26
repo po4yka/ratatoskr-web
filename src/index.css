@@ -212,3 +212,21 @@
      depends on stylesheet order rather than on the attribute. */
   cursor: inherit;
 }
+
+/* Reader settings are local presentation only. The reader retains the
+   document's semantic content and its evidence while these variables change. */
+[data-reader-theme="sepia"] {
+  background: color-mix(in oklch, var(--background), oklch(0.8 0.03 80) 20%);
+}
+
+[data-reader-content][data-reader-font="serif"] {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+[data-reader-content][data-reader-line-height="relaxed"] {
+  line-height: 1.75;
+}
+
+[data-reader-content][data-reader-measure="narrow"] {
+  max-width: 58ch;
+}

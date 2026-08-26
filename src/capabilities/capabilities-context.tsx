@@ -51,7 +51,10 @@ export function CapabilitiesProvider({
   // The reconnect listener reads this outside React's flow; a ref keeps it
   // current without re-binding the listener on every answer.
   const statusRef = React.useRef<CapabilitiesStatus>("loading")
-  statusRef.current = state.status
+
+  React.useEffect(() => {
+    statusRef.current = state.status
+  }, [state.status])
 
   const restart = React.useCallback(() => {
     setState({ status: "loading", document: null })
