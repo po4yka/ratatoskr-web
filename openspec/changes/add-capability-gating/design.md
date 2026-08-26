@@ -27,9 +27,11 @@ integration.
 ### D1: A dedicated capability context, not an extension of the auth probe
 
 `src/capabilities/capabilities-context.tsx` owns discovery: mounted only around the protected
-shell, it reads `/v1/capabilities` through the injected gateway on mount, again when the browser
-reports connectivity restored, and exposes `{ status: "loading" | "ready" | "failed", document,
-retry }`. Alternative considered: thread the probe's discarded response body through
+shell, it reads `/v1/capabilities` through the injected gateway on mount, again when connectivity
+returns after a lost answer, and exposes `{ status: "loading" | "ready" | "failed", document,
+retry }`. A routine `online` event with a held answer refreshes nothing — re-reading would flap
+every gated surface through a pending round to relearn what Platform already said this session.
+Alternative considered: thread the probe's discarded response body through
 `provider.probe()` into auth state — rejected because the document serves navigation and routing,
 not the session lifecycle, and threading it would grow the auth interface for a concern ARCHITECTURE.md
 draws as its own box. Cost: one extra GET per boot of the endpoint the contract designates as the

@@ -56,7 +56,14 @@ export function createAppRouter(
     seams.routeModules?.collections ?? defaultCollections
   )
 
-  /** Wrap a feature region in the gate its registry entry declares. */
+  /**
+   * Wrap a feature region in the gate its registry entry declares. The lookup
+   * is the contract every new route keeps: an id the registry carries is gated
+   * by that entry's requirement, and an id it does not carry is ungated by
+   * declaration — features declare their gates here, so a route added without
+   * a registry entry is claiming to belong to every deployment, and review
+   * should read that claim as deliberate.
+   */
   function gated(id: string, children: React.ReactElement): React.ReactElement {
     const entry = navEntries.find((candidate) => candidate.id === id)
     if (entry === undefined) return children

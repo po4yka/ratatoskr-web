@@ -81,7 +81,40 @@ describe("CapabilitiesProvider", () => {
     expect(reads).toBe(2)
   })
 
-  it("connectivity restored re-reads the document", async () => {
+  it("re-reads when connectivity returns after a lost answer, not before", async () => {
+    let failing = true
+    let reads = 0
+    const gateway: Gateway = gatewayOf(() => {
+      reads += 1
+      return failing
+        ? Promise.reject({ kind: "offline" })
+        : Promise.resolve(fullDeployment)
+    })
+
+    render(
+      <CapabilitiesProvider gateway={gateway}>
+        <Probe />
+      </CapabilitiesProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText("status: failed")).toBeInTheDocument()
+    })
+    expect(reads).toBe(1)
+
+    // Connectivity returns: the lost answer is chased again.
+    failing = false
+    await act(async () => {
+      window.dispatchEvent(new Event("online"))
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText("status: ready")).toBeInTheDocument()
+    })
+    expect(reads).toBe(2)
+  })
+
+  it("a routine connectivity event leaves a held answer alone", async () => {
     let reads = 0
     const gateway: Gateway = gatewayOf(() => {
       reads += 1
@@ -99,13 +132,12 @@ describe("CapabilitiesProvider", () => {
     })
     expect(reads).toBe(1)
 
+    // Wake-from-sleep and network handoff fire online events without any
+    // answer having been lost; the held document stays authoritative.
     await act(async () => {
       window.dispatchEvent(new Event("online"))
     })
-
-    await waitFor(() => {
-      expect(reads).toBe(2)
-    })
+    expect(reads).toBe(1)
     expect(screen.getByText("status: ready")).toBeInTheDocument()
   })
 })

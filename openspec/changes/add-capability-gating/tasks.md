@@ -25,4 +25,5 @@
 ## 6. Gate
 
 - [x] 6.1 Run the full DEVELOPMENT.md command list — api:check, typecheck, lint, format:check, test, build, audit:ui --fail-under 79 — and confirm green. All seven green; 127 tests pass; shadscan holds the 79 ratchet after fixing the `mobile-nav-present` regression with an explicit small-screen layout on the primary navigation.
+- [x] 6.3 Review round (code-review skill, two parallel axes): fixed the reconnect behavior to chase a lost answer only instead of wiping a held document on every online event (test-first), and closed the two coverage gaps it found — the route region's pending state and the retry-refuses path. Gate re-run green; 130 tests pass.
 - [ ] 6.2 Run `openspec validate --change add-capability-gating --strict` and confirm the change validates; archive only after every task above is ticked.

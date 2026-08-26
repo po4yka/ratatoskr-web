@@ -48,6 +48,10 @@ export function CapabilitiesProvider({
   // re-trigger the effect. The reset lives here rather than in the effect so
   // the effect only ever settles an answer.
   const [attempt, setAttempt] = React.useState(0)
+  // The reconnect listener reads this outside React's flow; a ref keeps it
+  // current without re-binding the listener on every answer.
+  const statusRef = React.useRef<CapabilitiesStatus>("loading")
+  statusRef.current = state.status
 
   const restart = React.useCallback(() => {
     setState({ status: "loading", document: null })
@@ -76,8 +80,15 @@ export function CapabilitiesProvider({
   }, [gateway, attempt])
 
   React.useEffect(() => {
-    window.addEventListener("online", restart)
-    return () => window.removeEventListener("online", restart)
+    // Connectivity returning after a lost answer chases that answer again.
+    // A routine online event — wake-from-sleep, a network handoff — has
+    // lost nothing: the held document stays authoritative instead of
+    // flapping every gated surface through a pointless pending round.
+    const refreshOnReconnect = () => {
+      if (statusRef.current === "failed") restart()
+    }
+    window.addEventListener("online", refreshOnReconnect)
+    return () => window.removeEventListener("online", refreshOnReconnect)
   }, [restart])
 
   const value = React.useMemo<CapabilitiesContextValue>(

@@ -72,6 +72,36 @@ describe("capability-gated routes", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("holds the designed pending region while discovery has not answered", async () => {
+    window.history.replaceState(null, "", "/collections")
+    storeCustody("credential-1")
+    let calls = 0
+    renderApp({
+      // Boot resolves; discovery hangs, so the gate cannot decide yet.
+      gateway: gatewayOf(() => {
+        calls += 1
+        return calls === 1
+          ? Promise.resolve(fullDeployment)
+          : new Promise(() => {})
+      }),
+      navEntries: gatingRegistry,
+      routeModules: { collections: () => Promise.resolve(collectionsModule) },
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole("banner")).toBeInTheDocument()
+    })
+    await waitFor(() => {
+      expect(calls).toBeGreaterThanOrEqual(2)
+    })
+
+    // The route region holds its pending state — not a blank area and not
+    // somebody else's answer.
+    const pending = screen.getByRole("status")
+    expect(pending).toHaveTextContent(/loading/i)
+    expect(screen.queryByText(/collections arrived/i)).not.toBeInTheDocument()
+  })
+
   it("an undecidable read holds the route with retry, which admits it per the fresh answer", async () => {
     window.history.replaceState(null, "", "/collections")
     storeCustody("credential-1")
@@ -107,6 +137,43 @@ describe("capability-gated routes", () => {
 
     // The fresh answer admits the route.
     expect(await screen.findByText(/collections arrived/i)).toBeInTheDocument()
+  })
+
+  it("a retry answered with the capability absent refuses the route instead", async () => {
+    window.history.replaceState(null, "", "/collections")
+    storeCustody("credential-1")
+    let failing = true
+    let calls = 0
+    renderApp({
+      gateway: gatewayOf(() => {
+        calls += 1
+        if (calls === 1) return Promise.resolve(fullDeployment)
+        return failing
+          ? Promise.reject({ kind: "offline" })
+          : Promise.resolve(emptyDeployment)
+      }),
+      navEntries: gatingRegistry,
+      routeModules: { collections: () => Promise.resolve(collectionsModule) },
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole("banner")).toBeInTheDocument()
+    })
+    expect(
+      await screen.findByRole("button", { name: /^retry$/i })
+    ).toBeInTheDocument()
+
+    failing = false
+    fireEvent.click(screen.getByRole("button", { name: /^retry$/i }))
+
+    // The fresh answer refuses the route: undecidable gives way to the
+    // explained absence, and nothing of the view renders.
+    expect(
+      await screen.findByRole("heading", {
+        name: /not available in this deployment/i,
+      })
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/collections arrived/i)).not.toBeInTheDocument()
   })
 
   it("sends no capability traffic while signed out", async () => {
