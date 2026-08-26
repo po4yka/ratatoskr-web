@@ -1,6 +1,8 @@
 import { lazy, Suspense, type ComponentType } from "react"
 import { createBrowserRouter } from "react-router"
 import { RedirectToLogin, RouteNotFound } from "@/app/gate-surfaces"
+import { GatedRoute } from "@/app/gated-route"
+import { NAV_ENTRIES, type NavEntry } from "@/app/navigation"
 import { Shell } from "@/components/shell/shell"
 import { RoutePending } from "@/components/shell/route-pending"
 import LoginPage from "@/features/login/login-page"
@@ -21,6 +23,16 @@ export interface RouteModules {
   collections?: FeatureModuleLoader
 }
 
+/**
+ * What a caller may override when building the router. Production passes
+ * nothing; tests inject fixture modules and registries through the same
+ * seams the real tree reads.
+ */
+export interface RouterSeams {
+  routeModules?: RouteModules
+  navEntries?: readonly NavEntry[]
+}
+
 const defaultSearch = () => import("@/features/search/search-page")
 const defaultCollections = () =>
   import("@/features/collections/collections-page")
@@ -28,26 +40,43 @@ const defaultCollections = () =>
 /**
  * The route tree. `/login` is the one unauthenticated surface; everything
  * else renders inside the protected shell, and a visitor without a session
- * is redirected to `/login` carrying the URL they asked for. Feature views
- * load lazily inside their Suspense region, so a slow chunk holds one
- * pending region on cold entry while the shell stays put.
+ * is redirected to `/login` carrying the URL they asked for. Feature routes
+ * sit behind their registry entry's capability gate — the same wrapper for
+ * clicked links and direct URLs — and load lazily inside their Suspense
+ * region, so a slow chunk holds one pending region on cold entry while the
+ * shell stays put.
  */
 export function createAppRouter(
   authenticated: boolean,
-  routeModules: RouteModules = {}
+  seams: RouterSeams = {}
 ) {
-  const SearchRoute = lazy(routeModules.search ?? defaultSearch)
-  const CollectionsRoute = lazy(routeModules.collections ?? defaultCollections)
+  const navEntries = seams.navEntries ?? NAV_ENTRIES
+  const SearchRoute = lazy(seams.routeModules?.search ?? defaultSearch)
+  const CollectionsRoute = lazy(
+    seams.routeModules?.collections ?? defaultCollections
+  )
+
+  /** Wrap a feature region in the gate its registry entry declares. */
+  function gated(id: string, children: React.ReactElement): React.ReactElement {
+    const entry = navEntries.find((candidate) => candidate.id === id)
+    if (entry === undefined) return children
+    return <GatedRoute entry={entry}>{children}</GatedRoute>
+  }
 
   return createBrowserRouter([
     { path: "/login", element: <LoginPage /> },
     {
       path: "*",
-      element: authenticated ? <Shell /> : <RedirectToLogin />,
+      element: authenticated ? (
+        <Shell entries={navEntries} />
+      ) : (
+        <RedirectToLogin />
+      ),
       children: [
         {
           index: true,
-          element: (
+          element: gated(
+            "search",
             <Suspense fallback={<RoutePending />}>
               <SearchRoute />
             </Suspense>
@@ -55,7 +84,8 @@ export function createAppRouter(
         },
         {
           path: "collections",
-          element: (
+          element: gated(
+            "collections",
             <Suspense fallback={<RoutePending />}>
               <CollectionsRoute />
             </Suspense>

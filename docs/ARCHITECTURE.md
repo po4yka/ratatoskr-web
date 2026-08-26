@@ -62,8 +62,10 @@ ratatoskr-web/
 │   │   └── query keys
 │   ├── auth/
 │   │   ├── session boot
-│   │   ├── token storage adapter
-│   │   └── capability context
+│   │   └── token storage adapter
+│   ├── capabilities/
+│   │   ├── capability document discovery (context, refresh on reconnect)
+│   │   └── the gating rule and the client's capability vocabulary
 │   ├── features/
 │   │   ├── search
 │   │   ├── reader
@@ -166,6 +168,13 @@ boot -> GET capabilities -> capability context -> feature gating
 - A present but unconfigured capability renders a path to configure it.
 - Hiding a control is presentation. The server still enforces. A hidden control is never a security
   boundary.
+
+Shipped: `src/capabilities/capabilities-context.tsx` reads the document for authenticated sessions
+and refreshes on the browser's reconnect event; `src/capabilities/gating.ts` resolves every feature
+to one verdict — available, pending, undecidable, or unavailable naming what is missing; navigation
+renders from the registry in `src/app/navigation.ts` through that verdict, and feature routes sit
+behind the same rule in `src/app/gated-route.tsx`, so a direct URL meets the identical gate as a
+clicked link. A failed read renders its own retryable state and decides nothing.
 
 ### 6.2. Why this is not a feature flag
 

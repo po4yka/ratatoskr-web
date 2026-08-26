@@ -2,6 +2,7 @@ import type { ReactElement } from "react"
 import { render } from "@testing-library/react"
 import { ThemeProvider } from "@/components/theme-provider"
 import type { RouteModules } from "@/app/router"
+import type { NavEntry } from "@/app/navigation"
 import {
   createPresentedCredentialProvider,
   type PresentedCredentialProvider,
@@ -24,6 +25,8 @@ export interface HarnessOptions {
   /** Swap in a provider double (for spying on revoke and friends). */
   provider?: PresentedCredentialProvider
   routeModules?: RouteModules
+  /** Override the primary-navigation registry (gating fixtures ride in here). */
+  navEntries?: readonly NavEntry[]
 }
 
 /**
@@ -40,7 +43,11 @@ export function renderApp(options: HarnessOptions): {
   const wiring: SessionWiring = { gateway: options.gateway, provider }
 
   let tree: ReactElement = (
-    <App wiring={wiring} routeModules={options.routeModules} />
+    <App
+      wiring={wiring}
+      routeModules={options.routeModules}
+      navEntries={options.navEntries}
+    />
   )
   tree = <ThemeProvider>{tree}</ThemeProvider>
 

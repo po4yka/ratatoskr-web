@@ -113,13 +113,17 @@ regenerated against is visible in the workspace before it is visible to a user.
 
 A self-hosted deployment does not run every service. A user may have no X account connected, no
 GitHub token, and no Git Vault storage attached. The client asks Platform what is available and
-renders accordingly.
+renders accordingly: for an authenticated session it reads the capability document from
+`GET /v1/capabilities`, navigation renders from a feature registry filtered through one typed
+gating rule, and routes sit behind the same rule — so a deep link into something this deployment
+cannot honour meets an explained absence rather than a broken view.
 
 Rules:
 
 - an absent capability produces an explained absence, not a dead control;
 - a present capability that the user has not configured produces a path to configure it;
 - the client never infers a capability from a 404, a timeout, or an empty list;
+- a failed capability read renders its own retryable state and decides nothing about what exists;
 - hiding a control is a presentation decision and is never the enforcement of a permission.
 
 ## Operation progress

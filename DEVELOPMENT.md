@@ -105,6 +105,13 @@ One is a false negative:
   ignores modifier chords and guards editable targets, which is exactly what the remediation asks
   for. shadscan does not find it there. Do not add a second handler to satisfy the detector.
 
+One is a verified advisory that does not move the score:
+
+- **`links-have-accessible-names`** — since navigation renders from the registry in
+  `src/app/navigation.ts`, each link's text is a mapped `{entry.label}` and shadscan cannot verify
+  the name statically. The labels are string constants and `nav-gating.test.tsx` asserts every
+  entry by role and accessible name; verified no-change rather than rewritten for the analyzer.
+
 It can also check a rendered page — `npx shadscan --check-ui http://localhost:5173` — which is where
 contrast, pointer-target size, and mobile overflow stop being advisory. That is not wired into CI
 because there is nothing to render yet; it belongs with the end-to-end suite.

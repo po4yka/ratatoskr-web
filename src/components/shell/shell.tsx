@@ -1,14 +1,32 @@
 import { Link, Outlet } from "react-router"
+import { evaluateGate } from "@/capabilities/gating"
+import { useCapabilities } from "@/capabilities/capabilities-context"
+import { NAV_ENTRIES, type NavEntry } from "@/app/navigation"
 import { ThemeSwitcher } from "@/components/shell/theme-switcher"
 import { UserMenu } from "@/components/shell/user-menu"
 
+export interface ShellProps {
+  /**
+   * The navigation registry to render. Production passes nothing and gets
+   * the real one; tests inject fixtures through the same seam.
+   */
+  entries?: readonly NavEntry[]
+}
+
 /**
  * The protected shell: skip link, banner with primary navigation and the
- * account controls, main region. Every interactive element is a native
- * control reachable by keyboard with visible focus; the layout holds in both
- * themes through the semantic tokens.
+ * account controls, main region. Navigation renders from the registry
+ * filtered by each entry's capability verdict, so a destination the
+ * deployment cannot honour never appears as a dead control. Every
+ * interactive element is a native control reachable by keyboard with visible
+ * focus; the layout holds in both themes through the semantic tokens.
  */
-export function Shell() {
+export function Shell({ entries = NAV_ENTRIES }: ShellProps) {
+  const { status, document } = useCapabilities()
+  const available = entries.filter(
+    (entry) => evaluateGate(entry, { status, document }).state === "available"
+  )
+
   return (
     <div className="flex min-h-svh flex-col">
       <a
@@ -20,20 +38,20 @@ export function Shell() {
 
       <header className="border-b border-border bg-background">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 p-4">
-          <nav aria-label="Primary" className="flex items-center gap-6">
+          <nav
+            aria-label="Primary"
+            className="flex flex-wrap items-center gap-6"
+          >
             <span className="text-subheading font-semibold">Ratatoskr</span>
-            <Link
-              to="/"
-              className="text-body text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            >
-              Search
-            </Link>
-            <Link
-              to="/collections"
-              className="text-body text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            >
-              Collections
-            </Link>
+            {available.map((entry) => (
+              <Link
+                key={entry.id}
+                to={entry.path}
+                className="text-body text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                {entry.label}
+              </Link>
+            ))}
           </nav>
           <div className="flex items-center gap-3">
             <ThemeSwitcher />

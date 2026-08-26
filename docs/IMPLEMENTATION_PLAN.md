@@ -6,7 +6,10 @@
 2. ~~Generate API types from the pinned contract and fail the build on drift.~~ Done. Types are generated from a digest-pinned copy of the platform contract, and `api:check` fails the gate when the pin or the generated output drifts.
 3. Build the fetch gateway: refresh, retry, error normalization, and query keys.
 4. Implement session boot, the protected shell, sign-out, and the unauthorized state.
-5. Implement capability discovery and the gating rules that follow from it.
+5. ~~Implement capability discovery and the gating rules that follow from it.~~ Done. The client
+   reads `/v1/capabilities` for authenticated sessions, refreshes on reconnect, and gates
+   navigation and routes through one typed rule; an absent capability renders an explained absence,
+   a failed read its own retryable state.
 6. Implement search and the article reader with provenance and warnings.
 7. Add collections and tags.
 8. Add capture by URL and operation tracking with streaming and polling recovery.

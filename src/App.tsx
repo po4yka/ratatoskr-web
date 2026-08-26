@@ -1,6 +1,8 @@
 import { RouterProvider } from "react-router/dom"
 import { useMemo } from "react"
 import { createAppRouter, type RouteModules } from "@/app/router"
+import type { NavEntry } from "@/app/navigation"
+import { CapabilitiesProvider } from "@/capabilities/capabilities-context"
 import { AuthProvider, useAuth } from "@/auth/auth-context"
 import type { SessionWiring } from "@/auth/session-gateway"
 import { wireSessions } from "@/auth/session-gateway"
@@ -21,6 +23,8 @@ export interface AppProps {
   wiring?: SessionWiring
   /** Route-module overrides; a test seam production never uses. */
   routeModules?: RouteModules
+  /** Navigation-registry overrides; same kind of seam as routeModules. */
+  navEntries?: readonly NavEntry[]
 }
 
 /**
@@ -29,7 +33,7 @@ export interface AppProps {
  * renders a boot failure with retry, and everything else hands the tree to
  * the router, which gates routes by the session.
  */
-export function App({ wiring, routeModules }: AppProps) {
+export function App({ wiring, routeModules, navEntries }: AppProps) {
   const session = useMemo(
     () => wiring ?? wireSessions({ baseUrl: API_BASE_URL }),
     [wiring]
@@ -37,17 +41,33 @@ export function App({ wiring, routeModules }: AppProps) {
 
   return (
     <AuthProvider wiring={session}>
-      <AppSession routeModules={routeModules} />
+      <AppSession
+        gateway={session.gateway}
+        routeModules={routeModules}
+        navEntries={navEntries}
+      />
     </AuthProvider>
   )
 }
 
-function AppSession({ routeModules }: { routeModules?: RouteModules }) {
+function AppSession({
+  gateway,
+  routeModules,
+  navEntries,
+}: {
+  gateway: SessionWiring["gateway"]
+  routeModules?: RouteModules
+  navEntries?: readonly NavEntry[]
+}) {
   const { state, retryBoot } = useAuth()
 
   const router = useMemo(
-    () => createAppRouter(state.status === "authenticated", routeModules),
-    [state.status, routeModules]
+    () =>
+      createAppRouter(state.status === "authenticated", {
+        routeModules,
+        navEntries,
+      }),
+    [state.status, routeModules, navEntries]
   )
 
   if (state.status === "booting") {
@@ -80,7 +100,17 @@ function AppSession({ routeModules }: { routeModules?: RouteModules }) {
     )
   }
 
-  return <RouterProvider router={router} />
+  if (state.status !== "authenticated") {
+    // Unauthenticated: no shell, so no capability discovery either — the
+    // endpoint requires a session and none stands.
+    return <RouterProvider router={router} />
+  }
+
+  return (
+    <CapabilitiesProvider gateway={gateway}>
+      <RouterProvider router={router} />
+    </CapabilitiesProvider>
+  )
 }
 
 export default App
