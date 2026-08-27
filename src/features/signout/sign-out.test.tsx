@@ -28,16 +28,16 @@ async function renderSignedIn() {
   })
 
   await waitFor(() => {
-    expect(screen.getByRole("banner")).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: /search your archive/i })
+    ).toHaveFocus()
   })
 
   return wiring
 }
 
 function openAccountMenu() {
-  const account = screen.getByRole("button", { name: /account/i })
-  fireEvent.pointerDown(account)
-  fireEvent.click(account)
+  fireEvent.click(screen.getByRole("button", { name: /account/i }))
 }
 
 describe("the sign-out flow", () => {
