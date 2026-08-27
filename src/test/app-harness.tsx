@@ -47,6 +47,7 @@ export function renderApp(options: HarnessOptions): {
       wiring={wiring}
       routeModules={options.routeModules}
       navEntries={options.navEntries}
+      publicGateway={options.gateway}
     />
   )
   tree = <ThemeProvider>{tree}</ThemeProvider>

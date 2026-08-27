@@ -8,6 +8,7 @@ function documentOf(capabilities: string[]): CapabilityDocument {
     api_version: "1",
     capabilities: [...capabilities].sort(),
     minimum_client_versions: { web: "0.0.1", mobile: "0.0.1" },
+    services: [],
   }
 }
 

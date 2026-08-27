@@ -8,6 +8,8 @@ import type { SessionWiring } from "@/auth/session-gateway"
 import { wireSessions } from "@/auth/session-gateway"
 import { Button } from "@/components/ui/button"
 import { GatewayProvider } from "@/api/gateway/context"
+import { createGateway, type Gateway } from "@/api/gateway/client"
+import { PublicStatusRouter } from "@/app/public-status-router"
 
 /**
  * Where the API answers. Same-origin by default: the deployment fronts the
@@ -26,6 +28,8 @@ export interface AppProps {
   routeModules?: RouteModules
   /** Navigation-registry overrides; same kind of seam as routeModules. */
   navEntries?: readonly NavEntry[]
+  /** Anonymous gateway seam used only by `/status`. */
+  publicGateway?: Gateway
 }
 
 /**
@@ -34,11 +38,33 @@ export interface AppProps {
  * renders a boot failure with retry, and everything else hands the tree to
  * the router, which gates routes by the session.
  */
-export function App({ wiring, routeModules, navEntries }: AppProps) {
+export function App({
+  wiring,
+  routeModules,
+  navEntries,
+  publicGateway: injectedPublicGateway,
+}: AppProps) {
   const session = useMemo(
     () => wiring ?? wireSessions({ baseUrl: API_BASE_URL }),
     [wiring]
   )
+  const publicGateway = useMemo(
+    () =>
+      injectedPublicGateway ??
+      createGateway({
+        baseUrl: API_BASE_URL,
+        tokenSource: { current: () => null },
+      }),
+    [injectedPublicGateway]
+  )
+
+  if (window.location.pathname === "/status") {
+    return (
+      <GatewayProvider gateway={publicGateway}>
+        <PublicStatusRouter />
+      </GatewayProvider>
+    )
+  }
 
   return (
     <AuthProvider wiring={session}>
