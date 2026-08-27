@@ -1,8 +1,8 @@
 # Ratatoskr Web Architecture
 
-> Status: target architecture. The application scaffold, toolchain, CI gate, and generated shell
-> component exist; the document defines the intended routing, API gateway, state, capability,
-> rendering, and security boundaries. No API client, route, or product view exists yet.
+> Status: evolving implementation. The typed gateway, authenticated shell, capability gating,
+> archive slices, operational inspectors, public status route, and browser gate exist. Sections that
+> describe unbuilt archive workflows remain target architecture.
 
 ## 1. Purpose
 
@@ -206,9 +206,12 @@ completes invalidates the searches and collections it touched.
 /collections[/:id]        curation
 /github                   catalog, tracked repositories, desired backup state
 /vault                    snapshots, integrity, restore verification
-/operations[/:id]         operation monitoring
+/operations[/:id]         user operation monitoring
 /settings/*               account, sessions, devices, provider accounts
-/ops/*                    deployment: schedules, queues, storage, service health
+/ops                      owner deployment operation inspector
+/ops/operations/:id       owner operation detail
+/ops/schedules            owner schedule visibility
+/ops/audit                owner audit trail
 /status                   public, unauthenticated
 /login                    unauthenticated
 ```
@@ -347,9 +350,9 @@ both themes.
 
 ### End-to-end
 
-Sign in, search, read, curate, capture, watch an operation to completion, revoke a device — against a
-mock Platform and, once the workspace harness provides it, the planned Compose profile. Never a live
-deployment, a real provider account, or a real archive.
+Repository browser tests cover the implemented routes against a mock Platform. The workspace owns a
+separate composed-profile smoke across compatible Contracts, Platform, and Web revisions. Neither
+suite uses a live deployment, a real provider account, or a real archive.
 
 ## 19. Build and release
 

@@ -13,14 +13,16 @@ Required tests:
 - Operations: duplicate and out-of-order events, stream drop and polling recovery, reload mid-run.
 - Destructive actions: confirmation required, idempotency key present, capability checked.
 - Session: sign-out revokes server-side; revocation elsewhere is observed here.
-- Accessibility: keyboard traversal, visible focus, contrast, and reduced-motion on shell, search,
-  and reader, in both themes.
+- Accessibility: keyboard traversal and focus management, landmarks, automated serious/critical axe
+  findings, pointer targets, overflow, contrast, and reduced-motion in both themes and at desktop and
+  320-pixel widths.
 - End-to-end: sign in, search, read, curate, capture, watch an operation to completion, revoke a
   device.
 
-Current tests use local fixtures and mocks. The planned end-to-end suite will use a local mock
-Platform and, after the workspace harness implements it, an isolated Compose profile. It will never
-use a live deployment, a real provider account, or a real user archive.
+Component tests use local fixtures and mocks. Playwright runs the browser against the mock Platform;
+the workspace runs a separate smoke against its isolated Compose profile and compatible repository
+pins. Neither uses a live deployment, a real provider account, or a real user archive. The latest
+manual and automated accessibility matrix is committed in `docs/ACCESSIBILITY_CHECKLIST.md`.
 
 ## Test-first
 

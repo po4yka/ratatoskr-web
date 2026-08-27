@@ -1,9 +1,11 @@
 # Developing Ratatoskr Web
 
-> Status: Toolchain implemented; product features proposed
-> Last reviewed: 2026-08-20
+> Status: Browser client under active implementation
+> Last reviewed: 2026-08-27
 
-The toolchain is in place. No router, API client, view, or end-to-end suite is.
+The client has a typed Edge gateway, authenticated route shell, capability-driven views, a public
+status route, and browser end-to-end coverage. The implementation plan records which archive
+surfaces still use fixtures or remain unbuilt.
 
 ## Toolchain
 
@@ -47,6 +49,7 @@ npm run typecheck
 npm run lint
 npm run format:check
 npm run test
+npm run test:e2e
 npm run build
 npm run audit:ui -- --fail-under 79
 ```
@@ -113,8 +116,9 @@ One is a verified advisory that does not move the score:
   entry by role and accessible name; verified no-change rather than rewritten for the analyzer.
 
 It can also check a rendered page — `npx shadscan --check-ui http://localhost:5173` — which is where
-contrast, pointer-target size, and mobile overflow stop being advisory. That is not wired into CI
-because there is nothing to render yet; it belongs with the end-to-end suite.
+contrast, pointer-target size, and mobile overflow stop being advisory. The accessibility checklist
+records the rendered `/status` and owner-route measurements; Playwright covers the same route matrix
+in both themes and at desktop and 320-pixel widths.
 
 ### Project skills — advisory, not in the gate
 
@@ -255,8 +259,9 @@ raising a number here: a raised number applies to code nobody has written yet.
 3. Build loading, empty, error, partial, and unauthorized states with every view, not after it.
 4. Query by role and accessible name in tests. A control that exists only as a styled `div` passes a
    snapshot and fails a user.
-5. Test against a local mock Platform. Add the planned workspace Compose profile to this gate only
-   after the workspace harness implements it; never target a live deployment.
+5. Test browser behavior against the local mock Platform. The workspace owns the separate Compose
+   smoke because it coordinates compatible Contracts, Platform, and Web revisions. Neither suite
+   targets a live deployment.
 
 No provider token, real archive fixture, or production endpoint is ever required to run this
 repository.

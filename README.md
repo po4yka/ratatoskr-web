@@ -5,9 +5,10 @@ searches, organizes, and operates their own archive: articles, GitHub repositori
 Threads sources, ChatGPT and Claude exports, Git Vault snapshots, and the operations that produced
 them.
 
-> **Status:** the toolchain is in place and nothing else is. React 19, TypeScript 6, Vite 8,
-> Tailwind 4, shadcn/ui on the Base UI base, ESLint, Prettier, Vitest and a CI gate are in the
-> tree. No router, API client, state cache, view, or end-to-end suite exists yet.
+> **Status:** active development. The typed Edge gateway, authenticated shell, capability gating,
+> fixture-backed archive views, owner-only operational inspectors, public status page, and
+> Playwright accessibility suite are in the tree. `docs/IMPLEMENTATION_PLAN.md` distinguishes live
+> API integrations from fixture-backed slices and unbuilt work.
 
 > [!IMPORTANT]
 > **Ratatoskr is in development.** No database holds data that has to survive a schema change.
@@ -84,8 +85,8 @@ ratatoskr-web/
 └── tooling/
 ```
 
-Of that tree, `src/components/` (shadcn's generated `ui/` and one composed view), `src/lib/` and
-`src/test/` exist. The rest arrives with the slices that need it.
+The repository follows this shape today. Feature directories own their routes, states, and tests;
+generated UI and API files stay behind their documented boundaries.
 
 [`DESIGN.md`](DESIGN.md) is the authority on the visual identity — palette, type scale, shape,
 surfaces — and its values are tokens in `src/index.css`.
@@ -195,23 +196,20 @@ density are requirements rather than polish:
 7. Add the GitHub catalog and Git Vault views, including restore verification evidence.
 8. Add social and AI-archive browsing with truthful provenance.
 9. Add settings: devices, sessions, provider accounts, and revocation.
-10. Add operational views, the public status page, and workspace end-to-end tests.
+10. Add operational views, the public status page, accessibility hardening, and workspace
+    integration. The browser surfaces and repository tests are implemented; the workspace changeset
+    owns the composed-profile smoke and compatible repository pins.
 
 ## Workspace integration
 
-The planned workspace harness will pin this repository together with compatible
-`ratatoskr-platform` and `ratatoskr-contracts` commits. Its intended mount is
-`repos/clients/web/`, under the workspace key `web` with the role `client`. The harness, repository
-pin and mount do not exist yet. In a future cross-repository changeset the client is last in the
-rollout order and first in the rollback order, because a client may depend on a deployed contract
-but nothing deployed depends on the client.
-
-End-to-end tests against an isolated workspace Compose profile are also planned; no such profile or
-end-to-end suite exists today. They will not target a live deployment.
+The workspace pins this repository with compatible `ratatoskr-platform` and
+`ratatoskr-contracts` revisions. Web remains last in rollout order and first in rollback order,
+because a client may depend on a deployed contract but nothing deployed depends on the client.
+Repository browser tests use the local mock Platform; the sibling workspace changeset owns the
+isolated Compose smoke. Neither path targets a live deployment.
 
 ## Project status
 
-This README defines the intended browser client. What exists is the toolchain and one generated
-shadcn component; the API client, the routes, and every view described above do not. See
-`DEVELOPMENT.md` for the toolchain and `docs/IMPLEMENTATION_PLAN.md` for the order the rest
-arrives in.
+This README describes both the current client and its boundaries. See `DEVELOPMENT.md` for the
+toolchain and gate, `docs/IMPLEMENTATION_PLAN.md` for shipped and pending slices, and
+`docs/ACCESSIBILITY_CHECKLIST.md` for the committed accessibility evidence.

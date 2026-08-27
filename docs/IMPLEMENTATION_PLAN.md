@@ -36,8 +36,17 @@
     than authorization. Integration remains pending on Edge projections,
     capability names, OAuth/disconnect semantics, and pagination.
 11. Add settings: sessions, devices, provider accounts, and revocation.
-12. Add operational views, the public status page, accessibility hardening, and workspace
-    end-to-end tests.
+12. ~~Add operational views, the public status page, accessibility hardening, and workspace
+    integration.~~ The public `/status` route consumes the anonymous sanitized status endpoint.
+    Owner-gated inspectors expose operations, schedules, and the audit trail with explicit loading,
+    empty, forbidden, offline, and failure states. The browser gate covers keyboard focus, landmarks,
+    serious/critical axe findings, target size, overflow, themes, and narrow viewports. The sibling
+    workspace changeset owns the composed-profile smoke.
+
+    Deferred fleet decisions: an LLM cost dashboard needs a Knowledge cost-ledger contract;
+    digest/RSS, signals, and chat-agent surfaces have no assigned subsystem; EN/RU needs a shared
+    localization framework; the command palette and global agent dock remain unimplemented. These
+    are not implied by the operational routes shipped here.
 
 Definition of Done: the client reaches only the Edge API; generated types match the pinned contract;
 capability gating is server-driven; every added view has its loading, empty, partial, error,

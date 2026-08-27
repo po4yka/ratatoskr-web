@@ -57,13 +57,17 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run test
+      - name: Install the pinned Chromium runtime
+        run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
       - run: npm run build
 
       # shadscan audits the tree for the UI fundamentals a shadcn app is supposed to have: error
       # states with a wired retry, document metadata, keyboard entry points, contrast and target
       # sizes. `--fail-under` is a ratchet, not a target — it is the score this tree already has, so
       # the step fails on a regression and not on the views that have not been built yet. It went
-      # 68 -> 69 when the animated icons landed with their reduced-motion backstop.
+      # 69 -> 79 when session boot added conventional pending, validation, autocomplete, and theme
+      # provider signals.
       #
       # When the number legitimately moves, move it in the same commit as the change that moved it,
       # and say which finding changed. A ruleset update can also move it: shadscan is pinned by the
