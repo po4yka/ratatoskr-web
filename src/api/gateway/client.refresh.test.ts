@@ -9,6 +9,38 @@ import {
 } from "./gateway-fixtures"
 
 describe("silent refresh through the gateway", () => {
+  it("refreshes and reopens an authenticated progress stream after a 401", async () => {
+    let refreshCalls = 0
+    const body = new ReadableStream<Uint8Array>()
+    const script = scriptedFetch([
+      () => jsonResponse(401, envelope()),
+      () => ({
+        body,
+        headers: new Headers(),
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(""),
+      }),
+    ])
+    const gateway = createGateway({
+      ...baseDeps(script.fetchImpl),
+      refresher: async () => {
+        refreshCalls += 1
+        return { status: "refreshed" }
+      },
+      tokenSource: { current: () => (refreshCalls === 0 ? null : "fresh") },
+    })
+
+    await expect(
+      gateway.stream?.({ path: "/v1/operations/operation-1/events" })
+    ).resolves.toBe(body)
+    expect(refreshCalls).toBe(1)
+    expect(script.calls()).toBe(2)
+    expect(new Headers(script.inits[1].headers).get("authorization")).toBe(
+      "Bearer fresh"
+    )
+  })
+
   it("refreshes exactly once for concurrent 401s and replays every waiter", async () => {
     let refreshCalls = 0
     let releaseRefresh!: () => void

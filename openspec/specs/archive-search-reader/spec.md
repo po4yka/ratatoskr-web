@@ -77,11 +77,12 @@ content.
 
 ### Requirement: Reader settings and progress remain local and recoverable
 
-The reader SHALL persist its font scale, line height, measure, theme, and font
-family settings locally, restore valid values at the next render, display read
-and favorite action state, and show reading progress. It SHALL save progress
-for a document as a ratio of scrollable distance, and a resume action SHALL
-restore the matching scroll offset when the document is revisited.
+The reader SHALL persist its font scale, line height, measure, theme, font
+family, and local read/favorite presentation settings, restore valid values at
+the next render, display read and favorite action state, and show reading
+progress. It SHALL save progress for a document as a ratio of scrollable
+distance, and a resume action SHALL restore the matching scroll offset when
+the document is revisited.
 
 #### Scenario: reading settings survive remount
 
@@ -100,6 +101,12 @@ restore the matching scroll offset when the document is revisited.
 
 - **WHEN** local storage contains an invalid reader setting or progress value
 - **THEN** the reader uses a safe default and remains usable
+
+#### Scenario: capture list controls change local state only
+
+- **WHEN** a user marks a listed capture result read or favorite
+- **THEN** its list presentation updates without claiming that Platform changed
+  archive metadata
 
 ### Requirement: Fixture integration is explicitly bounded
 

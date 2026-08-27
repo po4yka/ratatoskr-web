@@ -67,5 +67,10 @@ describe("contract-shaped query keys", () => {
       ...operationKey,
       "events",
     ])
+    expect(apiKeys.captureOperations()).toEqual([
+      "v1",
+      "operations",
+      { kind: "content.capture.submit", limit: 20 },
+    ])
   })
 })

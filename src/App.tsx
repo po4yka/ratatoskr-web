@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/auth/auth-context"
 import type { SessionWiring } from "@/auth/session-gateway"
 import { wireSessions } from "@/auth/session-gateway"
 import { Button } from "@/components/ui/button"
+import { GatewayProvider } from "@/api/gateway/context"
 
 /**
  * Where the API answers. Same-origin by default: the deployment fronts the
@@ -107,9 +108,11 @@ function AppSession({
   }
 
   return (
-    <CapabilitiesProvider gateway={gateway}>
-      <RouterProvider router={router} />
-    </CapabilitiesProvider>
+    <GatewayProvider gateway={gateway}>
+      <CapabilitiesProvider gateway={gateway}>
+        <RouterProvider router={router} />
+      </CapabilitiesProvider>
+    </GatewayProvider>
   )
 }
 

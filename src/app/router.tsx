@@ -20,6 +20,8 @@ export type FeatureModuleLoader = () => Promise<FeatureModule>
 export interface RouteModules {
   search?: FeatureModuleLoader
   collections?: FeatureModuleLoader
+  capture?: FeatureModuleLoader
+  operations?: FeatureModuleLoader
   reader?: FeatureModuleLoader
   tags?: FeatureModuleLoader
 }
@@ -37,6 +39,8 @@ export interface RouterSeams {
 const defaultSearch = () => import("@/features/search/search-page")
 const defaultCollections = () =>
   import("@/features/collections/collections-page")
+const defaultCapture = () => import("@/features/capture/capture-page")
+const defaultOperations = () => import("@/features/operations/operation-page")
 const defaultReader = () => import("@/features/reader/reader-page")
 const defaultTags = () => import("@/features/tags/tags-page")
 
@@ -45,6 +49,8 @@ function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
   return {
     search: seams.routeModules?.search ?? defaultSearch,
     collections: seams.routeModules?.collections ?? defaultCollections,
+    capture: seams.routeModules?.capture ?? defaultCapture,
+    operations: seams.routeModules?.operations ?? defaultOperations,
     reader: seams.routeModules?.reader ?? defaultReader,
     tags: seams.routeModules?.tags ?? defaultTags,
   }
@@ -67,6 +73,8 @@ export function createAppRouter(
   const modules = resolveRouteModules(seams)
   const SearchRoute = lazy(modules.search)
   const CollectionsRoute = lazy(modules.collections)
+  const CaptureRoute = lazy(modules.capture)
+  const OperationsRoute = lazy(modules.operations)
   const ReaderRoute = lazy(modules.reader)
   const TagsRoute = lazy(modules.tags)
 
@@ -80,6 +88,19 @@ export function createAppRouter(
         <RedirectToLogin />
       ),
       children: [
+        {
+          path: "capture",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "capture")}
+              view={CaptureRoute}
+            />
+          ),
+        },
+        {
+          path: "operations/:operationId",
+          element: <FeatureRoute view={OperationsRoute} />,
+        },
         {
           index: true,
           element: (

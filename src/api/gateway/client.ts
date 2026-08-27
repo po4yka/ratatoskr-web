@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- gateway keeps auth, retry, JSON, and stream boundary together. */
 import {
   normalizeHttpFailure,
   parseBodyText,
@@ -29,6 +30,7 @@ export interface JsonLikeResponse {
   status: number
   headers: { get(name: string): string | null }
   text(): Promise<string>
+  body?: ReadableStream<Uint8Array> | null
 }
 
 export interface TokenSource {
@@ -54,6 +56,8 @@ export interface GatewayRequest {
 export interface Gateway {
   /** Resolve with the parsed JSON payload, or undefined for an empty body. */
   request<T = unknown>(req: GatewayRequest): Promise<T | undefined>
+  /** Open an authenticated read stream; callers own framing and cancellation. */
+  stream?(req: GatewayRequest): Promise<ReadableStream<Uint8Array>>
 }
 
 export interface GatewayDeps {
@@ -126,6 +130,40 @@ interface Attempt<T> {
   replayed: boolean
   errorJson?: unknown
   payload?: T | undefined
+}
+
+type StreamOpen = (attempt: Attempt<unknown>) => Promise<JsonLikeResponse>
+type StreamFailure = (
+  response: JsonLikeResponse,
+  attempt: Attempt<unknown>
+) => Promise<never>
+
+interface StreamContext {
+  refresh: RefreshCoordinator
+  open: StreamOpen
+  reject: StreamFailure
+}
+
+async function openStream(
+  attempt: Attempt<unknown>,
+  context: StreamContext
+): Promise<ReadableStream<Uint8Array>> {
+  let response: JsonLikeResponse
+  try {
+    response = await context.open(attempt)
+  } catch (cause) {
+    if (cause instanceof TransportLost) throw { kind: "offline" }
+    throw cause
+  }
+  if (response.status === 401 && !attempt.replayed) {
+    await context.refresh.refreshOnce()
+    attempt.replayed = true
+    return openStream(attempt, context)
+  }
+  if (!response.ok) return context.reject(response, attempt)
+  if (response.body === null || response.body === undefined)
+    throw new Error("The stream did not open.")
+  return response.body
 }
 
 export function createGateway(deps: GatewayDeps): Gateway {
@@ -241,6 +279,22 @@ export function createGateway(deps: GatewayDeps): Gateway {
         throw classifyFailure(result.outcome, attempt)
 
       return attempt.payload
+    },
+    async stream(request: GatewayRequest): Promise<ReadableStream<Uint8Array>> {
+      const attempt: Attempt<unknown> = {
+        request,
+        method: request.method ?? "GET",
+        url: buildUrl(deps.baseUrl, request),
+        replayed: false,
+      }
+      return openStream(attempt, {
+        refresh,
+        open: (current) => exchange(current, buildInit(current)),
+        reject: async (response, current) => {
+          const outcome = await failureOutcome(response, current)
+          throw classifyFailure(outcome, current)
+        },
+      })
     },
   }
 }

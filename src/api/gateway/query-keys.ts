@@ -98,6 +98,11 @@ export const apiKeys = {
 
   operationsRoot: (): readonly ["v1", "operations"] => ["v1", "operations"],
 
+  captureOperations: () =>
+    queryKey(contractTemplate("/v1/operations"), {
+      query: { kind: "content.capture.submit", limit: 20 },
+    }),
+
   operation: (operationId: string) =>
     queryKey(contractTemplate("/v1/operations/{operation_id}"), {
       path: { operation_id: operationId },

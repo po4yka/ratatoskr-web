@@ -52,6 +52,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List your active devices
+         * @description The installations currently trusted under your account, newest first. Follow `next_cursor` for the rest; a device stops appearing here the moment it is deleted.
+         */
+        get: operations["listDevices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/devices/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Exchange a pairing code for device credentials
+         * @description Completes pairing from the NEW device. Presents a live single-use code and declares what kind of client this installation is; the answer carries the device's root secret, its first session credential and the first refresh link — each returned once, never recoverable afterwards.
+         *
+         *     Every unacceptable code receives the same refusal: unknown, expired, already used, set aside and kind-mismatched are deliberately indistinguishable. If the response is lost after a successful exchange, the code is spent; pair again with a fresh code and delete the leftover device entry.
+         */
+        post: operations["pairDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/devices/pairing-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mint a single-use pairing code for a new device
+         * @description Starts pairing: an authenticated session mints a short-lived, single-use code that one new device can present to become trusted under your account.
+         *
+         *     The code is shown ONCE and expires quickly. Creating another code sets the previous pending one aside, so you never hold more than one. Optionally pin the kind of device allowed to present it.
+         */
+        post: operations["createPairingCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete one of your devices
+         * @description Revokes the device and every session opened by it, together and immediately: its root secret stops working and none of its sessions authenticate afterwards. Another user's device and a nonexistent one are the same answer.
+         */
+        delete: operations["deleteDevice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ingest/webhooks/{source_id}": {
         parameters: {
             query?: never;
@@ -122,6 +206,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List your operations
+         * @description Answers with your operations, newest accepted first, in pages you size. Filter them by lifecycle `state`, by exact `kind`, or both at once; follow `next_cursor` for the rest. The cursor is opaque: pages cannot shift while you walk them, and passing `null` back means you are done.
+         *
+         *     Rows carry identification and lifecycle facts but not result references, errors or warnings - read those from `GET /v1/operations/{operation_id}`, which stays the place an outcome lives.
+         */
+        get: operations["listOperations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/operations/{operation_id}": {
         parameters: {
             query?: never;
@@ -138,6 +244,28 @@ export interface paths {
         get: operations["readOperation"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/operations/{operation_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask for an operation to stop
+         * @description Records a request to stop one of your operations and delivers it to the service executing the work, which stops cooperatively and reports the outcome like any other progress report. The response carries the operation's CURRENT state, never the requested one: between the request and the confirmation the operation keeps whatever status its work has actually reached.
+         *
+         *     The route is idempotent without an `Idempotency-Key`. Cancelling twice queues one stop request, and cancelling an operation that already finished answers with its outcome as plain truth - a `succeeded` capture stays `succeeded`.
+         */
+        post: operations["cancelOperation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -168,6 +296,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List your active sessions
+         * @description Where you are signed in: every live session of yours, whichever way it was established, newest first, each with its kind, its bound device when it has one, and when it last saw use. Follow `next_cursor` for the rest.
+         */
+        get: operations["listSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sessions/device": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open a session from a device's root secret
+         * @description The recovery login for a registered device: present your device identifier and root secret and receive a fresh session credential plus a new refresh chain, each returned once.
+         *
+         *     A wrong secret, an unknown identifier and a revoked device receive the same refusal.
+         */
+        post: operations["openDeviceSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sessions/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate a device session's credentials
+         * @description Exchanges the current refresh link for a new session credential AND the next link, atomically; the old bearer credential stops working at once. Each link works once.
+         *
+         *     Presenting a spent link revokes the whole session — a well-behaved client never does that, so a replay means the credential leaked. The refusal looks like every other refresh failure; recover by logging in again with the device root secret.
+         */
+        post: operations["refreshSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sessions/revoke-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke every one of your sessions
+         * @description Signs out everywhere at once, including the session making this call. Devices are deliberately untouched: a registered device recovers by presenting its root secret to the device login route.
+         */
+        post: operations["revokeAllSessions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/sessions/telegram": {
         parameters: {
             query?: never;
@@ -189,6 +401,26 @@ export interface paths {
          */
         post: operations["exchangeTelegramAssertion"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke one of your sessions
+         * @description Signs that session out immediately; its record remains for audit. A session belonging to somebody else, an already-dead one and a nonexistent identifier are all the same answer.
+         */
+        delete: operations["revokeSession"];
         options?: never;
         head?: never;
         patch?: never;
@@ -258,6 +490,57 @@ export interface components {
             algorithm: components["schemas"]["DigestAlgorithm"];
             /** @description Lowercase hexadecimal digest bytes. */
             hex: components["schemas"]["DigestHex"];
+        };
+        /** @description What creating a pairing code may ask for. */
+        CreatePairingCode: {
+            /** @description The kind of device expected to present this code, when the initiator wants to pin one. */
+            expected_kind?: string | null;
+            /** @description A free-text note about what is expected to pair, at most 120 characters. */
+            label?: string | null;
+        };
+        /** @description One page of [`DeviceSummary`] rows, newest first. `next_cursor` nulls at the end of the walk. */
+        DeviceList: {
+            /** @description The page. */
+            devices: components["schemas"]["DeviceSummary"][];
+            /** @description Pass back verbatim for the next page; `null` after the last one. */
+            next_cursor?: string | null;
+        };
+        /** @description What a login grants — both credentials appear once, here, and nowhere again. */
+        DeviceSessionOpened: {
+            /** @description The new session's bearer credential. */
+            credential: string;
+            /**
+             * Format: uuid
+             * @description The device that authenticated.
+             */
+            device_id: string;
+            /** @description When that credential stops working. */
+            expires_at: string;
+            /** @description When that link stops being usable. */
+            refresh_expires_at: string;
+            /** @description The first link of the new refresh chain. */
+            refresh_token: string;
+            /**
+             * Format: uuid
+             * @description The internal user the device belongs to.
+             */
+            user_id: string;
+        };
+        /** @description One listed device. */
+        DeviceSummary: {
+            /** @description When it was registered. */
+            created_at: string;
+            /**
+             * Format: uuid
+             * @description The device's identity.
+             */
+            device_id: string;
+            /** @description The owner's name for it, when there is one. */
+            display_name?: string | null;
+            /** @description Which client it is. */
+            kind: string;
+            /** @description When it last authenticated, as far as the throttled liveness touch records. */
+            last_seen_at?: string | null;
         };
         /** @description Algorithm used to calculate a content digest. */
         DigestAlgorithm: "sha256";
@@ -372,6 +655,16 @@ export interface components {
             /** @description `ratatoskr-web`. */
             web: string;
         };
+        /** @description What a logging-in device presents. */
+        OpenDeviceSession: {
+            /**
+             * Format: uuid
+             * @description The device identifier issued at pairing.
+             */
+            device_id: string;
+            /** @description The device's root secret. Stored only as a digest; wrong means refused. */
+            device_secret: string;
+        };
         /**
          * OperationId
          * Format: uuid
@@ -388,6 +681,18 @@ export interface components {
          * @example social.source.sync
          */
         OperationKind: string;
+        /**
+         * @description One page of [`OperationSummary`] rows, newest accepted first.
+         *
+         *     `next_cursor` is always present: `null` means the walk is finished, a string means at least
+         *     one more page exists. A cursor is opaque to the client - pass it back verbatim.
+         */
+        OperationList: {
+            /** @description The continuation point, or `null` when this page holds the end of the listing. */
+            next_cursor?: string | null;
+            /** @description The rows of this page. */
+            operations: components["schemas"]["OperationSummary"][];
+        };
         /**
          * OperationResultKind
          * @description What an [`OperationResultRef`](crate::OperationResultRef) points at, e.g.
@@ -524,11 +829,89 @@ export interface components {
          */
         OperationStatus: "accepted" | "queued" | "running" | "succeeded" | "partially_succeeded" | "failed" | "cancelled";
         /**
+         * @description One listed operation: identification and lifecycle truth, no payloads.
+         *
+         *     Result references, errors and warnings stay the singular endpoint's job; a listing answers
+         *     "what is the state of my work", and a client that wants an outcome follows the identifier.
+         */
+        OperationSummary: {
+            /** @description When it was accepted. */
+            accepted_at: components["schemas"]["WireTimestamp"];
+            /** @description The correlation identifier that ties this operation to its acceptance request. */
+            correlation_id: string;
+            /** @description What work it performs. */
+            kind: string;
+            /**
+             * Format: uuid
+             * @description The operation's identity.
+             */
+            operation_id: string;
+            /**
+             * Format: int16
+             * @description Bounded progress, when one was reported.
+             */
+            progress_percent?: number | null;
+            /** @description Whether the client may resubmit this work after a failure. */
+            retryable: boolean;
+            /** @description A producer-defined display phase, when one was reported. */
+            stage?: string | null;
+            /** @description Where it is in the lifecycle. */
+            status: components["schemas"]["OperationStatus"];
+            /** @description When its status last changed. */
+            status_changed_at: components["schemas"]["WireTimestamp"];
+            /** @description When it finished, if it has. */
+            terminated_at?: components["schemas"]["WireTimestamp"] | null;
+        };
+        /** @description What a pairing device presents. */
+        PairDevice: {
+            /** @description The single-use code minted by an authenticated session. */
+            code: string;
+            /** @description A name its owner chose for it, at most 120 characters. */
+            display_name?: string | null;
+            /** @description The kind this device claims for itself. */
+            kind: string;
+        };
+        /** @description What pairing grants — every secret in it appears once, here, and nowhere again. */
+        Paired: {
+            /** @description The first session's bearer credential. */
+            credential: string;
+            /**
+             * Format: uuid
+             * @description The registered installation.
+             */
+            device_id: string;
+            /** @description The device's root credential. Stored only as a digest; losing it means pairing again. */
+            device_secret: string;
+            /** @description When that credential stops working. */
+            expires_at: string;
+            /** @description When that link stops being usable. */
+            refresh_expires_at: string;
+            /** @description The first link of the refresh chain. */
+            refresh_token: string;
+            /**
+             * Format: uuid
+             * @description The internal user the device now belongs to.
+             */
+            user_id: string;
+        };
+        /** @description A minted pairing code. */
+        PairingCodeIssued: {
+            /** @description The code. Shown once, carried to the new device, never retrievable from Platform again. */
+            code: string;
+            /** @description When it stops being acceptable. */
+            expires_at: string;
+        };
+        /**
          * ProgressPercent
          * @description Completion estimate in whole percent, 0..=100 inclusive. Integer, never floating point, so canonical serialization is platform-independent. Absence means the producer cannot estimate, never zero.
          * @example 42
          */
         ProgressPercent: number;
+        /** @description What a refreshing client presents. */
+        RefreshSession: {
+            /** @description The current, unspent link of the session's refresh chain. */
+            refresh_token: string;
+        };
         /** @description What the owning service gets, once. */
         RelayedCallback: {
             /** @description The authorization code. Present exactly once, in this response, and nowhere else. */
@@ -539,6 +922,25 @@ export interface components {
             provider: string;
             /** @description The `state` this service issued, so it can match the callback to its own flow. */
             state: string;
+        };
+        /** @description What revoke-all answers. */
+        RevokedAll: {
+            /**
+             * Format: uint64
+             * @description How many live sessions ended, including the calling one.
+             */
+            revoked: number;
+        };
+        /** @description What rotation returns — both credentials appear once, here, and nowhere again. */
+        RotatedCredentials: {
+            /** @description The replacement bearer credential for the same session. */
+            credential: string;
+            /** @description When it stops working. */
+            expires_at: string;
+            /** @description When that link stops being usable. */
+            refresh_expires_at: string;
+            /** @description The next link of the chain. The presented one is spent from this instant. */
+            refresh_token: string;
         };
         /**
          * SafeMessage
@@ -553,6 +955,25 @@ export interface components {
          * @example The requested document does not exist.
          */
         SafeMessage: string;
+        /** @description A device reference inside [`SessionSummary`]. */
+        SessionDeviceRef: {
+            /**
+             * Format: uuid
+             * @description The device's identity.
+             */
+            device_id: string;
+            /** @description The owner's name for it, when there is one. */
+            display_name?: string | null;
+            /** @description Which client it is. */
+            kind: string;
+        };
+        /** @description One page of [`SessionSummary`] rows, newest first. `next_cursor` nulls at the end of the walk. */
+        SessionList: {
+            /** @description Pass back verbatim for the next page; `null` after the last one. */
+            next_cursor?: string | null;
+            /** @description The page. */
+            sessions: components["schemas"]["SessionSummary"][];
+        };
         /** @description The session, once. */
         SessionMinted: {
             /**
@@ -567,6 +988,24 @@ export interface components {
              * @description The internal user it authenticates. Independent of the Telegram id, per S6.1.
              */
             user_id: string;
+        };
+        /** @description One listed session: what kind it is, what device carries it when one does, and its liveness. */
+        SessionSummary: {
+            /** @description The bound device, when the kind requires one. */
+            device?: components["schemas"]["SessionDeviceRef"] | null;
+            /** @description When it stops being valid on its own. */
+            expires_at: string;
+            /** @description When it was issued. */
+            issued_at: string;
+            /** @description How it was established. */
+            kind: string;
+            /** @description When it last authenticated, as far as the throttled liveness touch records. */
+            last_seen_at?: string | null;
+            /**
+             * Format: uuid
+             * @description The session's identity.
+             */
+            session_id: string;
         };
         /** @description What a source gets back. */
         SignalAccepted: {
@@ -735,6 +1174,208 @@ export interface operations {
                 };
             };
             /** @description A dependency did not answer in time. Nothing was written; retrying with the same key is safe and is the intended response. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listDevices: {
+        parameters: {
+            query?: {
+                /** @description Page size, between 1 and 100. Defaults to 20. */
+                limit?: string;
+                /** @description The `next_cursor` value of the previous response, verbatim. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page. `next_cursor` is null after the last one. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceList"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    pairDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PairDevice"];
+            };
+        };
+        responses: {
+            /** @description The device is registered and its credentials appear once, here. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Paired"];
+                };
+            };
+            /** @description The body is not readable or names an unknown kind. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The code was not accepted, for a reason this API does not disclose. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was written. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    createPairingCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePairingCode"];
+            };
+        };
+        responses: {
+            /** @description The code, and when it expires. It appears in this response and nowhere else. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingCodeIssued"];
+                };
+            };
+            /** @description The body is not readable or names an unknown kind. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description This account has spent its request allowance. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was written. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    deleteDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The device to revoke. */
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The device and all of its sessions are revoked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No credential, or one that does not authenticate. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No such device, or it belongs to somebody else — indistinguishable on purpose. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was changed. */
             504: {
                 headers: {
                     [name: string]: unknown;
@@ -925,6 +1566,71 @@ export interface operations {
             };
         };
     };
+    listOperations: {
+        parameters: {
+            query?: {
+                /** @description Only operations in this lifecycle state. One of accepted, queued, running, succeeded, partially_succeeded, failed, cancelled. */
+                state?: string;
+                /** @description Only operations of exactly this kind, e.g. content.capture.submit. */
+                kind?: string;
+                /** @description How many rows to answer with, 1 to 100. The default is 20. */
+                limit?: string;
+                /** @description The `next_cursor` value of the previous response, verbatim. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page. `next_cursor` is null after the last one. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationList"];
+                };
+            };
+            /** @description A state outside the vocabulary, a malformed kind, a page size outside 1..=100, or a cursor this service did not issue. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description This caller has spent its request allowance. Retryable: the allowance refills continuously, so waiting is the fix. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     readOperation: {
         parameters: {
             query?: never;
@@ -974,6 +1680,74 @@ export interface operations {
                 };
             };
             /** @description A dependency did not answer in time. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    cancelOperation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The operation to stop, as returned by the route that created it. */
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nothing to stop: the operation had already finished, and the body carries its outcome unchanged. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationSnapshot"];
+                };
+            };
+            /** @description The stop request was recorded for a still-running operation. The body carries its current snapshot. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationSnapshot"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No such operation, or it belongs to somebody else. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description This caller has spent its request allowance. Retryable: the allowance refills continuously, so waiting is the fix. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was written; retrying is safe and converges on current truth. */
             504: {
                 headers: {
                     [name: string]: unknown;
@@ -1037,6 +1811,189 @@ export interface operations {
             };
         };
     };
+    listSessions: {
+        parameters: {
+            query?: {
+                /** @description Page size, between 1 and 100. Defaults to 20. */
+                limit?: string;
+                /** @description The `next_cursor` value of the previous response, verbatim. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page. `next_cursor` is null after the last one. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionList"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    openDeviceSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenDeviceSession"];
+            };
+        };
+        responses: {
+            /** @description The session is open; its credentials appear once, here. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceSessionOpened"];
+                };
+            };
+            /** @description The body is not readable. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The presentation was not believed, for a reason this API does not disclose. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was written. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    refreshSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshSession"];
+            };
+        };
+        responses: {
+            /** @description Both credentials are replaced; the answer carries them once. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RotatedCredentials"];
+                };
+            };
+            /** @description The body is not readable. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The presented link was not usable, for a reason this API does not disclose. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was changed. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    revokeAllSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every live session is revoked; the answer counts them. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevokedAll"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was changed. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     exchangeTelegramAssertion: {
         parameters: {
             query?: never;
@@ -1078,6 +2035,54 @@ export interface operations {
                 };
             };
             /** @description A dependency did not answer in time. Nothing was written. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    revokeSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The session to revoke. */
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session no longer authenticates anything. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No credential, or one that does not authenticate. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No such live session of yours — indistinguishable from somebody else's. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was changed. */
             504: {
                 headers: {
                     [name: string]: unknown;
