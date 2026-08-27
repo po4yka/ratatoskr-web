@@ -35,9 +35,7 @@ async function renderSignedIn() {
 }
 
 function openAccountMenu() {
-  fireEvent.mouseDown(screen.getByRole("button", { name: /account/i }), {
-    button: 0,
-  })
+  fireEvent.click(screen.getByRole("button", { name: /account/i }))
 }
 
 describe("the sign-out flow", () => {
