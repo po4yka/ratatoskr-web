@@ -30,7 +30,7 @@ function OperationRow({ row }: { row: Row }) {
         <Fact label="State">{label(row.status)}</Fact>
         <Fact label="Operation">
           <Link
-            className="underline"
+            className="inline-flex min-h-7 items-center underline"
             to={`/ops/operations/${row.operation_id}`}
           >
             {row.operation_id}

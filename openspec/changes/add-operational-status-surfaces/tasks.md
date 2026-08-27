@@ -55,16 +55,21 @@
   Enter/Space/Escape operation, and trigger focus return, then record the focus failure.
 - [x] 4.2 GREEN: implement one route-focus manager and fix affected authored components outside
   generated directories until 4.1 passes.
-- [ ] 4.3 Run the Playwright axe matrix across status, member `/ops`, owner operations, schedules,
+- [x] 4.3 Run the Playwright axe matrix across status, member `/ops`, owner operations, schedules,
   audit, login, search, and reader in both themes at 320px and 1280px; commit observed automated and
   manual results to `docs/ACCESSIBILITY_CHECKLIST.md`, marking screen-reader work unverified unless
   performed.
-- [ ] 4.4 For each serious/critical axe or manual keyboard/landmark/focus/contrast/reduced-motion/
+- [x] 4.4 For each serious/critical axe or manual keyboard/landmark/focus/contrast/reduced-motion/
   target-size/mobile finding from 4.3, append a named RED task below before its paired GREEN fix, then
   rerun the matrix until serious/critical findings are zero and every checklist row maps to evidence.
-- [ ] 4.5 Run `npm run audit:ui` and rendered shadscan against every new route in both themes and
+- [x] 4.5 Run `npm run audit:ui` and rendered shadscan against every new route in both themes and
   target widths; fix only confirmed findings through appended RED/GREEN pairs and never lower the
   score ratchet.
+- [x] 4.6 RED: extend `e2e/accessibility.spec.ts` with rendered target-size and document-overflow
+  assertions; record the theme/nav/reader controls below 24px and the protected shell's 52–54px
+  narrow overflow in both themes.
+- [x] 4.7 GREEN: give authored interactive targets a stable 28px minimum and let the protected
+  header stack within 320px, then rerun all 32 combinations with zero target or overflow findings.
 
 ## 5. Documentation, gate, and lifecycle
 

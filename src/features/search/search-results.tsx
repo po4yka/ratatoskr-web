@@ -37,7 +37,7 @@ export function SearchResults({
             key={result.documentId}
           >
             <Link
-              className="text-subheading font-semibold underline-offset-4 hover:underline"
+              className="inline-flex min-h-7 items-center text-subheading font-semibold underline-offset-4 hover:underline"
               to={`/documents/${result.documentId}`}
             >
               {result.title}

@@ -59,7 +59,10 @@ export default function OperationDetailPage() {
   return (
     <section className="flex flex-col gap-6 py-4">
       <header className="flex flex-col gap-2">
-        <Link className="text-body underline" to="/ops">
+        <Link
+          className="inline-flex min-h-7 items-center text-body underline"
+          to="/ops"
+        >
           Back to operations
         </Link>
         <h1 className="text-heading font-semibold">Operation detail</h1>

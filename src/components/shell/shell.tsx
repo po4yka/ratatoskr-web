@@ -43,17 +43,17 @@ export function Shell({ entries = NAV_ENTRIES }: ShellProps) {
       </a>
 
       <header className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 p-4">
+        <div className="mx-auto flex w-full max-w-5xl flex-col items-stretch gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
           <nav
             aria-label="Primary"
-            className="flex flex-wrap items-center gap-6"
+            className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-2"
           >
             <span className="text-subheading font-semibold">Ratatoskr</span>
             {primary.map((entry) => (
               <Link
                 key={entry.id}
                 to={entry.path}
-                className="text-body text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                className="inline-flex min-h-7 items-center text-body text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
               >
                 {entry.label}
               </Link>
@@ -68,7 +68,7 @@ export function Shell({ entries = NAV_ENTRIES }: ShellProps) {
                   <Link
                     key={entry.id}
                     to={entry.path}
-                    className="text-body text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                    className="inline-flex min-h-7 items-center text-body text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                   >
                     {entry.label}
                   </Link>
@@ -76,7 +76,7 @@ export function Shell({ entries = NAV_ENTRIES }: ShellProps) {
               </span>
             ) : null}
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3 sm:justify-start">
             <ThemeSwitcher />
             <UserMenu />
           </div>

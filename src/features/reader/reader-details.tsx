@@ -64,7 +64,7 @@ export function ReaderEvidence({ document }: { document: ArchiveDocument }) {
           <dt className="text-caption text-muted-foreground">Source</dt>
           <dd className="mt-1 break-all">
             <a
-              className="underline-offset-4 hover:underline"
+              className="inline-flex min-h-7 items-center underline-offset-4 hover:underline"
               href={document.sourceAddress}
             >
               {document.sourceAddress}
