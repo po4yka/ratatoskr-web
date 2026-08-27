@@ -115,7 +115,7 @@ describe("operations inspector", () => {
     expect(
       await screen.findByRole("heading", { name: /operation detail/i })
     ).toBeInTheDocument()
-    expect(screen.getByText("fixture.failed")).toBeInTheDocument()
+    expect(await screen.findByText("fixture.failed")).toBeInTheDocument()
     expect(screen.getByText(/65%/i)).toBeInTheDocument()
     expect(document.body).not.toHaveTextContent(/stack|payload|diagnostic/i)
   })

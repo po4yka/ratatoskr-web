@@ -70,14 +70,18 @@
   narrow overflow in both themes.
 - [x] 4.7 GREEN: give authored interactive targets a stable 28px minimum and let the protected
   header stack within 320px, then rerun all 32 combinations with zero target or overflow findings.
+- [x] 4.8 RED: add `route focus does not steal focus after interaction while lazy content mounts`;
+  record the delayed heading taking focus from the account control and closing its menu.
+- [x] 4.9 GREEN: cancel a pending lazy-route focus transfer after keyboard or pointer interaction,
+  while preserving heading focus for navigation that has not been superseded by the user.
 
 ## 5. Documentation, gate, and lifecycle
 
-- [ ] 5.1 Update README, DEVELOPMENT, IMPLEMENTATION_PLAN, TESTING, ARCHITECTURE, and affected status
+- [x] 5.1 Update README, DEVELOPMENT, IMPLEMENTATION_PLAN, TESTING, ARCHITECTURE, and affected status
   text after behavior exists; documentation cannot start from a behavior test, so verify it describes
   the implemented router/API/views/e2e suite and keeps localization, command palette, LLM costs, and
   agent/digest/RSS/signals surfaces deferred.
-- [ ] 5.2 Add `test:e2e` to the documented and hosted gate with pinned Chromium installation and a
+- [x] 5.2 Add `test:e2e` to the documented and hosted gate with pinned Chromium installation and a
   parity assertion; CI configuration cannot start from a behavior test, so verify local/workflow
   command identity.
 - [ ] 5.3 Run the exact Web gate in order: clean install, API check, typecheck, lint, format check,

@@ -1,5 +1,7 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { MemoryRouter } from "react-router"
 import { describe, expect, it } from "vitest"
+import { RouteFocusManager } from "@/app/route-focus"
 import { renderOwnerView } from "@/test/owner-view-harness"
 
 const pages = {
@@ -40,5 +42,29 @@ describe("route focus", () => {
     const skip = screen.getByRole("link", { name: /skip to content/i })
     fireEvent.click(skip)
     expect(screen.getByRole("main")).toHaveFocus()
+  })
+
+  it("does not steal focus after interaction while lazy content mounts", async () => {
+    const view = (heading: boolean) => (
+      <MemoryRouter>
+        <RouteFocusManager />
+        <main id="main">
+          {heading ? <h1>Lazy route</h1> : null}
+          <button type="button">Account</button>
+        </main>
+      </MemoryRouter>
+    )
+    const rendered = render(view(false))
+    const account = screen.getByRole("button", { name: "Account" })
+
+    account.focus()
+    fireEvent.pointerDown(account)
+    fireEvent.click(account)
+    rendered.rerender(view(true))
+
+    await waitFor(() =>
+      expect(screen.getByText("Lazy route")).toBeInTheDocument()
+    )
+    expect(account).toHaveFocus()
   })
 })

@@ -15,14 +15,21 @@ export function RouteFocusManager({ mainId = "main" }: { mainId?: string }) {
 
   useEffect(() => {
     if (focusHeading(mainId)) return undefined
+    function stopWaiting() {
+      observer.disconnect()
+      document.removeEventListener("pointerdown", stopWaiting, true)
+      document.removeEventListener("keydown", stopWaiting, true)
+    }
     const observer = new MutationObserver(() => {
-      if (focusHeading(mainId)) observer.disconnect()
+      if (focusHeading(mainId)) stopWaiting()
     })
     observer.observe(document.getElementById(mainId) ?? document.body, {
       childList: true,
       subtree: true,
     })
-    return () => observer.disconnect()
+    document.addEventListener("pointerdown", stopWaiting, true)
+    document.addEventListener("keydown", stopWaiting, true)
+    return stopWaiting
   }, [mainId, pathname])
 
   return null
