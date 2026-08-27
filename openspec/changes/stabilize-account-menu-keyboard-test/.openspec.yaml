@@ -1,5 +1,0 @@
-schema: spec-driven
-created: 2026-08-27
-goal: Replace the click-shaped test setup with the actual keyboard activation
-  path and prove the full Web gate and hosted CI.
-skip_specs: true
