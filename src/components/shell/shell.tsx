@@ -4,6 +4,8 @@ import { useCapabilities } from "@/capabilities/capabilities-context"
 import { NAV_ENTRIES, type NavEntry } from "@/app/navigation"
 import { ThemeSwitcher } from "@/components/shell/theme-switcher"
 import { UserMenu } from "@/components/shell/user-menu"
+import { focusMainLandmark } from "@/app/focus-main"
+import { RouteFocusManager } from "@/app/route-focus"
 
 export interface ShellProps {
   /**
@@ -31,8 +33,10 @@ export function Shell({ entries = NAV_ENTRIES }: ShellProps) {
 
   return (
     <div className="flex min-h-svh flex-col">
+      <RouteFocusManager />
       <a
         href="#main"
+        onClick={focusMainLandmark}
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-background focus:px-3 focus:py-2 focus:text-body focus:font-medium focus:ring-3 focus:ring-ring/50"
       >
         Skip to content
@@ -79,7 +83,11 @@ export function Shell({ entries = NAV_ENTRIES }: ShellProps) {
         </div>
       </header>
 
-      <main id="main" className="mx-auto w-full max-w-5xl flex-1 p-4">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-5xl flex-1 p-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
         <Outlet />
       </main>
     </div>

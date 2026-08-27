@@ -3,6 +3,7 @@ import type { components } from "@/api/generated/schema"
 import { Button } from "@/components/ui/button"
 import { ThemeSwitcher } from "@/components/shell/theme-switcher"
 import { usePublicStatus } from "@/features/status/use-public-status"
+import { focusMainLandmark } from "@/app/focus-main"
 
 type Component = components["schemas"]["PublicStatusComponent"]
 const componentNames: Record<Component["id"], string> = {
@@ -77,6 +78,7 @@ export default function StatusPage() {
     <div className="min-h-svh">
       <a
         href="#status-main"
+        onClick={(event) => focusMainLandmark(event, "status-main")}
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-background focus:px-3 focus:py-2 focus:text-body focus:font-medium focus:ring-3 focus:ring-ring/50"
       >
         Skip to status

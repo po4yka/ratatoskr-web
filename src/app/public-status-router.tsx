@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react"
 import { createBrowserRouter, RouterProvider } from "react-router"
+import { RouteFocusManager } from "@/app/route-focus"
 
 const StatusPage = lazy(() => import("@/features/status/status-page"))
 
@@ -19,9 +20,12 @@ export function PublicStatusRouter() {
     {
       path: "/status",
       element: (
-        <Suspense fallback={<StatusRoutePending />}>
-          <StatusPage />
-        </Suspense>
+        <>
+          <RouteFocusManager mainId="status-main" />
+          <Suspense fallback={<StatusRoutePending />}>
+            <StatusPage />
+          </Suspense>
+        </>
       ),
     },
   ])

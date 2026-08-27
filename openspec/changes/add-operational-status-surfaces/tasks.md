@@ -49,11 +49,11 @@
 
 ## 4. Accessibility hardening and evidence
 
-- [ ] 4.1 RED: add `src/app/route-focus.test.tsx` and
+- [x] 4.1 RED: add `src/app/route-focus.test.tsx` and
   `e2e/keyboard-navigation.spec.ts` test `route changes and disclosures keep visible logical focus`;
   assert skip-link destination, h1 focus after navigation, no refresh focus theft, logical Tab order,
   Enter/Space/Escape operation, and trigger focus return, then record the focus failure.
-- [ ] 4.2 GREEN: implement one route-focus manager and fix affected authored components outside
+- [x] 4.2 GREEN: implement one route-focus manager and fix affected authored components outside
   generated directories until 4.1 passes.
 - [ ] 4.3 Run the Playwright axe matrix across status, member `/ops`, owner operations, schedules,
   audit, login, search, and reader in both themes at 320px and 1280px; commit observed automated and

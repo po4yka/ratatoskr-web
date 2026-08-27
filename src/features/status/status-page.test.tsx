@@ -46,6 +46,9 @@ describe("public status page", () => {
     expect(
       await screen.findByRole("heading", { name: /system status/i })
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: /system status/i })
+    ).toHaveFocus()
     expect(await screen.findAllByText(/^degraded$/i)).toHaveLength(2)
     expect(screen.getByText(/command delivery/i)).toBeInTheDocument()
     expect(screen.getByText(/stale/i)).toBeInTheDocument()
