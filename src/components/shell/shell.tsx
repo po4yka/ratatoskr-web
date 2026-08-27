@@ -26,6 +26,8 @@ export function Shell({ entries = NAV_ENTRIES }: ShellProps) {
   const available = entries.filter(
     (entry) => evaluateGate(entry, { status, document }).state === "available"
   )
+  const primary = available.filter((entry) => entry.group === undefined)
+  const operational = available.filter((entry) => entry.group === "operations")
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -43,7 +45,7 @@ export function Shell({ entries = NAV_ENTRIES }: ShellProps) {
             className="flex flex-wrap items-center gap-6"
           >
             <span className="text-subheading font-semibold">Ratatoskr</span>
-            {available.map((entry) => (
+            {primary.map((entry) => (
               <Link
                 key={entry.id}
                 to={entry.path}
@@ -52,6 +54,23 @@ export function Shell({ entries = NAV_ENTRIES }: ShellProps) {
                 {entry.label}
               </Link>
             ))}
+            {operational.length > 0 ? (
+              <span
+                aria-label="Operations"
+                className="flex flex-wrap items-center gap-3 border-l border-border pl-4"
+                role="group"
+              >
+                {operational.map((entry) => (
+                  <Link
+                    key={entry.id}
+                    to={entry.path}
+                    className="text-body text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    {entry.label}
+                  </Link>
+                ))}
+              </span>
+            ) : null}
           </nav>
           <div className="flex items-center gap-3">
             <ThemeSwitcher />

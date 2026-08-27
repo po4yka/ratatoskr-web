@@ -10,6 +10,7 @@ export interface NavEntry {
   readonly id: string
   readonly label: string
   readonly path: string
+  readonly group?: "operations"
   /**
    * The capability this feature requires. Absent, the entry belongs to every
    * deployment and renders in every discovery state.
@@ -74,5 +75,26 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
     label: "Connections",
     path: "/connections",
     requires: "connections.providers",
+  },
+  {
+    id: "ops",
+    label: "Operations",
+    path: "/ops",
+    group: "operations",
+    requires: "platform.operations.inspect",
+  },
+  {
+    id: "ops-schedules",
+    label: "Schedules",
+    path: "/ops/schedules",
+    group: "operations",
+    requires: "platform.schedules.inspect",
+  },
+  {
+    id: "ops-audit",
+    label: "Audit",
+    path: "/ops/audit",
+    group: "operations",
+    requires: "platform.audit.inspect",
   },
 ]

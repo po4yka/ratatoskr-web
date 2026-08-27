@@ -31,6 +31,10 @@ export interface RouteModules {
   social?: FeatureModuleLoader
   aiArchive?: FeatureModuleLoader
   connections?: FeatureModuleLoader
+  operationsAdmin?: FeatureModuleLoader
+  operationAdminDetail?: FeatureModuleLoader
+  schedulesAdmin?: FeatureModuleLoader
+  auditAdmin?: FeatureModuleLoader
 }
 
 /**
@@ -59,6 +63,13 @@ const defaultAiArchive = () =>
   import("@/features/social-ai-archive/ai-archive-page")
 const defaultConnections = () =>
   import("@/features/social-ai-archive/connections-page")
+const defaultOperationsAdmin = () =>
+  import("@/features/operations-admin/operations-page")
+const defaultOperationAdminDetail = () =>
+  import("@/features/operations-admin/operation-detail-page")
+const defaultSchedulesAdmin = () =>
+  import("@/features/operations-admin/schedules-page")
+const defaultAuditAdmin = () => import("@/features/operations-admin/audit-page")
 
 // eslint-disable-next-line complexity -- this mirrors the fixed lazy-route registry.
 function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
@@ -74,6 +85,12 @@ function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
     social: seams.routeModules?.social ?? defaultSocial,
     aiArchive: seams.routeModules?.aiArchive ?? defaultAiArchive,
     connections: seams.routeModules?.connections ?? defaultConnections,
+    operationsAdmin:
+      seams.routeModules?.operationsAdmin ?? defaultOperationsAdmin,
+    operationAdminDetail:
+      seams.routeModules?.operationAdminDetail ?? defaultOperationAdminDetail,
+    schedulesAdmin: seams.routeModules?.schedulesAdmin ?? defaultSchedulesAdmin,
+    auditAdmin: seams.routeModules?.auditAdmin ?? defaultAuditAdmin,
   }
 }
 
@@ -104,6 +121,10 @@ export function createAppRouter(
   const SocialRoute = lazy(modules.social)
   const AiArchiveRoute = lazy(modules.aiArchive)
   const ConnectionsRoute = lazy(modules.connections)
+  const OperationsAdminRoute = lazy(modules.operationsAdmin)
+  const OperationAdminDetailRoute = lazy(modules.operationAdminDetail)
+  const SchedulesAdminRoute = lazy(modules.schedulesAdmin)
+  const AuditAdminRoute = lazy(modules.auditAdmin)
 
   return createBrowserRouter([
     { path: "/login", element: <LoginPage /> },
@@ -225,6 +246,42 @@ export function createAppRouter(
             <FeatureRoute
               entry={navEntries.find((entry) => entry.id === "connections")}
               view={ConnectionsRoute}
+            />
+          ),
+        },
+        {
+          path: "ops",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "ops")}
+              view={OperationsAdminRoute}
+            />
+          ),
+        },
+        {
+          path: "ops/operations/:operationId",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "ops")}
+              view={OperationAdminDetailRoute}
+            />
+          ),
+        },
+        {
+          path: "ops/schedules",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "ops-schedules")}
+              view={SchedulesAdminRoute}
+            />
+          ),
+        },
+        {
+          path: "ops/audit",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "ops-audit")}
+              view={AuditAdminRoute}
             />
           ),
         },

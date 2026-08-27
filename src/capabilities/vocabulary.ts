@@ -18,6 +18,9 @@
  */
 export const KNOWN_CAPABILITIES = [
   "content.submit",
+  "platform.operations.inspect",
+  "platform.schedules.inspect",
+  "platform.audit.inspect",
   "github.catalog",
   "ai.archive.chatgpt",
   "ai.archive.claude",

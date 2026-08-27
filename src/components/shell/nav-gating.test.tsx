@@ -115,6 +115,28 @@ describe("capability-gated navigation", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("declares independent owner inspection destinations", () => {
+    expect(NAV_ENTRIES).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "ops",
+          path: "/ops",
+          requires: "platform.operations.inspect",
+        }),
+        expect.objectContaining({
+          id: "ops-schedules",
+          path: "/ops/schedules",
+          requires: "platform.schedules.inspect",
+        }),
+        expect.objectContaining({
+          id: "ops-audit",
+          path: "/ops/audit",
+          requires: "platform.audit.inspect",
+        }),
+      ])
+    )
+  })
+
   it("keeps core entries while discovery is pending or has failed", async () => {
     /**
      * Boot resolves on the first call; every later call — discovery among

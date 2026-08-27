@@ -21,30 +21,30 @@
 
 ## 3. Operational gating and views
 
-- [ ] 3.1 RED: extend `src/components/shell/nav-gating.test.tsx` and add
+- [x] 3.1 RED: extend `src/components/shell/nav-gating.test.tsx` and add
   `src/app/ops-route.test.tsx` test `member cannot discover or deep-link to owner operations`; assert
   independent operational capabilities, retryable discovery failure, and visible Platform forbidden
   after stale admission, then run and record the gating failure.
-- [ ] 3.2 GREEN: add the exact capability vocabulary, grouped navigation, lazy `/ops`,
+- [x] 3.2 GREEN: add the exact capability vocabulary, grouped navigation, lazy `/ops`,
   `/ops/schedules`, and `/ops/audit` routes, and absence/forbidden surfaces until 3.1 passes without
   treating presentation as authorization.
-- [ ] 3.3 RED: add `src/features/operations-admin/operations-page.test.tsx` test
+- [x] 3.3 RED: add `src/features/operations-admin/operations-page.test.tsx` test
   `renders every lifecycle and safe failure without private diagnostics`; assert loading, empty,
   cursor, offline, forbidden, failed, and partially-succeeded states through generated admin paths,
   then run and record the missing-view failure.
-- [ ] 3.4 GREEN: implement the operations source, bounded list/detail view, URL cursor, and exact text
+- [x] 3.4 GREEN: implement the operations source, bounded list/detail view, URL cursor, and exact text
   labels until 3.3 passes without client-owned wire types or unbounded filtering.
-- [ ] 3.5 RED: add `src/features/operations-admin/schedules-page.test.tsx` test
+- [x] 3.5 RED: add `src/features/operations-admin/schedules-page.test.tsx` test
   `renders unknown disabled and failed schedule truthfully`; assert loading, empty, pagination,
   absent outcome, disabled/failed, offline, and forbidden states, then run and record the missing-view
   failure.
-- [ ] 3.6 GREEN: implement the generated schedule source and responsive semantic presentation until
+- [x] 3.6 GREEN: implement the generated schedule source and responsive semantic presentation until
   3.5 passes without rendering payload or configuration fields.
-- [ ] 3.7 RED: add `src/features/operations-admin/audit-page.test.tsx` test
+- [x] 3.7 RED: add `src/features/operations-admin/audit-page.test.tsx` test
   `renders bounded audit actors and empty separately from failure`; assert unknown actor, readable
   contracted fields, cursor pagination, empty, offline, forbidden, and terminal states, then run and
   record the missing-view failure.
-- [ ] 3.8 GREEN: implement the generated audit source and bounded viewer until 3.7 passes without
+- [x] 3.8 GREEN: implement the generated audit source and bounded viewer until 3.7 passes without
   payload export, diagnostics, or private-data logging.
 
 ## 4. Accessibility hardening and evidence
