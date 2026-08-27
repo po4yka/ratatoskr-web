@@ -119,7 +119,10 @@ describe("the shell surface", () => {
     trigger.focus()
     expect(trigger).toHaveFocus()
 
-    fireEvent.click(trigger)
+    fireEvent.keyDown(trigger, { key: "Enter", code: "Enter" })
+    fireEvent.keyUp(trigger, { key: "Enter", code: "Enter" })
+    // jsdom does not synthesize the native button click that follows Enter.
+    fireEvent.click(trigger, { detail: 0 })
 
     const signOut = await screen.findByRole("menuitem", { name: /sign out/i })
     fireEvent.click(signOut)
