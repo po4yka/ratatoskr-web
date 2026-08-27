@@ -84,8 +84,8 @@
 - [x] 5.2 Add `test:e2e` to the documented and hosted gate with pinned Chromium installation and a
   parity assertion; CI configuration cannot start from a behavior test, so verify local/workflow
   command identity.
-- [ ] 5.3 Run the exact Web gate in order: clean install, API check, typecheck, lint, format check,
+- [x] 5.3 Run the exact Web gate in order: clean install, API check, typecheck, lint, format check,
   Vitest, Playwright, build through `build-gate --`, shadscan, rendered checks, and production audit;
   inspect bundle and final diff for privacy, generated-contract, accessibility, and scope regressions.
-- [ ] 5.4 Validate, sync, and archive this OpenSpec change with every task checked; verify archived
+- [x] 5.4 Validate, sync, and archive this OpenSpec change with every task checked; verify archived
   strict validation and the required separate contract, dependency, and feature/evidence commits.
