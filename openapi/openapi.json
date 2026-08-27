@@ -1,6 +1,316 @@
 {
   "components": {
     "schemas": {
+      "AcquisitionMethod": {
+        "description": "How the source entered the user's library.\n\n**Closed on purpose.** An unknown value is rejected at parse rather than guessed at: the\nmethod determines retention, re-acquisition and provenance handling, and silently filing an\nunrecognized method under a default is how provenance rots. Adding a variant is an additive\nwire change that consumers adopt by upgrading.",
+        "oneOf": [
+          {
+            "const": "official_api",
+            "description": "Read from the platform's supported, authenticated API.",
+            "type": "string"
+          },
+          {
+            "const": "share_extension",
+            "description": "The user pushed it in through an OS or browser share target.",
+            "type": "string"
+          },
+          {
+            "const": "browser_extension",
+            "description": "The user pushed it in through a browser extension.",
+            "type": "string"
+          },
+          {
+            "const": "public_resolution",
+            "description": "Resolved from the platform's public, unauthenticated metadata surface (oEmbed-style).",
+            "type": "string"
+          },
+          {
+            "const": "data_export",
+            "description": "Parsed out of a provider data export the user supplied.",
+            "type": "string"
+          },
+          {
+            "const": "legacy_import",
+            "description": "Carried over from the retired monolith's stored state.",
+            "type": "string"
+          }
+        ]
+      },
+      "AiArchiveCompleteness": {
+        "description": "Whether one import obtained the whole export, stated per `docs/ARCHITECTURE.md` S8.3.\n\n**Closed on purpose**: indexing depth, retention and re-import scheduling hang off this\nstate, so an unrecognized value must stop processing rather than be read as \"whole enough\".\nCompleteness is evidence-based: a parser may not mark an import `complete` merely because it\nparsed every file it knows about.",
+        "oneOf": [
+          {
+            "const": "complete",
+            "description": "Every record parsed and every referenced asset was stored.",
+            "type": "string"
+          },
+          {
+            "const": "conversations_complete",
+            "description": "Every conversation record parsed; some assets are missing or were refused.",
+            "type": "string"
+          },
+          {
+            "const": "structurally_partial",
+            "description": "Some records did not parse or were not present; the gaps say which.",
+            "type": "string"
+          },
+          {
+            "const": "assets_partial",
+            "description": "Records parsed but asset storage was incomplete.",
+            "type": "string"
+          },
+          {
+            "const": "unknown",
+            "description": "The parser could not determine what the export contained at all.",
+            "type": "string"
+          },
+          {
+            "const": "failed_validation",
+            "description": "The export failed an integrity check before parsing could be trusted.",
+            "type": "string"
+          }
+        ]
+      },
+      "AiArchiveId": {
+        "description": "Identity of one import of a provider AI account export. Bare canonical lowercase hyphenated UUID; not namespaced.",
+        "examples": [
+          "018f0000-0000-7000-8000-000000000001"
+        ],
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "title": "AiArchiveId",
+        "type": "string"
+      },
+      "AiArchiveOperationSummary": {
+        "additionalProperties": false,
+        "description": "The privacy-safe import outcome that an operation result may expose to a client.\n\nIt carries only the immutable archive identity, provider, exact completeness classification,\nand aggregate counts; gap and warning details remain on the owning archive report.",
+        "properties": {
+          "ai_archive_id": {
+            "$ref": "#/components/schemas/AiArchiveId",
+            "description": "The immutable archive import produced by the operation."
+          },
+          "asset_count": {
+            "description": "Number of stored asset references in this import.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "completeness": {
+            "$ref": "#/components/schemas/AiArchiveCompleteness",
+            "description": "The producer's exact evidence-based import completeness classification."
+          },
+          "conversation_count": {
+            "description": "Number of normalized conversations in this import.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "gap_count": {
+            "description": "Number of known archive-level gaps in this import.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "message_count": {
+            "description": "Number of normalized messages in this import.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/AiProvider",
+            "description": "The provider whose export the archive represents."
+          },
+          "warning_count": {
+            "description": "Number of non-gap warnings produced while importing this archive.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ai_archive_id",
+          "provider",
+          "completeness",
+          "conversation_count",
+          "message_count",
+          "asset_count",
+          "gap_count",
+          "warning_count"
+        ],
+        "type": "object"
+      },
+      "AiProvider": {
+        "description": "The AI provider an archive came from, e.g. `chatgpt`, `claude`.\n\n**Open on purpose.** A validated token, not an enum: a provider added by a later milestone\nmust not break a running consumer, and no consumer may assume the vocabulary is\nexhaustive. Branch on equality with known tokens; treat everything else generically. The\ngrammar is the event-type segment grammar (`EventType::SEGMENT_PATTERN`), so one\nsnake_case alphabet covers both.",
+        "examples": [
+          "chatgpt",
+          "claude"
+        ],
+        "maxLength": 32,
+        "pattern": "^[a-z][a-z0-9_]{0,31}$",
+        "title": "AiProvider",
+        "type": "string"
+      },
+      "ArchivePrepared": {
+        "description": "A durable operation plus the only upload path that may deliver its archive.",
+        "properties": {
+          "operation_id": {
+            "description": "The operation to poll for importer processing and completeness.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "description": "Edge has durably accepted metadata only; it has not received the archive bytes yet.",
+            "type": "string"
+          },
+          "upload_path": {
+            "description": "Relative operation-bound endpoint to which the archive bytes may be streamed with `PUT`.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "status",
+          "upload_path"
+        ],
+        "type": "object"
+      },
+      "AuditAction": {
+        "description": "Stable audited action token.",
+        "examples": [
+          "operation.read"
+        ],
+        "maxLength": 120,
+        "pattern": "^[a-z][a-z0-9_]{0,29}(\\.[a-z][a-z0-9_]{0,29}){1,3}$",
+        "title": "AuditAction",
+        "type": "string"
+      },
+      "AuditEventPage": {
+        "additionalProperties": false,
+        "description": "Cursor page of newest-first audit summaries.",
+        "properties": {
+          "items": {
+            "description": "At most 100 audit summaries.",
+            "items": {
+              "$ref": "#/components/schemas/AuditEventSummary"
+            },
+            "maxItems": 100,
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionCursor"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque continuation cursor, absent on the final page."
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "type": "object"
+      },
+      "AuditEventSummary": {
+        "additionalProperties": false,
+        "description": "One redacted audit event.",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/AuditAction",
+            "description": "Stable bounded audited action token."
+          },
+          "actor_session_id": {
+            "description": "Acting session, absent when no session acted.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actor_user_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Acting user, absent for a system or unauthenticated event."
+          },
+          "audit_event_id": {
+            "description": "Stable audit record identity.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "correlation_id": {
+            "$ref": "#/components/schemas/EntityRef",
+            "description": "Namespaced correlation reference visible to support workflows."
+          },
+          "occurred_at": {
+            "$ref": "#/components/schemas/WireTimestamp",
+            "description": "Platform-observed occurrence instant."
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/AuditOutcome",
+            "description": "Stable audited outcome."
+          },
+          "target_id": {
+            "description": "Target UUID when one exists.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "target_kind": {
+            "$ref": "#/components/schemas/AuditTargetKind",
+            "description": "Stable bounded target kind."
+          }
+        },
+        "required": [
+          "audit_event_id",
+          "occurred_at",
+          "action",
+          "target_kind",
+          "outcome",
+          "correlation_id"
+        ],
+        "type": "object"
+      },
+      "AuditOutcome": {
+        "description": "Stable outcome of one audited action.",
+        "oneOf": [
+          {
+            "const": "allowed",
+            "description": "The action proceeded.",
+            "type": "string"
+          },
+          {
+            "const": "denied",
+            "description": "Authorization refused the action.",
+            "type": "string"
+          },
+          {
+            "const": "failed",
+            "description": "The permitted action did not complete.",
+            "type": "string"
+          }
+        ]
+      },
+      "AuditTargetKind": {
+        "description": "Stable kind of audited target.",
+        "examples": [
+          "operation"
+        ],
+        "maxLength": 60,
+        "pattern": "^[a-z][a-z0-9_-]{0,59}$",
+        "title": "AuditTargetKind",
+        "type": "string"
+      },
       "BlobOwner": {
         "description": "Deployment identity of the service that owns and resolves a blob.",
         "examples": [
@@ -60,12 +370,20 @@
           "minimum_client_versions": {
             "$ref": "#/components/schemas/MinimumClientVersions",
             "description": "The oldest client release per surface that this API still answers correctly."
+          },
+          "services": {
+            "description": "Service-owned capability documents last sampled by Edge. Each section states whether it is\nstale instead of fabricating an empty success when its loopback owner is absent.",
+            "items": {
+              "$ref": "#/components/schemas/ServiceCapabilities"
+            },
+            "type": "array"
           }
         },
         "required": [
           "api_version",
           "minimum_client_versions",
-          "capabilities"
+          "capabilities",
+          "services"
         ],
         "type": "object"
       },
@@ -373,6 +691,16 @@
         "type": "object",
         "x-ratatoskr-unknown-policy": "preserve"
       },
+      "InspectionCursor": {
+        "description": "Opaque service-generated pagination cursor.",
+        "examples": [
+          "eyJvYnNlcnZlZF9hdCI6IjIwMjYtMDgtMjdUMDk6MDA6MDBaIn0"
+        ],
+        "maxLength": 512,
+        "pattern": "^[A-Za-z0-9_-]{1,512}$",
+        "title": "InspectionCursor",
+        "type": "string"
+      },
       "MediaType": {
         "description": "Internet media type of stored bytes, without parameters.",
         "examples": [
@@ -431,6 +759,85 @@
         "title": "OperationId",
         "type": "string"
       },
+      "OperationInspectionPage": {
+        "additionalProperties": false,
+        "description": "Cursor page of deployment-wide operation summaries.",
+        "properties": {
+          "items": {
+            "description": "At most 100 summaries in newest-accepted-first order.",
+            "items": {
+              "$ref": "#/components/schemas/OperationInspectionSummary"
+            },
+            "maxItems": 100,
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionCursor"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque continuation cursor, absent on the final page."
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "type": "object"
+      },
+      "OperationInspectionSummary": {
+        "additionalProperties": false,
+        "description": "One redacted operation in an owner inspection page.",
+        "properties": {
+          "accepted_at": {
+            "$ref": "#/components/schemas/WireTimestamp",
+            "description": "Platform-observed acceptance instant."
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorCode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Stable user-safe failure code, absent when no failure is recorded."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OperationKind",
+            "description": "Contracted kind of work."
+          },
+          "operation_id": {
+            "$ref": "#/components/schemas/OperationId",
+            "description": "Stable operation identity."
+          },
+          "owner_user_id": {
+            "$ref": "#/components/schemas/UserId",
+            "description": "User whose data the operation concerns."
+          },
+          "status": {
+            "$ref": "#/components/schemas/OperationStatus",
+            "description": "Exact lifecycle state."
+          },
+          "status_changed_at": {
+            "$ref": "#/components/schemas/WireTimestamp",
+            "description": "Platform-observed instant at which status last changed."
+          }
+        },
+        "required": [
+          "operation_id",
+          "owner_user_id",
+          "kind",
+          "status",
+          "accepted_at",
+          "status_changed_at"
+        ],
+        "type": "object"
+      },
       "OperationKind": {
         "description": "What work the operation performs, e.g. `content.document.extract`.\nPresent tense: a kind names an activity, not a completed fact — unlike an event action.\nOpen by construction (a validated string), so there is no unknown-variant problem.",
         "examples": [
@@ -479,6 +886,17 @@
         "additionalProperties": true,
         "description": "A typed pointer to something the operation produced.\n\nA pointer, never inlined content: an operation may produce megabytes, and\n`ARCHITECTURE.md` S14 requires user content to be separable from metadata so telemetry can\nomit it.",
         "properties": {
+          "ai_archive_import_summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiArchiveOperationSummary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Privacy-safe summary of an imported AI archive when this result is `ai_archive.import`."
+          },
           "blob": {
             "anyOf": [
               {
@@ -508,7 +926,7 @@
       },
       "OperationSnapshot": {
         "additionalProperties": true,
-        "description": "A point-in-time public view of a long-running operation (`ARCHITECTURE.md` S5.4).\n\nNamed `OperationSnapshot`, not `Operation`, because this repository owns wire representations,\nnot entities (`ARCHITECTURE.md` S15.1, S15.12). Two snapshots of the same `operation_id` at\ndifferent `status_changed_at` are both valid and are not expected to be equal.\n\nNo `schema_version` field: S5.4's field list does not include one, and the envelope already\ncarries the envelope major. A third version axis is a compatibility hazard, not a feature.\n\n`Deserialize` is hand-written (the **only** hand-written `Deserialize` in this repository)\nbecause the invariants below are cross-field and serde has no validation hook. It parses a\nprivate mirror struct and then checks. A field added to the public struct and not the mirror\nwould be silently dropped; test `O-2` (byte round-trip of a fixture carrying every field)\nfails immediately if that happens, and a source comment points at it.\n\n# Cross-field invariants\n\nEvery one is re-checkable through [`OperationSnapshot::validate`]:\n\n- **I1** `terminated_at` is present exactly when `status.is_terminal()`.\n- **I2** `failed` requires at least one error.\n- **I3** `succeeded` forbids errors.\n- **I4** `partially_succeeded` requires at least one warning or error.\n- **I5** `status_changed_at` and `terminated_at` are never earlier than `accepted_at`.",
+        "description": "A point-in-time public view of a long-running operation (`ARCHITECTURE.md` S5.4).\n\nNamed `OperationSnapshot`, not `Operation`, because this repository owns wire representations,\nnot entities (`ARCHITECTURE.md` S15.1, S15.12). Two snapshots of the same `operation_id` at\ndifferent `status_changed_at` are both valid and are not expected to be equal.\n\nNo `schema_version` field: S5.4's field list does not include one, and the envelope already\ncarries the envelope major. A third version axis is a compatibility hazard, not a feature.\n\n`Deserialize` is hand-written (one of the two hand-written `Deserialize` impls in this\nrepository, beside `ratatoskr-social-contracts`'s snapshot) because the invariants below are\ncross-field and serde has no validation hook. It parses a\nprivate mirror struct and then checks. A field added to the public struct and not the mirror\nwould be silently dropped; test `O-2` (byte round-trip of a fixture carrying every field)\nfails immediately if that happens, and a source comment points at it.\n\n# Cross-field invariants\n\nEvery one is re-checkable through [`OperationSnapshot::validate`]:\n\n- **I1** `terminated_at` is present exactly when `status.is_terminal()`.\n- **I2** `failed` requires at least one error.\n- **I3** `succeeded` forbids errors.\n- **I4** `partially_succeeded` requires at least one warning or error.\n- **I5** `status_changed_at` and `terminated_at` are never earlier than `accepted_at`.\n- **I6** every result satisfies its own typed-field association constraints.",
         "properties": {
           "accepted_at": {
             "$ref": "#/components/schemas/WireTimestamp",
@@ -827,6 +1245,25 @@
         ],
         "type": "object"
       },
+      "PrepareArchive": {
+        "description": "Digest-first archive metadata. The body bytes arrive only at the operation-bound upload path.",
+        "properties": {
+          "byte_size": {
+            "description": "Exact number of bytes that will be delivered.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "sha256": {
+            "description": "Lowercase hexadecimal SHA-256 of the exact bytes that will be delivered.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sha256",
+          "byte_size"
+        ],
+        "type": "object"
+      },
       "ProgressPercent": {
         "description": "Completion estimate in whole percent, 0..=100 inclusive. Integer, never floating point, so canonical serialization is platform-independent. Absence means the producer cannot estimate, never zero.",
         "examples": [
@@ -836,6 +1273,140 @@
         "minimum": 0,
         "title": "ProgressPercent",
         "type": "integer"
+      },
+      "PublicComponentId": {
+        "description": "A stable public component group that reveals no private topology.",
+        "oneOf": [
+          {
+            "const": "api",
+            "description": "Public Edge API readiness.",
+            "type": "string"
+          },
+          {
+            "const": "storage",
+            "description": "Durable storage readiness.",
+            "type": "string"
+          },
+          {
+            "const": "command_delivery",
+            "description": "Command delivery readiness.",
+            "type": "string"
+          },
+          {
+            "const": "connected_services",
+            "description": "Aggregate readiness of connected product services.",
+            "type": "string"
+          }
+        ]
+      },
+      "PublicComponentState": {
+        "description": "Availability of one public component group.",
+        "oneOf": [
+          {
+            "const": "operational",
+            "description": "The latest observation is current and healthy.",
+            "type": "string"
+          },
+          {
+            "const": "degraded",
+            "description": "The component is impaired but some useful operation remains.",
+            "type": "string"
+          },
+          {
+            "const": "unavailable",
+            "description": "The component cannot serve its required work.",
+            "type": "string"
+          },
+          {
+            "const": "unknown",
+            "description": "No successful observation exists.",
+            "type": "string"
+          }
+        ]
+      },
+      "PublicStatusComponent": {
+        "additionalProperties": false,
+        "description": "Sanitized observation of one stable public component group.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/PublicComponentId",
+            "description": "Stable public component identifier."
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WireTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Latest successful observation, absent when never observed."
+          },
+          "stale": {
+            "description": "Whether the last successful observation is older than the current failed refresh.",
+            "type": "boolean"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PublicComponentState",
+            "description": "Latest contracted component state."
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "stale"
+        ],
+        "type": "object"
+      },
+      "PublicStatusDocument": {
+        "additionalProperties": false,
+        "description": "Anonymous sanitized public status response.",
+        "properties": {
+          "components": {
+            "description": "Stable component observations in contract order.",
+            "items": {
+              "$ref": "#/components/schemas/PublicStatusComponent"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "type": "array"
+          },
+          "generated_at": {
+            "$ref": "#/components/schemas/WireTimestamp",
+            "description": "Instant this projection was produced by Platform."
+          },
+          "state": {
+            "$ref": "#/components/schemas/PublicStatusState",
+            "description": "Overall public availability."
+          }
+        },
+        "required": [
+          "generated_at",
+          "state",
+          "components"
+        ],
+        "type": "object"
+      },
+      "PublicStatusState": {
+        "description": "Overall public availability of Ratatoskr.",
+        "oneOf": [
+          {
+            "const": "operational",
+            "description": "All public component observations are current and healthy.",
+            "type": "string"
+          },
+          {
+            "const": "degraded",
+            "description": "Ratatoskr can answer but one or more component observations are impaired.",
+            "type": "string"
+          },
+          {
+            "const": "unavailable",
+            "description": "A required component cannot serve work.",
+            "type": "string"
+          }
+        ]
       },
       "RefreshSession": {
         "description": "What a refreshing client presents.",
@@ -933,6 +1504,167 @@
         "maxLength": 1024,
         "pattern": "^[^\\x00-\\x1f\\x7f]{1,1024}$",
         "title": "SafeMessage",
+        "type": "string"
+      },
+      "SavedAuthority": {
+        "description": "What the saved-state claim in this snapshot is worth.\n\n**Closed on purpose.** `AGENTS.md`: never model Instagram or Threads explicit capture as\nauthoritative membership in the provider's native Saved list. An unknown authority must stop\nprocessing — a consumer that guesses treats a maybe-saved source as saved.",
+        "oneOf": [
+          {
+            "const": "authoritative_platform_state",
+            "description": "The platform itself exposes this saved state (e.g. X bookmarks through the supported\nAPI). The strongest claim; folder membership may be provider-authoritative too.",
+            "type": "string"
+          },
+          {
+            "const": "explicit_user_capture",
+            "description": "A user action inside Ratatoskr captured the source; the provider's own state is unknown.",
+            "type": "string"
+          },
+          {
+            "const": "export_observation",
+            "description": "A provider data export shows the item was saved at some point, without live authority.",
+            "type": "string"
+          },
+          {
+            "const": "legacy_observation",
+            "description": "Migrated from the retired monolith; authority is as good as that record was.",
+            "type": "string"
+          }
+        ]
+      },
+      "ScheduleInspectionPage": {
+        "additionalProperties": false,
+        "description": "Cursor page of deterministic schedule status summaries.",
+        "properties": {
+          "items": {
+            "description": "At most 100 schedule status rows.",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleInspectionSummary"
+            },
+            "maxItems": 100,
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionCursor"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque continuation cursor, absent on the final page."
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "type": "object"
+      },
+      "ScheduleInspectionSummary": {
+        "additionalProperties": false,
+        "description": "One schedule's current Platform-owned status projection.",
+        "properties": {
+          "enabled": {
+            "description": "Whether future occurrences are enabled.",
+            "type": "boolean"
+          },
+          "last_outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Last operation outcome, absent before the first occurrence."
+          },
+          "name": {
+            "$ref": "#/components/schemas/ScheduleName",
+            "description": "Schedule name within that service."
+          },
+          "next_due_at": {
+            "$ref": "#/components/schemas/WireTimestamp",
+            "description": "Next Platform-observed due instant."
+          },
+          "owner_user_id": {
+            "$ref": "#/components/schemas/UserId",
+            "description": "User whose data scheduled work concerns."
+          },
+          "schedule_id": {
+            "description": "Stable schedule identity.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "service_name": {
+            "$ref": "#/components/schemas/ServiceName",
+            "description": "Stable service label, not an address."
+          }
+        },
+        "required": [
+          "schedule_id",
+          "service_name",
+          "name",
+          "owner_user_id",
+          "next_due_at",
+          "enabled"
+        ],
+        "type": "object"
+      },
+      "ScheduleName": {
+        "description": "Stable schedule name within one service.",
+        "examples": [
+          "daily_sync"
+        ],
+        "maxLength": 120,
+        "pattern": "^[a-z][a-z0-9_-]{0,119}$",
+        "title": "ScheduleName",
+        "type": "string"
+      },
+      "ServiceCapabilities": {
+        "description": "A service-owned document observed through its loopback capability endpoint.",
+        "properties": {
+          "document": {
+            "description": "The service's own capability document, opaque to Edge."
+          },
+          "observed_at": {
+            "description": "RFC 3339 timestamp of the last successful observation, if one exists.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "service": {
+            "description": "Stable configured service name.",
+            "type": "string"
+          },
+          "stale": {
+            "description": "Whether the most recent refresh failed.",
+            "type": "boolean"
+          },
+          "stale_since": {
+            "description": "RFC 3339 timestamp when the current stale period began, if stale.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "service",
+          "document",
+          "stale"
+        ],
+        "type": "object"
+      },
+      "ServiceName": {
+        "description": "Stable product-service label, never a hostname or address.",
+        "examples": [
+          "telegram"
+        ],
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+        "title": "ServiceName",
         "type": "string"
       },
       "SessionDeviceRef": {
@@ -1074,9 +1806,68 @@
         ],
         "type": "object"
       },
+      "SocialCaptureProvenance": {
+        "description": "The social provenance a browser extension must assert explicitly.",
+        "properties": {
+          "acquisition": {
+            "$ref": "#/components/schemas/AcquisitionMethod",
+            "description": "Must be `browser_extension`; a caller cannot claim another acquisition lane here."
+          },
+          "captured_at": {
+            "$ref": "#/components/schemas/WireTimestamp",
+            "description": "The browser's capture instant."
+          },
+          "provider": {
+            "$ref": "#/components/schemas/SocialCaptureProvider",
+            "description": "The provider whose public permalink is captured."
+          },
+          "saved_authority": {
+            "$ref": "#/components/schemas/SavedAuthority",
+            "description": "Must be `explicit_user_capture`; this path never claims provider Saved state."
+          }
+        },
+        "required": [
+          "provider",
+          "captured_at",
+          "acquisition",
+          "saved_authority"
+        ],
+        "type": "object"
+      },
+      "SocialCaptureProvider": {
+        "description": "The social owner to which Platform routes an explicit capture.",
+        "oneOf": [
+          {
+            "const": "x",
+            "description": "X owns the permalink.",
+            "type": "string"
+          },
+          {
+            "const": "instagram",
+            "description": "Instagram owns the permalink.",
+            "type": "string"
+          },
+          {
+            "const": "threads",
+            "description": "Threads owns the permalink.",
+            "type": "string"
+          }
+        ]
+      },
       "SubmitCapture": {
         "description": "What a client submits.",
         "properties": {
+          "social": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SocialCaptureProvenance"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Provenance supplied by an explicit browser social capture, when this is a social permalink."
+          },
           "url": {
             "description": "The address to capture. `http` or `https`, with a host, at most 2048 characters.",
             "type": "string"
@@ -1105,6 +1896,16 @@
         "maxLength": 32,
         "pattern": "^[0-9a-f]{32}$",
         "title": "TraceId",
+        "type": "string"
+      },
+      "UserId": {
+        "description": "Identity of a Ratatoskr end user. Bare canonical lowercase hyphenated UUID; not namespaced.",
+        "examples": [
+          "018f0000-0000-7000-8000-000000000001"
+        ],
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "title": "UserId",
         "type": "string"
       },
       "WarningEnvelope": {
@@ -1187,6 +1988,603 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.0",
   "paths": {
+    "/v1/admin/audit-events": {
+      "get": {
+        "description": "Returns a bounded newest-first page after a live owner grant check. The fixed audit columns contain no request body, credential, or diagnostic payload.",
+        "operationId": "inspectAuditEvents",
+        "parameters": [
+          {
+            "description": "Page size from 1 through 100; defaults to 20.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Opaque continuation cursor from the previous page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditEventPage"
+                }
+              }
+            },
+            "description": "One bounded redacted audit page."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The page size or cursor is invalid."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No valid session credential."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The authenticated user does not hold the live owner grant."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The caller has spent its request allowance."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authorization or audit storage could not answer."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Inspect the audit trail",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
+    "/v1/admin/operations": {
+      "get": {
+        "description": "Returns a bounded newest-first page across users after a live owner grant check. Rows contain lifecycle facts and a stable safe failure code only.",
+        "operationId": "inspectOperations",
+        "parameters": [
+          {
+            "description": "Exact operation lifecycle state.",
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Exact operation kind.",
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Exact operation owner.",
+            "in": "query",
+            "name": "owner_user_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size from 1 through 100; defaults to 20.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Opaque continuation cursor from the previous page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationInspectionPage"
+                }
+              }
+            },
+            "description": "One bounded inspection page."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A filter, page size, owner identifier, or cursor is invalid."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No valid session credential."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The authenticated user does not hold the live owner grant."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The caller has spent its request allowance."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authorization or operation storage could not answer."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Inspect recent operations",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
+    "/v1/admin/operations/{operation_id}": {
+      "get": {
+        "description": "Returns the existing operation snapshot after a live owner grant check.",
+        "operationId": "inspectOperation",
+        "parameters": [
+          {
+            "description": "The operation to inspect.",
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationSnapshot"
+                }
+              }
+            },
+            "description": "The operation snapshot."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No valid session credential."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The authenticated user does not hold the live owner grant."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No such operation."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The caller has spent its request allowance."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authorization or operation storage could not answer."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Inspect one operation",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
+    "/v1/admin/schedules": {
+      "get": {
+        "description": "Returns a bounded schedule-status page after a live owner grant check. Command payloads and schedule configuration are never selected.",
+        "operationId": "inspectSchedules",
+        "parameters": [
+          {
+            "description": "Page size from 1 through 100; defaults to 20.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Opaque continuation cursor from the previous page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleInspectionPage"
+                }
+              }
+            },
+            "description": "One bounded schedule-status page."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The page size or cursor is invalid."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No valid session credential."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The authenticated user does not hold the live owner grant."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The caller has spent its request allowance."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authorization or schedule storage could not answer."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Inspect schedule status",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
+    "/v1/ai-archives/{provider}": {
+      "post": {
+        "description": "Accepts immutable metadata for a registered export-agent archive and returns the operation-bound upload path. It does not mean that archive bytes have been received or imported.",
+        "operationId": "prepareAiArchive",
+        "parameters": [
+          {
+            "description": "`chatgpt` or `claude`.",
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "A client-chosen 1 to 255 character replay key.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrepareArchive"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchivePrepared"
+                }
+              }
+            },
+            "description": "Metadata accepted durably; upload bytes to the returned path."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The metadata or idempotency header is invalid."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The provider is unsupported or this is not a registered export-agent device."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The idempotency key is in use for different metadata."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Prepare an AI archive import",
+        "tags": [
+          "ai-archives"
+        ]
+      }
+    },
+    "/v1/ai-archives/{provider}/{operation_id}/content": {
+      "put": {
+        "description": "Streams bytes to the configured provider importer. Edge injects the operation, digest and size claims; callers cannot set them.",
+        "operationId": "uploadAiArchiveContent",
+        "parameters": [
+          {
+            "description": "The provider selected during preparation.",
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The prepared operation identifier.",
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "The importer accepted the streamed archive for asynchronous processing."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The operation is not a deliverable archive owned by this device."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The configured importer could not be reached; the operation is marked failed with a safe retryable diagnostic."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The configured importer did not respond within its bounded receipt budget."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Deliver prepared AI archive bytes",
+        "tags": [
+          "ai-archives"
+        ]
+      }
+    },
     "/v1/capabilities": {
       "get": {
         "description": "Returns the API version, the client-version floors, and the capabilities available to the caller.\n\nA capability is a stable name a client gates a feature on. It appears when this deployment has the components that capability needs, those components answered their last health probe, and the caller is authorized for it. It disappears the moment any of the three stops holding, so a client must read this on every session rather than caching it across deployments.\n\nThe array is sorted and its vocabulary is closed: a name that is absent is a name this deployment cannot honour, never a name it forgot to mention. Treat an unfamiliar name as a feature this client does not implement, and a familiar name that is absent as a feature to hide.",
@@ -2576,6 +3974,29 @@
         "summary": "Revoke one of your sessions",
         "tags": [
           "sessions"
+        ]
+      }
+    },
+    "/v1/status": {
+      "get": {
+        "description": "Projects four sanitized public component groups from cached observations. It performs no request-time dependency probes and is not the operator health surface.",
+        "operationId": "readPublicStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicStatusDocument"
+                }
+              }
+            },
+            "description": "Current cached public status projection."
+          }
+        },
+        "security": [],
+        "summary": "Read public status",
+        "tags": [
+          "status"
         ]
       }
     }

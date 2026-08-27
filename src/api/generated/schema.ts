@@ -4,6 +4,126 @@
  */
 
 export interface paths {
+    "/v1/admin/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Inspect the audit trail
+         * @description Returns a bounded newest-first page after a live owner grant check. The fixed audit columns contain no request body, credential, or diagnostic payload.
+         */
+        get: operations["inspectAuditEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Inspect recent operations
+         * @description Returns a bounded newest-first page across users after a live owner grant check. Rows contain lifecycle facts and a stable safe failure code only.
+         */
+        get: operations["inspectOperations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/operations/{operation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Inspect one operation
+         * @description Returns the existing operation snapshot after a live owner grant check.
+         */
+        get: operations["inspectOperation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Inspect schedule status
+         * @description Returns a bounded schedule-status page after a live owner grant check. Command payloads and schedule configuration are never selected.
+         */
+        get: operations["inspectSchedules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai-archives/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare an AI archive import
+         * @description Accepts immutable metadata for a registered export-agent archive and returns the operation-bound upload path. It does not mean that archive bytes have been received or imported.
+         */
+        post: operations["prepareAiArchive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai-archives/{provider}/{operation_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Deliver prepared AI archive bytes
+         * @description Streams bytes to the configured provider importer. Edge injects the operation, digest and size claims; callers cannot set them.
+         */
+        put: operations["uploadAiArchiveContent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/capabilities": {
         parameters: {
             query?: never;
@@ -426,10 +546,170 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read public status
+         * @description Projects four sanitized public component groups from cached observations. It performs no request-time dependency probes and is not the operator health surface.
+         */
+        get: operations["readPublicStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description How the source entered the user's library.
+         *
+         *     **Closed on purpose.** An unknown value is rejected at parse rather than guessed at: the
+         *     method determines retention, re-acquisition and provenance handling, and silently filing an
+         *     unrecognized method under a default is how provenance rots. Adding a variant is an additive
+         *     wire change that consumers adopt by upgrading.
+         */
+        AcquisitionMethod: "official_api" | "share_extension" | "browser_extension" | "public_resolution" | "data_export" | "legacy_import";
+        /**
+         * @description Whether one import obtained the whole export, stated per `docs/ARCHITECTURE.md` S8.3.
+         *
+         *     **Closed on purpose**: indexing depth, retention and re-import scheduling hang off this
+         *     state, so an unrecognized value must stop processing rather than be read as "whole enough".
+         *     Completeness is evidence-based: a parser may not mark an import `complete` merely because it
+         *     parsed every file it knows about.
+         */
+        AiArchiveCompleteness: "complete" | "conversations_complete" | "structurally_partial" | "assets_partial" | "unknown" | "failed_validation";
+        /**
+         * AiArchiveId
+         * Format: uuid
+         * @description Identity of one import of a provider AI account export. Bare canonical lowercase hyphenated UUID; not namespaced.
+         * @example 018f0000-0000-7000-8000-000000000001
+         */
+        AiArchiveId: string;
+        /**
+         * @description The privacy-safe import outcome that an operation result may expose to a client.
+         *
+         *     It carries only the immutable archive identity, provider, exact completeness classification,
+         *     and aggregate counts; gap and warning details remain on the owning archive report.
+         */
+        AiArchiveOperationSummary: {
+            /** @description The immutable archive import produced by the operation. */
+            ai_archive_id: components["schemas"]["AiArchiveId"];
+            /**
+             * Format: uint32
+             * @description Number of stored asset references in this import.
+             */
+            asset_count: number;
+            /** @description The producer's exact evidence-based import completeness classification. */
+            completeness: components["schemas"]["AiArchiveCompleteness"];
+            /**
+             * Format: uint32
+             * @description Number of normalized conversations in this import.
+             */
+            conversation_count: number;
+            /**
+             * Format: uint32
+             * @description Number of known archive-level gaps in this import.
+             */
+            gap_count: number;
+            /**
+             * Format: uint32
+             * @description Number of normalized messages in this import.
+             */
+            message_count: number;
+            /** @description The provider whose export the archive represents. */
+            provider: components["schemas"]["AiProvider"];
+            /**
+             * Format: uint32
+             * @description Number of non-gap warnings produced while importing this archive.
+             */
+            warning_count: number;
+        };
+        /**
+         * AiProvider
+         * @description The AI provider an archive came from, e.g. `chatgpt`, `claude`.
+         *
+         *     **Open on purpose.** A validated token, not an enum: a provider added by a later milestone
+         *     must not break a running consumer, and no consumer may assume the vocabulary is
+         *     exhaustive. Branch on equality with known tokens; treat everything else generically. The
+         *     grammar is the event-type segment grammar (`EventType::SEGMENT_PATTERN`), so one
+         *     snake_case alphabet covers both.
+         * @example chatgpt
+         * @example claude
+         */
+        AiProvider: string;
+        /** @description A durable operation plus the only upload path that may deliver its archive. */
+        ArchivePrepared: {
+            /**
+             * Format: uuid
+             * @description The operation to poll for importer processing and completeness.
+             */
+            operation_id: string;
+            /** @description Edge has durably accepted metadata only; it has not received the archive bytes yet. */
+            status: string;
+            /** @description Relative operation-bound endpoint to which the archive bytes may be streamed with `PUT`. */
+            upload_path: string;
+        };
+        /**
+         * AuditAction
+         * @description Stable audited action token.
+         * @example operation.read
+         */
+        AuditAction: string;
+        /** @description Cursor page of newest-first audit summaries. */
+        AuditEventPage: {
+            /** @description At most 100 audit summaries. */
+            items: components["schemas"]["AuditEventSummary"][];
+            /** @description Opaque continuation cursor, absent on the final page. */
+            next_cursor?: components["schemas"]["InspectionCursor"] | null;
+        };
+        /** @description One redacted audit event. */
+        AuditEventSummary: {
+            /** @description Stable bounded audited action token. */
+            action: components["schemas"]["AuditAction"];
+            /**
+             * Format: uuid
+             * @description Acting session, absent when no session acted.
+             */
+            actor_session_id?: string | null;
+            /** @description Acting user, absent for a system or unauthenticated event. */
+            actor_user_id?: components["schemas"]["UserId"] | null;
+            /**
+             * Format: uuid
+             * @description Stable audit record identity.
+             */
+            audit_event_id: string;
+            /** @description Namespaced correlation reference visible to support workflows. */
+            correlation_id: components["schemas"]["EntityRef"];
+            /** @description Platform-observed occurrence instant. */
+            occurred_at: components["schemas"]["WireTimestamp"];
+            /** @description Stable audited outcome. */
+            outcome: components["schemas"]["AuditOutcome"];
+            /**
+             * Format: uuid
+             * @description Target UUID when one exists.
+             */
+            target_id?: string | null;
+            /** @description Stable bounded target kind. */
+            target_kind: components["schemas"]["AuditTargetKind"];
+        };
+        /** @description Stable outcome of one audited action. */
+        AuditOutcome: "allowed" | "denied" | "failed";
+        /**
+         * AuditTargetKind
+         * @description Stable kind of audited target.
+         * @example operation
+         */
+        AuditTargetKind: string;
         /**
          * BlobOwner
          * @description Deployment identity of the service that owns and resolves a blob.
@@ -468,6 +748,11 @@ export interface components {
             capabilities: string[];
             /** @description The oldest client release per surface that this API still answers correctly. */
             minimum_client_versions: components["schemas"]["MinimumClientVersions"];
+            /**
+             * @description Service-owned capability documents last sampled by Edge. Each section states whether it is
+             *     stale instead of fabricating an empty success when its loopback owner is absent.
+             */
+            services: components["schemas"]["ServiceCapabilities"][];
         };
         /**
          * @description What a client gets back.
@@ -637,6 +922,12 @@ export interface components {
             [key: string]: unknown;
         };
         /**
+         * InspectionCursor
+         * @description Opaque service-generated pagination cursor.
+         * @example eyJvYnNlcnZlZF9hdCI6IjIwMjYtMDgtMjdUMDk6MDA6MDBaIn0
+         */
+        InspectionCursor: string;
+        /**
          * MediaType
          * @description Internet media type of stored bytes, without parameters.
          * @example text/html
@@ -672,6 +963,30 @@ export interface components {
          * @example 018f0000-0000-7000-8000-000000000001
          */
         OperationId: string;
+        /** @description Cursor page of deployment-wide operation summaries. */
+        OperationInspectionPage: {
+            /** @description At most 100 summaries in newest-accepted-first order. */
+            items: components["schemas"]["OperationInspectionSummary"][];
+            /** @description Opaque continuation cursor, absent on the final page. */
+            next_cursor?: components["schemas"]["InspectionCursor"] | null;
+        };
+        /** @description One redacted operation in an owner inspection page. */
+        OperationInspectionSummary: {
+            /** @description Platform-observed acceptance instant. */
+            accepted_at: components["schemas"]["WireTimestamp"];
+            /** @description Stable user-safe failure code, absent when no failure is recorded. */
+            failure_code?: components["schemas"]["ErrorCode"] | null;
+            /** @description Contracted kind of work. */
+            kind: components["schemas"]["OperationKind"];
+            /** @description Stable operation identity. */
+            operation_id: components["schemas"]["OperationId"];
+            /** @description User whose data the operation concerns. */
+            owner_user_id: components["schemas"]["UserId"];
+            /** @description Exact lifecycle state. */
+            status: components["schemas"]["OperationStatus"];
+            /** @description Platform-observed instant at which status last changed. */
+            status_changed_at: components["schemas"]["WireTimestamp"];
+        };
         /**
          * OperationKind
          * @description What work the operation performs, e.g. `content.document.extract`.
@@ -708,6 +1023,8 @@ export interface components {
          *     omit it.
          */
         OperationResultRef: {
+            /** @description Privacy-safe summary of an imported AI archive when this result is `ai_archive.import`. */
+            ai_archive_import_summary?: components["schemas"]["AiArchiveOperationSummary"] | null;
             /** @description Content-addressed handle when the result is stored bytes rather than a modelled entity. */
             blob?: components["schemas"]["BlobRef"] | null;
             /** @description What the target is. */
@@ -727,8 +1044,9 @@ export interface components {
          *     No `schema_version` field: S5.4's field list does not include one, and the envelope already
          *     carries the envelope major. A third version axis is a compatibility hazard, not a feature.
          *
-         *     `Deserialize` is hand-written (the **only** hand-written `Deserialize` in this repository)
-         *     because the invariants below are cross-field and serde has no validation hook. It parses a
+         *     `Deserialize` is hand-written (one of the two hand-written `Deserialize` impls in this
+         *     repository, beside `ratatoskr-social-contracts`'s snapshot) because the invariants below are
+         *     cross-field and serde has no validation hook. It parses a
          *     private mirror struct and then checks. A field added to the public struct and not the mirror
          *     would be silently dropped; test `O-2` (byte round-trip of a fixture carrying every field)
          *     fails immediately if that happens, and a source comment points at it.
@@ -742,6 +1060,7 @@ export interface components {
          *     - **I3** `succeeded` forbids errors.
          *     - **I4** `partially_succeeded` requires at least one warning or error.
          *     - **I5** `status_changed_at` and `terminated_at` are never earlier than `accepted_at`.
+         *     - **I6** every result satisfies its own typed-field association constraints.
          */
         OperationSnapshot: {
             /**
@@ -901,12 +1220,48 @@ export interface components {
             /** @description When it stops being acceptable. */
             expires_at: string;
         };
+        /** @description Digest-first archive metadata. The body bytes arrive only at the operation-bound upload path. */
+        PrepareArchive: {
+            /**
+             * Format: int64
+             * @description Exact number of bytes that will be delivered.
+             */
+            byte_size: number;
+            /** @description Lowercase hexadecimal SHA-256 of the exact bytes that will be delivered. */
+            sha256: string;
+        };
         /**
          * ProgressPercent
          * @description Completion estimate in whole percent, 0..=100 inclusive. Integer, never floating point, so canonical serialization is platform-independent. Absence means the producer cannot estimate, never zero.
          * @example 42
          */
         ProgressPercent: number;
+        /** @description A stable public component group that reveals no private topology. */
+        PublicComponentId: "api" | "storage" | "command_delivery" | "connected_services";
+        /** @description Availability of one public component group. */
+        PublicComponentState: "operational" | "degraded" | "unavailable" | "unknown";
+        /** @description Sanitized observation of one stable public component group. */
+        PublicStatusComponent: {
+            /** @description Stable public component identifier. */
+            id: components["schemas"]["PublicComponentId"];
+            /** @description Latest successful observation, absent when never observed. */
+            observed_at?: components["schemas"]["WireTimestamp"] | null;
+            /** @description Whether the last successful observation is older than the current failed refresh. */
+            stale: boolean;
+            /** @description Latest contracted component state. */
+            state: components["schemas"]["PublicComponentState"];
+        };
+        /** @description Anonymous sanitized public status response. */
+        PublicStatusDocument: {
+            /** @description Stable component observations in contract order. */
+            components: components["schemas"]["PublicStatusComponent"][];
+            /** @description Instant this projection was produced by Platform. */
+            generated_at: components["schemas"]["WireTimestamp"];
+            /** @description Overall public availability. */
+            state: components["schemas"]["PublicStatusState"];
+        };
+        /** @description Overall public availability of Ratatoskr. */
+        PublicStatusState: "operational" | "degraded" | "unavailable";
         /** @description What a refreshing client presents. */
         RefreshSession: {
             /** @description The current, unspent link of the session's refresh chain. */
@@ -955,6 +1310,66 @@ export interface components {
          * @example The requested document does not exist.
          */
         SafeMessage: string;
+        /**
+         * @description What the saved-state claim in this snapshot is worth.
+         *
+         *     **Closed on purpose.** `AGENTS.md`: never model Instagram or Threads explicit capture as
+         *     authoritative membership in the provider's native Saved list. An unknown authority must stop
+         *     processing — a consumer that guesses treats a maybe-saved source as saved.
+         */
+        SavedAuthority: "authoritative_platform_state" | "explicit_user_capture" | "export_observation" | "legacy_observation";
+        /** @description Cursor page of deterministic schedule status summaries. */
+        ScheduleInspectionPage: {
+            /** @description At most 100 schedule status rows. */
+            items: components["schemas"]["ScheduleInspectionSummary"][];
+            /** @description Opaque continuation cursor, absent on the final page. */
+            next_cursor?: components["schemas"]["InspectionCursor"] | null;
+        };
+        /** @description One schedule's current Platform-owned status projection. */
+        ScheduleInspectionSummary: {
+            /** @description Whether future occurrences are enabled. */
+            enabled: boolean;
+            /** @description Last operation outcome, absent before the first occurrence. */
+            last_outcome?: components["schemas"]["OperationStatus"] | null;
+            /** @description Schedule name within that service. */
+            name: components["schemas"]["ScheduleName"];
+            /** @description Next Platform-observed due instant. */
+            next_due_at: components["schemas"]["WireTimestamp"];
+            /** @description User whose data scheduled work concerns. */
+            owner_user_id: components["schemas"]["UserId"];
+            /**
+             * Format: uuid
+             * @description Stable schedule identity.
+             */
+            schedule_id: string;
+            /** @description Stable service label, not an address. */
+            service_name: components["schemas"]["ServiceName"];
+        };
+        /**
+         * ScheduleName
+         * @description Stable schedule name within one service.
+         * @example daily_sync
+         */
+        ScheduleName: string;
+        /** @description A service-owned document observed through its loopback capability endpoint. */
+        ServiceCapabilities: {
+            /** @description The service's own capability document, opaque to Edge. */
+            document: unknown;
+            /** @description RFC 3339 timestamp of the last successful observation, if one exists. */
+            observed_at?: string | null;
+            /** @description Stable configured service name. */
+            service: string;
+            /** @description Whether the most recent refresh failed. */
+            stale: boolean;
+            /** @description RFC 3339 timestamp when the current stale period began, if stale. */
+            stale_since?: string | null;
+        };
+        /**
+         * ServiceName
+         * @description Stable product-service label, never a hostname or address.
+         * @example telegram
+         */
+        ServiceName: string;
         /** @description A device reference inside [`SessionSummary`]. */
         SessionDeviceRef: {
             /**
@@ -1018,8 +1433,23 @@ export interface components {
             /** @description Always `accepted` here. Present so a caller never has to infer it from the status code. */
             status: string;
         };
+        /** @description The social provenance a browser extension must assert explicitly. */
+        SocialCaptureProvenance: {
+            /** @description Must be `browser_extension`; a caller cannot claim another acquisition lane here. */
+            acquisition: components["schemas"]["AcquisitionMethod"];
+            /** @description The browser's capture instant. */
+            captured_at: components["schemas"]["WireTimestamp"];
+            /** @description The provider whose public permalink is captured. */
+            provider: components["schemas"]["SocialCaptureProvider"];
+            /** @description Must be `explicit_user_capture`; this path never claims provider Saved state. */
+            saved_authority: components["schemas"]["SavedAuthority"];
+        };
+        /** @description The social owner to which Platform routes an explicit capture. */
+        SocialCaptureProvider: "x" | "instagram" | "threads";
         /** @description What a client submits. */
         SubmitCapture: {
+            /** @description Provenance supplied by an explicit browser social capture, when this is a social permalink. */
+            social?: components["schemas"]["SocialCaptureProvenance"] | null;
             /** @description The address to capture. `http` or `https`, with a host, at most 2048 characters. */
             url: string;
         };
@@ -1036,6 +1466,13 @@ export interface components {
          * @example 4bf92f3577b34da6a3ce929d0e0e4736
          */
         TraceId: string;
+        /**
+         * UserId
+         * Format: uuid
+         * @description Identity of a Ratatoskr end user. Bare canonical lowercase hyphenated UUID; not namespaced.
+         * @example 018f0000-0000-7000-8000-000000000001
+         */
+        UserId: string;
         /**
          * @description A non-terminal problem that did not prevent the recorded outcome.
          *
@@ -1074,6 +1511,419 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    inspectAuditEvents: {
+        parameters: {
+            query?: {
+                /** @description Page size from 1 through 100; defaults to 20. */
+                limit?: string;
+                /** @description Opaque continuation cursor from the previous page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One bounded redacted audit page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditEventPage"];
+                };
+            };
+            /** @description The page size or cursor is invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No valid session credential. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated user does not hold the live owner grant. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The caller has spent its request allowance. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Authorization or audit storage could not answer. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    inspectOperations: {
+        parameters: {
+            query?: {
+                /** @description Exact operation lifecycle state. */
+                state?: string;
+                /** @description Exact operation kind. */
+                kind?: string;
+                /** @description Exact operation owner. */
+                owner_user_id?: string;
+                /** @description Page size from 1 through 100; defaults to 20. */
+                limit?: string;
+                /** @description Opaque continuation cursor from the previous page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One bounded inspection page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationInspectionPage"];
+                };
+            };
+            /** @description A filter, page size, owner identifier, or cursor is invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No valid session credential. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated user does not hold the live owner grant. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The caller has spent its request allowance. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Authorization or operation storage could not answer. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    inspectOperation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The operation to inspect. */
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The operation snapshot. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationSnapshot"];
+                };
+            };
+            /** @description No valid session credential. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated user does not hold the live owner grant. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No such operation. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The caller has spent its request allowance. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Authorization or operation storage could not answer. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    inspectSchedules: {
+        parameters: {
+            query?: {
+                /** @description Page size from 1 through 100; defaults to 20. */
+                limit?: string;
+                /** @description Opaque continuation cursor from the previous page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One bounded schedule-status page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleInspectionPage"];
+                };
+            };
+            /** @description The page size or cursor is invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No valid session credential. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated user does not hold the live owner grant. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The caller has spent its request allowance. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Authorization or schedule storage could not answer. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    prepareAiArchive: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description A client-chosen 1 to 255 character replay key. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description `chatgpt` or `claude`. */
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrepareArchive"];
+            };
+        };
+        responses: {
+            /** @description Metadata accepted durably; upload bytes to the returned path. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchivePrepared"];
+                };
+            };
+            /** @description The metadata or idempotency header is invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The provider is unsupported or this is not a registered export-agent device. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The idempotency key is in use for different metadata. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    uploadAiArchiveContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The provider selected during preparation. */
+                provider: string;
+                /** @description The prepared operation identifier. */
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description The importer accepted the streamed archive for asynchronous processing. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The operation is not a deliverable archive owned by this device. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The configured importer could not be reached; the operation is marked failed with a safe retryable diagnostic. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The configured importer did not respond within its bounded receipt budget. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     readCapabilities: {
         parameters: {
             query?: never;
@@ -2089,6 +2939,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    readPublicStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current cached public status projection. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicStatusDocument"];
                 };
             };
         };
