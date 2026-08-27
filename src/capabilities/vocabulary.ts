@@ -11,14 +11,16 @@
  * and nothing here needs to change when Platform grows the set. When this
  * client gains a gated feature, its capability joins this one union.
  *
- * Source of truth today: Platform's closed enum serves `content.submit`
- * (capture at `POST /v1/captures`) and `telegram.mini_app` (assertion exchange
- * at `POST /v1/sessions/telegram`). No route family this client ships yet maps
- * to either, which is why every current surface is ungated by declaration.
+ * `github.catalog` and `vault.git` are contract-fixed fixture names for the
+ * integration-pending catalog slice. They are deliberately not generated Edge
+ * vocabulary; a workspace contract change must replace them before live calls
+ * are introduced.
  */
 export const KNOWN_CAPABILITIES = [
   "content.submit",
+  "github.catalog",
   "telegram.mini_app",
+  "vault.git",
 ] as const
 
 export type CapabilityName = (typeof KNOWN_CAPABILITIES)[number]

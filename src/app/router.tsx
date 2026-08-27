@@ -24,6 +24,8 @@ export interface RouteModules {
   operations?: FeatureModuleLoader
   reader?: FeatureModuleLoader
   tags?: FeatureModuleLoader
+  github?: FeatureModuleLoader
+  vault?: FeatureModuleLoader
 }
 
 /**
@@ -43,6 +45,9 @@ const defaultCapture = () => import("@/features/capture/capture-page")
 const defaultOperations = () => import("@/features/operations/operation-page")
 const defaultReader = () => import("@/features/reader/reader-page")
 const defaultTags = () => import("@/features/tags/tags-page")
+const defaultGithub = () =>
+  import("@/features/github-vault/github-catalog-page")
+const defaultVault = () => import("@/features/github-vault/git-vault-page")
 
 // eslint-disable-next-line complexity -- this mirrors the fixed lazy-route registry.
 function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
@@ -53,6 +58,8 @@ function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
     operations: seams.routeModules?.operations ?? defaultOperations,
     reader: seams.routeModules?.reader ?? defaultReader,
     tags: seams.routeModules?.tags ?? defaultTags,
+    github: seams.routeModules?.github ?? defaultGithub,
+    vault: seams.routeModules?.vault ?? defaultVault,
   }
 }
 
@@ -77,6 +84,8 @@ export function createAppRouter(
   const OperationsRoute = lazy(modules.operations)
   const ReaderRoute = lazy(modules.reader)
   const TagsRoute = lazy(modules.tags)
+  const GithubRoute = lazy(modules.github)
+  const VaultRoute = lazy(modules.vault)
 
   return createBrowserRouter([
     { path: "/login", element: <LoginPage /> },
@@ -134,6 +143,42 @@ export function createAppRouter(
             <FeatureRoute
               entry={navEntries.find((entry) => entry.id === "tags")}
               view={TagsRoute}
+            />
+          ),
+        },
+        {
+          path: "github",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "github")}
+              view={GithubRoute}
+            />
+          ),
+        },
+        {
+          path: "github/:repositoryId",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "github")}
+              view={GithubRoute}
+            />
+          ),
+        },
+        {
+          path: "vault",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "vault")}
+              view={VaultRoute}
+            />
+          ),
+        },
+        {
+          path: "vault/:mirrorId",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "vault")}
+              view={VaultRoute}
             />
           ),
         },

@@ -20,7 +20,12 @@
    smart collections, public links, and collaborators remain deferred
    server-side follow-ups.
 8. Add capture by URL and operation tracking with streaming and polling recovery.
-9. Add the GitHub catalog and Git Vault views, including restore verification evidence.
+9. ~~Add the GitHub catalog and Git Vault views, including restore verification evidence.~~ Done as a
+   fixture-backed first slice: capability-gated GitHub connection/catalog/detail views and Git Vault
+   mirror, snapshot, manifest-digest, and restore-drill evidence views are available. Integration is
+   pending because the generated Edge contract declares neither these operations nor their capability
+   names; fixture interactions do not claim a live provider write or backup verification. Star-list
+   management depth and watch configuration remain server-contract follow-ups.
 10. Add social and AI-archive browsing with truthful provenance.
 11. Add settings: sessions, devices, provider accounts, and revocation.
 12. Add operational views, the public status page, accessibility hardening, and workspace

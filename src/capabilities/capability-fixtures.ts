@@ -16,7 +16,9 @@ function documentOf(capabilities: string[]): CapabilityDocument {
  */
 export const fullDeployment = documentOf([
   "content.submit",
+  "github.catalog",
   "telegram.mini_app",
+  "vault.git",
 ])
 
 /**
@@ -41,6 +43,6 @@ export const telegramOnlyDeployment = documentOf(["telegram.mini_app"])
  */
 export const unfamiliarExtras = documentOf([
   "content.submit",
+  "calendar.read",
   "search.web",
-  "vault.git",
 ])

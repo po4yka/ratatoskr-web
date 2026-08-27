@@ -19,9 +19,8 @@ export interface NavEntry {
 
 /**
  * The primary navigation in display order. Every currently shipped surface
- * maps to no capability Platform serves (the closed vocabulary holds
- * `content.submit` and `telegram.mini_app`), so all are ungated by
- * declaration; gated entries join here with their views, not before.
+ * enters only with its route and the matching fixture or generated contract
+ * vocabulary, so a navigation item cannot invent a capability on its own.
  */
 export const NAV_ENTRIES: readonly NavEntry[] = [
   { id: "search", label: "Search", path: "/" },
@@ -33,4 +32,16 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
   },
   { id: "collections", label: "Collections", path: "/collections" },
   { id: "tags", label: "Tags", path: "/tags" },
+  {
+    id: "github",
+    label: "GitHub",
+    path: "/github",
+    requires: "github.catalog",
+  },
+  {
+    id: "vault",
+    label: "Git Vault",
+    path: "/vault",
+    requires: "vault.git",
+  },
 ]

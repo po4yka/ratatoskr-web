@@ -1,6 +1,7 @@
 import { cleanup, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import type { NavEntry } from "@/app/navigation"
+import { NAV_ENTRIES } from "@/app/navigation"
 import type { Gateway } from "@/api/gateway/client"
 import {
   captureOnlyDeployment,
@@ -70,6 +71,26 @@ describe("capability-gated navigation", () => {
       screen.getByRole("link", { name: /^collections$/i })
     ).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /^search$/i })).toBeInTheDocument()
+  })
+
+  it("hides GitHub and Vault when their capabilities are absent", async () => {
+    storeCustody("credential-1")
+    renderApp({
+      gateway: gatewayOf(() => Promise.resolve({ capabilities: [] })),
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole("banner")).toBeInTheDocument()
+    })
+    expect(NAV_ENTRIES.map((entry) => entry.id)).toEqual(
+      expect.arrayContaining(["github", "vault"])
+    )
+    expect(
+      screen.queryByRole("link", { name: /^github$/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: /^git vault$/i })
+    ).not.toBeInTheDocument()
   })
 
   it("keeps core entries while discovery is pending or has failed", async () => {
