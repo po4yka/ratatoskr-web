@@ -44,4 +44,35 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
     path: "/vault",
     requires: "vault.git",
   },
+  { id: "social-x", label: "X", path: "/social/x", requires: "social.x" },
+  {
+    id: "instagram",
+    label: "Instagram",
+    path: "/social/instagram",
+    requires: "social.instagram",
+  },
+  {
+    id: "threads",
+    label: "Threads",
+    path: "/social/threads",
+    requires: "social.threads",
+  },
+  {
+    id: "chatgpt-archive",
+    label: "ChatGPT Archive",
+    path: "/archives/chatgpt",
+    requires: "ai.archive.chatgpt",
+  },
+  {
+    id: "claude-archive",
+    label: "Claude Archive",
+    path: "/archives/claude",
+    requires: "ai.archive.claude",
+  },
+  {
+    id: "connections",
+    label: "Connections",
+    path: "/connections",
+    requires: "connections.providers",
+  },
 ]

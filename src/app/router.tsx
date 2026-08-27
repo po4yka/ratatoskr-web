@@ -6,6 +6,8 @@ import { NAV_ENTRIES, type NavEntry } from "@/app/navigation"
 import { Shell } from "@/components/shell/shell"
 import LoginPage from "@/features/login/login-page"
 
+/* eslint-disable max-lines -- The fixed lazy route registry is one audit-friendly route tree. */
+
 /** A feature view's module shape: the default export is what renders. */
 export interface FeatureModule {
   default: ComponentType
@@ -26,6 +28,9 @@ export interface RouteModules {
   tags?: FeatureModuleLoader
   github?: FeatureModuleLoader
   vault?: FeatureModuleLoader
+  social?: FeatureModuleLoader
+  aiArchive?: FeatureModuleLoader
+  connections?: FeatureModuleLoader
 }
 
 /**
@@ -48,6 +53,12 @@ const defaultTags = () => import("@/features/tags/tags-page")
 const defaultGithub = () =>
   import("@/features/github-vault/github-catalog-page")
 const defaultVault = () => import("@/features/github-vault/git-vault-page")
+const defaultSocial = () =>
+  import("@/features/social-ai-archive/social-posts-page")
+const defaultAiArchive = () =>
+  import("@/features/social-ai-archive/ai-archive-page")
+const defaultConnections = () =>
+  import("@/features/social-ai-archive/connections-page")
 
 // eslint-disable-next-line complexity -- this mirrors the fixed lazy-route registry.
 function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
@@ -60,6 +71,9 @@ function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
     tags: seams.routeModules?.tags ?? defaultTags,
     github: seams.routeModules?.github ?? defaultGithub,
     vault: seams.routeModules?.vault ?? defaultVault,
+    social: seams.routeModules?.social ?? defaultSocial,
+    aiArchive: seams.routeModules?.aiArchive ?? defaultAiArchive,
+    connections: seams.routeModules?.connections ?? defaultConnections,
   }
 }
 
@@ -72,6 +86,7 @@ function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
  * region, so a slow chunk holds one pending region on cold entry while the
  * shell stays put.
  */
+// eslint-disable-next-line max-lines-per-function -- The route registry is intentionally adjacent for direct-route review.
 export function createAppRouter(
   authenticated: boolean,
   seams: RouterSeams = {}
@@ -86,6 +101,9 @@ export function createAppRouter(
   const TagsRoute = lazy(modules.tags)
   const GithubRoute = lazy(modules.github)
   const VaultRoute = lazy(modules.vault)
+  const SocialRoute = lazy(modules.social)
+  const AiArchiveRoute = lazy(modules.aiArchive)
+  const ConnectionsRoute = lazy(modules.connections)
 
   return createBrowserRouter([
     { path: "/login", element: <LoginPage /> },
@@ -182,6 +200,34 @@ export function createAppRouter(
             />
           ),
         },
+        ...socialRoutes(navEntries, SocialRoute),
+        {
+          path: "archives/chatgpt/:view?/:itemId?",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "chatgpt-archive")}
+              view={AiArchiveRoute}
+            />
+          ),
+        },
+        {
+          path: "archives/claude/:view?/:itemId?",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "claude-archive")}
+              view={AiArchiveRoute}
+            />
+          ),
+        },
+        {
+          path: "connections",
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "connections")}
+              view={ConnectionsRoute}
+            />
+          ),
+        },
         {
           path: "documents/:documentId",
           element: <FeatureRoute view={ReaderRoute} />,
@@ -190,6 +236,23 @@ export function createAppRouter(
       ],
     },
   ])
+}
+
+function socialRoutes(
+  navEntries: readonly NavEntry[],
+  SocialRoute: ComponentType
+) {
+  return ["x", "instagram", "threads"].map((provider) => ({
+    path: `social/${provider}/:postId?`,
+    element: (
+      <FeatureRoute
+        entry={navEntries.find(
+          (entry) => entry.id === `social-${provider}` || entry.id === provider
+        )}
+        view={SocialRoute}
+      />
+    ),
+  }))
 }
 
 function resolveNavigation(seams: RouterSeams): readonly NavEntry[] {

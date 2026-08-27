@@ -17,6 +17,12 @@ function documentOf(capabilities: string[]): CapabilityDocument {
 export const fullDeployment = documentOf([
   "content.submit",
   "github.catalog",
+  "ai.archive.chatgpt",
+  "ai.archive.claude",
+  "connections.providers",
+  "social.instagram",
+  "social.threads",
+  "social.x",
   "telegram.mini_app",
   "vault.git",
 ])

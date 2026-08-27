@@ -19,6 +19,12 @@
 export const KNOWN_CAPABILITIES = [
   "content.submit",
   "github.catalog",
+  "ai.archive.chatgpt",
+  "ai.archive.claude",
+  "connections.providers",
+  "social.instagram",
+  "social.threads",
+  "social.x",
   "telegram.mini_app",
   "vault.git",
 ] as const

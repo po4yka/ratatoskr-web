@@ -26,7 +26,15 @@
    pending because the generated Edge contract declares neither these operations nor their capability
    names; fixture interactions do not claim a live provider write or backup verification. Star-list
    management depth and watch configuration remain server-contract follow-ups.
-10. Add social and AI-archive browsing with truthful provenance.
+10. ~~Add social and AI-archive browsing with truthful provenance.~~ Done as a
+    fixture-backed first slice: capability-gated X, Instagram, and Threads
+    post readers render supplied acquisition provenance, folder filters, and
+    Document IR links; ChatGPT and Claude archive readers render import
+    completeness, conversations, projects, and Claude artifact versions.
+    Provider connections expose only supplied OAuth redirects and confirmed
+    fixture disconnects. Local-backup status follows explicit evidence rather
+    than authorization. Integration remains pending on Edge projections,
+    capability names, OAuth/disconnect semantics, and pagination.
 11. Add settings: sessions, devices, provider accounts, and revocation.
 12. Add operational views, the public status page, accessibility hardening, and workspace
     end-to-end tests.

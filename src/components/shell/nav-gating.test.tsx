@@ -26,6 +26,7 @@ const gatedRegistry: readonly NavEntry[] = [
   },
 ]
 
+// eslint-disable-next-line max-lines-per-function -- Navigation capability cases share one reset fixture.
 describe("capability-gated navigation", () => {
   beforeEach(() => {
     sessionStorage.clear()
@@ -90,6 +91,27 @@ describe("capability-gated navigation", () => {
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("link", { name: /^git vault$/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it("hides social and AI archive providers when their capabilities are absent", async () => {
+    storeCustody("credential-1")
+    renderApp({
+      gateway: gatewayOf(() => Promise.resolve({ capabilities: [] })),
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole("banner")).toBeInTheDocument()
+    })
+    expect(NAV_ENTRIES.map((entry) => entry.id)).toEqual(
+      expect.arrayContaining(["social-x", "chatgpt-archive", "claude-archive"])
+    )
+    expect(screen.queryByRole("link", { name: /^x$/i })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: /^chatgpt archive$/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: /^claude archive$/i })
     ).not.toBeInTheDocument()
   })
 

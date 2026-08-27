@@ -75,6 +75,19 @@ describe("capability-gated routes", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("explains a direct social reader route whose provider is absent", async () => {
+    window.history.replaceState(null, "", "/social/x")
+    storeCustody("credential-1")
+    renderApp({ gateway: gatewayOf(() => Promise.resolve(emptyDeployment)) })
+
+    expect(
+      await screen.findByRole("heading", {
+        name: /not available in this deployment/i,
+      })
+    ).toBeInTheDocument()
+    expect(window.location.pathname).toBe("/social/x")
+  })
+
   it("holds the designed pending region while discovery has not answered", async () => {
     window.history.replaceState(null, "", "/collections")
     storeCustody("credential-1")
