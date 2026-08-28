@@ -16,6 +16,16 @@ describe("the protected shell gate", () => {
     window.history.replaceState(null, "", "/collections")
     renderApp({
       gateway: gatewayOf(() => Promise.resolve({ capabilities: [] })),
+      // This test is about the shell returning the user to the URL they asked for, and the
+      // collections page itself is covered by its own suite. Left to the default the assertion
+      // below also waits on Vitest transforming that page and its whole dependency subtree, which
+      // is wall-clock work unrelated to the redirect: under runner contention it is what pushed
+      // this past Testing Library's poll window and made it the flakiest test in the suite. The
+      // router's own test seam supplies an already-resolved module instead.
+      routeModules: {
+        collections: () =>
+          Promise.resolve({ default: () => <h1>Collections</h1> }),
+      },
     })
 
     // The shell never renders; the unauthorized surface does.
@@ -56,7 +66,18 @@ const accepting = () => Promise.resolve({ capabilities: [] })
 
 async function renderAuthenticatedShell() {
   storeCustody("credential-1")
-  renderApp({ gateway: gatewayOf(accepting) })
+  // Every test below is about the shell's own chrome — landmarks, the skip link, the theme
+  // switcher, the account menu — and none of them is about the search page that `/` renders.
+  // Left to the default, each one still pays for Vitest transforming that page and its dependency
+  // subtree, and that work competes with the interaction under test for the same event loop: under
+  // runner contention it is what kept the account menu from opening inside the poll window. The
+  // router's own test seam supplies an already-resolved module instead.
+  renderApp({
+    gateway: gatewayOf(accepting),
+    routeModules: {
+      search: () => Promise.resolve({ default: () => <h1>Search</h1> }),
+    },
+  })
 
   await waitFor(() => {
     expect(screen.getByRole("banner")).toBeInTheDocument()
