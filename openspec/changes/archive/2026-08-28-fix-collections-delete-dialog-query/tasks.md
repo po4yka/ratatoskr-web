@@ -10,4 +10,4 @@
 
 - [x] 3.1 Confirm the assertion still fails when it should: change the expected dialog copy to a string present nowhere, observe `1 failed | 3 passed`, restore it.
 - [x] 3.2 Run the documented gate: `npm run api:check`, `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test` (40 files, 157 tests), `npm run build`. All pass.
-- [ ] 3.3 Observe the hosted `ci` workflow pass on the integrated commit.
+- [x] 3.3 Observe the hosted `ci` workflow pass on the integrated commit: run 32995983078 on `3ad0b347`, conclusion `success`.
