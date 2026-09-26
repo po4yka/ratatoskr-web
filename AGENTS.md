@@ -249,8 +249,17 @@ feedback for an interaction — the same rule the itshover icons answer to.
 
 Ten skills are installed as project skills, pinned in `skills-lock.json`, vendored as real files
 under `.agents/skills/` and linked into `.claude/skills/`. Codex reads the first location, Claude
-Code the second, and OpenCode scans both, so all three assistants read one copy and nothing belongs
-under `.opencode/skills/`. Restore them with `npx skills experimental_install`. All are MIT.
+Code the second, and OpenCode scans both, so all three assistants read one copy and nothing of this
+vendored set belongs under `.opencode/skills/`. Restore them with `npx skills
+experimental_install`. All are MIT.
+
+The six `openspec-*` workflow skills are a separate, tool-generated family and the exception to that
+single-copy rule. The `openspec` tooling materializes them once per assistant syntax: generic under
+`.agents/skills/` (invoked as `$openspec-x`), Claude Code flavor under `.claude/skills/`
+(`/opsx:x`), and OpenCode flavor under `.opencode/skills/` (`/opsx-x`). Their companion commands sit
+beside them in `.opencode/commands/opsx-*.md` and `.claude/commands/opsx/`. Treat all three trees as
+generated: do not hand-edit or de-duplicate them by hand; regenerate with the openspec tooling
+instead.
 
 They are here because this client is read first and clicked second, and the difference between a
 reading surface that feels right and one that does not is made of decisions too small to argue about
