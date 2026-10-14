@@ -78,12 +78,21 @@ const STATUS_TEXT: Readonly<Record<string, string>> = {
   cancelled: "Cancelled",
 }
 
+/** The phases that ratatoskr-notes reports for a connect, as display text. */
+const PHASE_TEXT: Readonly<Record<string, string>> = {
+  login: "Step 1 of 4: Obsidian login",
+  setup: "Step 2 of 4: setup of the sync client",
+  first_sync: "Step 3 of 4: first sync of the vault",
+  indexing: "Step 4 of 4: indexing of the files",
+}
+
 function statusLine(snapshot: OperationSnapshot | null): string {
   if (snapshot === null) return "Reading the connect operation"
   const status = STATUS_TEXT[snapshot.status] ?? snapshot.status
-  return snapshot.stage
-    ? `${status} · ${snapshot.stage.replaceAll("_", " ")}`
-    : status
+  if (!snapshot.stage) return status
+  const phase =
+    PHASE_TEXT[snapshot.stage] ?? snapshot.stage.replaceAll("_", " ")
+  return `${status} · ${phase}`
 }
 
 /** The status and the stage of one connect operation, announced politely. */
@@ -106,6 +115,11 @@ export function ConnectProgress({
       {snapshot?.errors?.map((failure) => (
         <p className="text-body text-destructive" key={failure.code}>
           {describeNotesFailure(failure, failure.message)}
+        </p>
+      ))}
+      {snapshot?.warnings?.map((warning) => (
+        <p className="text-body" key={warning.code}>
+          {describeNotesFailure(warning, warning.message)}
         </p>
       ))}
       {polling ? (

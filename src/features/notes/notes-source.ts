@@ -30,10 +30,23 @@ export interface ConnectSync {
   readonly sync_login: SyncLogin
 }
 
+/**
+ * The 202 answer of Edge: the operation that Edge minted, and the answer of
+ * ratatoskr-notes unchanged under `connection`.
+ */
 export interface ConnectAccepted {
-  readonly operation_id?: string
-  readonly connection_id: string
-  readonly state: string
+  readonly operation_id: string
+  readonly status: string
+  readonly connection: {
+    readonly connection_id: string
+    readonly channel: string
+    readonly state: string
+    readonly operation: {
+      readonly operation_id: string
+      readonly kind: string
+      readonly lane: string
+    }
+  }
 }
 
 export interface NotesFile {
@@ -82,8 +95,9 @@ export function notesSource(gateway: Gateway) {
       const accepted = await gateway.request<ConnectAccepted>({
         path: CONNECTIONS,
         method: "POST",
+        // No Idempotency-Key: Edge takes none here, because its ledger would
+        // keep a digest of a body that holds the passwords.
         body,
-        headers: { "Idempotency-Key": crypto.randomUUID() },
       })
       return required(accepted)
     },
@@ -133,6 +147,16 @@ const MESSAGES: Readonly<Record<string, string>> = {
     "The server did not accept the form. Examine the fields and try again.",
   "notes.service.unavailable":
     "The notes service is not available now. Try again later.",
+  "notes.sync.journal_unreadable":
+    "The vault is connected, but the server cannot see when the Obsidian login expires.",
+  "edge.upstream_unavailable":
+    "The server could not reach the notes service. Try again later.",
+  "edge.upstream_timeout":
+    "The notes service did not answer in time. Try again later.",
+  "edge.upstream_invalid_response":
+    "The notes service gave an answer that the server cannot use. Try again later.",
+  "platform.operation.stale":
+    "The server stopped getting the progress of this connect. Disconnect the vault and connect it again.",
 }
 
 const KIND_MESSAGES: Readonly<Record<string, string>> = {

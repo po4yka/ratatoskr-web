@@ -21,8 +21,10 @@ change. The shapes:
 - `POST /v1/notes/connections` takes `{ channel: "sync", vault_key, vault_display_name,
   sync_login: { email, password, mfa_code?, e2e_password? } }`, the body that
   `ratatoskr-notes` reads (`services/notes/src/api.rs`, `ConnectRequest`, `deny_unknown_fields`).
-  It answers `202` with `{ operation_id, connection_id, channel, state }`. Edge adds
-  `operation_id`.
+  Edge answers `202` with `{ operation_id, status: "accepted", connection }`, and `connection` is
+  the answer of `ratatoskr-notes` unchanged: `{ connection_id, channel, state, operation: {
+  operation_id, kind, lane } }` (Platform `crates/public-api/src/notes.rs`). The request carries no
+  `Idempotency-Key`: Edge takes none, because its ledger would keep a digest of the body.
 - `DELETE /v1/notes/connections/{id}` answers `204`.
 - `GET /v1/notes/connections/{id}/files` answers `{ files: [{ path, revision }], next_cursor }`.
 - `GET /v1/notes/connections/{id}/files/{path}` answers `{ path, revision, content }`.
@@ -50,7 +52,12 @@ refuses a form whose notice is not accepted.
 
 The connect answer carries the operation id. The view reads `/v1/operations/{id}`, follows
 `/v1/operations/{id}/events` when the gateway can stream, and polls when it cannot, and says so. The
-stage is shown as text and the view branches only on the status.
+stage is shown as text and the view branches only on the status. The view names the four phases of a
+`sync` connect, `login`, `setup`, `first_sync` and `indexing`, as steps of four, and shows any other
+stage as its own text. A terminal snapshot shows one message for each code in `errors` and
+`warnings`: the codes of `ratatoskr-notes`, the `edge.upstream_*` codes of a forward that failed, and
+`platform.operation.stale` of the stale-operation reaper. A code without a message shows the server
+text of its envelope.
 
 ## Risks / Trade-offs
 

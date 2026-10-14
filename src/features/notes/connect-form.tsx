@@ -113,7 +113,7 @@ export function ConnectForm({
     setOperationId(null)
     try {
       const answer = await source.connect(bodyOf(plain, secrets))
-      setOperationId(answer.operation_id ?? null)
+      setOperationId(answer.operation_id)
       onChanged()
     } catch (failure) {
       setProblem(
