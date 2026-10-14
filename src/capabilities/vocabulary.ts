@@ -15,6 +15,10 @@
  * integration-pending catalog slice. They are deliberately not generated Edge
  * vocabulary; a workspace contract change must replace them before live calls
  * are introduced.
+ *
+ * `notes.vaults` gates the Obsidian vault routes of workspace change
+ * add-notes-vault-connections. The pinned contract does not list it yet, and
+ * Platform must publish it before the notes route is available.
  */
 export const KNOWN_CAPABILITIES = [
   "content.submit",
@@ -25,6 +29,7 @@ export const KNOWN_CAPABILITIES = [
   "ai.archive.chatgpt",
   "ai.archive.claude",
   "connections.providers",
+  "notes.vaults",
   "social.instagram",
   "social.threads",
   "social.x",

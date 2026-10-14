@@ -45,6 +45,12 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
     path: "/vault",
     requires: "vault.git",
   },
+  {
+    id: "notes",
+    label: "Notes",
+    path: "/notes",
+    requires: "notes.vaults",
+  },
   { id: "social-x", label: "X", path: "/social/x", requires: "social.x" },
   {
     id: "instagram",

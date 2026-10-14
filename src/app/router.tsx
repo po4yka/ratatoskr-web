@@ -28,6 +28,7 @@ export interface RouteModules {
   tags?: FeatureModuleLoader
   github?: FeatureModuleLoader
   vault?: FeatureModuleLoader
+  notes?: FeatureModuleLoader
   social?: FeatureModuleLoader
   aiArchive?: FeatureModuleLoader
   connections?: FeatureModuleLoader
@@ -57,6 +58,7 @@ const defaultTags = () => import("@/features/tags/tags-page")
 const defaultGithub = () =>
   import("@/features/github-vault/github-catalog-page")
 const defaultVault = () => import("@/features/github-vault/git-vault-page")
+const defaultNotes = () => import("@/features/notes/notes-page")
 const defaultSocial = () =>
   import("@/features/social-ai-archive/social-posts-page")
 const defaultAiArchive = () =>
@@ -82,6 +84,7 @@ function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
     tags: seams.routeModules?.tags ?? defaultTags,
     github: seams.routeModules?.github ?? defaultGithub,
     vault: seams.routeModules?.vault ?? defaultVault,
+    notes: seams.routeModules?.notes ?? defaultNotes,
     social: seams.routeModules?.social ?? defaultSocial,
     aiArchive: seams.routeModules?.aiArchive ?? defaultAiArchive,
     connections: seams.routeModules?.connections ?? defaultConnections,
@@ -118,6 +121,7 @@ export function createAppRouter(
   const TagsRoute = lazy(modules.tags)
   const GithubRoute = lazy(modules.github)
   const VaultRoute = lazy(modules.vault)
+  const NotesRoute = lazy(modules.notes)
   const SocialRoute = lazy(modules.social)
   const AiArchiveRoute = lazy(modules.aiArchive)
   const ConnectionsRoute = lazy(modules.connections)
@@ -221,6 +225,15 @@ export function createAppRouter(
             />
           ),
         },
+        ...["notes", "notes/:connectionId"].map((path) => ({
+          path,
+          element: (
+            <FeatureRoute
+              entry={navEntries.find((entry) => entry.id === "notes")}
+              view={NotesRoute}
+            />
+          ),
+        })),
         ...socialRoutes(navEntries, SocialRoute),
         {
           path: "archives/chatgpt/:view?/:itemId?",

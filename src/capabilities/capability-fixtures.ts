@@ -21,6 +21,7 @@ export const fullDeployment = documentOf([
   "ai.archive.chatgpt",
   "ai.archive.claude",
   "connections.providers",
+  "notes.vaults",
   "social.instagram",
   "social.threads",
   "social.x",
