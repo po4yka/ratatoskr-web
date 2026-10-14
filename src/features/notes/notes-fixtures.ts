@@ -51,3 +51,46 @@ export function connectOperation(status: string, stage: string | null) {
     retryable: false,
   }
 }
+
+/** One error or warning envelope of an operation snapshot. */
+export interface Envelope {
+  readonly code: string
+  readonly message: string
+}
+
+/**
+ * A terminal snapshot of the connect operation, with the `errors` and the
+ * `warnings` that ratatoskr-notes, Edge or the stale-operation reaper wrote.
+ */
+export function endedOperation(
+  status: string,
+  reported: {
+    readonly errors?: readonly Envelope[]
+    readonly warnings?: readonly Envelope[]
+  }
+) {
+  return {
+    ...connectOperation(status, null),
+    errors: (reported.errors ?? []).map((e) => ({ ...e, retryable: false })),
+    warnings: reported.warnings ?? [],
+  }
+}
+
+/**
+ * The 202 answer of Edge to `POST /v1/notes/connections`: the operation that
+ * Edge minted, and the answer of ratatoskr-notes unchanged under `connection`.
+ */
+export const connectAccepted = {
+  operation_id: "operation-1",
+  status: "accepted",
+  connection: {
+    connection_id: "connection-1",
+    channel: "sync",
+    state: "connecting",
+    operation: {
+      operation_id: "operation-1",
+      kind: "notes.connection.connect",
+      lane: "ratatoskr-notes",
+    },
+  },
+}

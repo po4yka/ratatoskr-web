@@ -1,19 +1,16 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { GatewayRequest } from "@/api/gateway/client"
-import { connectOperation, renderNotes } from "./notes-fixtures"
+import {
+  connectAccepted as accepted,
+  connectOperation,
+  renderNotes,
+} from "./notes-fixtures"
 
 const SECRETS = {
   password: "marker-password-7f3a",
   mfa: "550017",
   e2e: "marker-e2e-91bc",
-}
-
-const accepted = {
-  operation_id: "operation-1",
-  connection_id: "connection-1",
-  channel: "sync",
-  state: "connecting",
 }
 
 function isConnect(request: GatewayRequest): boolean {

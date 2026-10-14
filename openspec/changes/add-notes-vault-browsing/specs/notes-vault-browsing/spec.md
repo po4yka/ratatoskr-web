@@ -32,12 +32,31 @@ log call or in the rendered document after the submit.
 ### Requirement: The connect operation and its failures are shown
 
 The view SHALL show the status and the stage of the `notes.connection.connect` operation, and SHALL
-show each stable notes error code as its own message.
+show each stable notes error code as its own message. The view SHALL follow the operation that the
+`202` answer of Edge names, and the connect request SHALL NOT carry an `Idempotency-Key`, because
+Edge keeps no digest of the body. The view SHALL name the phases `login`, `setup`, `first_sync` and
+`indexing` as steps of four, and SHALL show one message for each terminal error code and warning of
+the operation, from `ratatoskr-notes`, from Edge, or from the stale-operation reaper of Platform.
 
 #### Scenario: The operation is in its first sync
 
 - **WHEN** the connect answer names an operation whose snapshot is `running` with the stage `first_sync`
 - **THEN** the view shows the stage, verified by `src/features/notes/connect.test.tsx` "the connect operation shows its stage"
+
+#### Scenario: The connect follows the operation of Edge
+
+- **WHEN** Edge answers `202` with `{ operation_id, status, connection }`
+- **THEN** the view reads `/v1/operations/{operation_id}` and the request has no `Idempotency-Key`, verified by `src/features/notes/connect-operation.test.tsx` "the connect sends no Idempotency-Key and follows the operation that Edge names"
+
+#### Scenario: Each phase is a named step
+
+- **WHEN** the snapshot is `running` with the stage `login`, `setup`, `first_sync` or `indexing`
+- **THEN** the view names the phase as step 1, 2, 3 or 4 of 4, verified by `src/features/notes/connect-operation.test.tsx` "the connect operation names the phase %s"
+
+#### Scenario: A terminal code or a warning has its own message
+
+- **WHEN** the snapshot is `failed` with a code of `ratatoskr-notes`, of Edge or `platform.operation.stale`, or `partially_succeeded` with `notes.sync.journal_unreadable`
+- **THEN** the view shows the message of that code, verified by `src/features/notes/connect-operation.test.tsx` "a failed connect operation names the reason of %s" and "a connect that ends with a warning names the warning"
 
 #### Scenario: The end-to-end password is wrong
 
