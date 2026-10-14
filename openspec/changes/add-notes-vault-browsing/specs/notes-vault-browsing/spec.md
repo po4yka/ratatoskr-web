@@ -67,7 +67,11 @@ the operation, from `ratatoskr-notes`, from Edge, or from the stale-operation re
 
 The view SHALL list the connections with their channel and state, list the files of one connection,
 show the text of one file and the files that link to it, and offer no control that changes a file.
-A disconnect SHALL ask for a confirmation that names the vault.
+A disconnect SHALL ask for a confirmation that names the vault. The view SHALL read the bytes of a
+file from `GET /v1/notes/connections/{id}/files/{*path}` and its links, tags, properties and
+backlinks from `GET /v1/notes/connections/{id}/index/{*path}`, with the file path sent as path
+segments. A file that is not UTF-8 text SHALL be named as not text, and `notes.file.not_found` and
+`notes.connection.cleanup_failed` SHALL each have their own message.
 
 #### Scenario: The owner opens a file
 
@@ -78,3 +82,23 @@ A disconnect SHALL ask for a confirmation that names the vault.
 
 - **WHEN** the owner selects disconnect for a vault
 - **THEN** no request is sent until the owner confirms in a dialog that names the vault, verified by `src/features/notes/browse.test.tsx` "a disconnect is sent only after a confirmation that names the vault"
+
+#### Scenario: The file and its index come from the read routes
+
+- **WHEN** the owner opens `Projects/Plan.md`
+- **THEN** the view reads `.../files/Projects/Plan.md` and `.../index/Projects/Plan.md`, verified by `src/features/notes/file-panel.test.tsx` "a file is read by its path segments, from the file and index routes"
+
+#### Scenario: The index shows links, tags and properties
+
+- **WHEN** the index of the file has a resolved link, a link without a target, a tag and a frontmatter property
+- **THEN** the view links the resolved target, marks the other link as not in the vault, and shows the tag and the property, verified by `src/features/notes/file-panel.test.tsx` "a file shows its links, tags and properties from the index"
+
+#### Scenario: A file is not text, or is gone
+
+- **WHEN** the bytes of the file are not UTF-8, or the file route answers `notes.file.not_found`
+- **THEN** the view says that the file is not text, or that it does not exist in the vault now, verified by `src/features/notes/file-panel.test.tsx` "a file that is not text says so" and "a file that is gone names the reason"
+
+#### Scenario: The server cannot finish a disconnect
+
+- **WHEN** the disconnect answers `notes.connection.cleanup_failed`
+- **THEN** the view says that the vault is still connected and to try again later, verified by `src/features/notes/browse.test.tsx` "a disconnect that the server cannot finish says to try again"

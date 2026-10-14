@@ -10,6 +10,20 @@ export interface NotesRender {
   readonly respond: NotesResponder
   /** The capability names of the deployment; `notes.vaults` when absent. */
   readonly capabilities?: readonly string[]
+  /**
+   * The bytes of a raw read, such as a file of a vault. Without it the
+   * gateway double cannot stream, as before.
+   */
+  readonly stream?: (request: GatewayRequest) => Uint8Array
+}
+
+function bodyOf(bytes: Uint8Array): ReadableStream<Uint8Array> {
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue(bytes)
+      controller.close()
+    },
+  })
 }
 
 /**
@@ -34,6 +48,12 @@ export function renderNotes(options: NotesRender): GatewayRequest[] {
     }
     return options.respond(request)
   })
+  const { stream } = options
+  if (stream !== undefined)
+    gateway.stream = async (request) => {
+      calls.push(request)
+      return bodyOf(stream(request))
+    }
   renderApp({ gateway })
   return calls
 }

@@ -1,55 +1,8 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import type { GatewayRequest } from "@/api/gateway/client"
+import { browse, fileBytes } from "./browse-fixtures"
 import { renderNotes } from "./notes-fixtures"
-
-const connections = {
-  connections: [
-    {
-      connection_id: "connection-1",
-      channel: "sync",
-      vault_display_name: "Research",
-      state: "active",
-    },
-    {
-      connection_id: "connection-2",
-      channel: "plugin",
-      vault_display_name: "Journal",
-      state: "login_expired",
-    },
-  ],
-}
-
-const PLAN = "Projects%2FPlan.md"
-
-function browse(request: GatewayRequest): unknown {
-  switch (request.path) {
-    case "/v1/notes/connections":
-      return connections
-    case "/v1/notes/connections/connection-1/files":
-      return {
-        files: [
-          { path: "Projects/Plan.md", revision: "sha256:aa" },
-          { path: "Inbox.md", revision: "sha256:bb" },
-        ],
-        next_cursor: null,
-      }
-    case `/v1/notes/connections/connection-1/files/${PLAN}`:
-      return {
-        path: "Projects/Plan.md",
-        revision: "sha256:aa",
-        content: "# Plan\nShip the reader first.",
-      }
-    case `/v1/notes/connections/connection-1/index/${PLAN}`:
-      return {
-        path: "Projects/Plan.md",
-        revision: "sha256:aa",
-        backlinks: [{ path: "Inbox.md" }],
-      }
-    default:
-      return undefined
-  }
-}
 
 describe("the notes vault browse", () => {
   beforeEach(() => {
@@ -101,7 +54,11 @@ describe("the notes vault browse", () => {
   })
 
   it("a file shows its text and its backlinks and cannot be edited", async () => {
-    renderNotes({ path: "/notes/connection-1", respond: browse })
+    renderNotes({
+      path: "/notes/connection-1",
+      respond: browse,
+      stream: fileBytes,
+    })
 
     fireEvent.click(
       await screen.findByRole("link", { name: "Projects/Plan.md" })
@@ -137,6 +94,35 @@ describe("the notes vault browse", () => {
         "/v1/notes/connections/connection-1",
       ])
     )
+  })
+
+  it("a disconnect that the server cannot finish says to try again", async () => {
+    renderNotes({
+      path: "/notes",
+      respond: (request) => {
+        if (request.method !== "DELETE") return browse(request)
+        throw {
+          kind: "terminal",
+          status: 503,
+          code: "notes.connection.cleanup_failed",
+          message: "The connection could not be removed now.",
+        }
+      },
+    })
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /disconnect research/i })
+    )
+    const dialog = await screen.findByRole("alertdialog", {
+      name: /disconnect research/i,
+    })
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /disconnect vault/i })
+    )
+
+    expect(
+      await screen.findByText(/is still connected\. try again later/i)
+    ).toBeInTheDocument()
   })
 
   it("the route explains its absence when the deployment lacks notes.vaults", async () => {
