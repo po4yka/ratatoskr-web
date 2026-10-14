@@ -1,0 +1,60 @@
+## Context
+
+Workspace change `add-notes-vault-connections` defines the routes. `docs/NOTES_AND_SITES.md`
+section 7 of the workspace lists `POST /v1/notes/connections` (202 with an operation) and
+`DELETE /v1/notes/connections/{id}` (204). Its design D4 says that the connect body carries the
+Obsidian password, the MFA code and the end-to-end password, and D10 says that the operation kind is
+`notes.connection.connect` with the phases `login`, `setup`, `first_sync` and `indexing`. Its risk
+list says that the connect flow states that the server can read the whole vault before it asks for
+the end-to-end password. The read routes of its group 7 are not built yet.
+
+## Decisions
+
+### D1. One module holds the notes wire shapes
+
+The pinned Edge contract has no `/v1/notes` route. `notes-source.ts` holds the request and response
+shapes and the calls through the gateway. It is the only file that a later regeneration commit must
+change. The shapes:
+
+- `GET /v1/notes/connections` answers `{ connections: [{ connection_id, channel,
+  vault_display_name, state }] }`.
+- `POST /v1/notes/connections` takes `{ channel: "sync", vault_key, vault_display_name,
+  sync_login: { email, password, mfa_code?, e2e_password? } }`, the body that
+  `ratatoskr-notes` reads (`services/notes/src/api.rs`, `ConnectRequest`, `deny_unknown_fields`).
+  It answers `202` with `{ operation_id, connection_id, channel, state }`. Edge adds
+  `operation_id`.
+- `DELETE /v1/notes/connections/{id}` answers `204`.
+- `GET /v1/notes/connections/{id}/files` answers `{ files: [{ path, revision }], next_cursor }`.
+- `GET /v1/notes/connections/{id}/files/{path}` answers `{ path, revision, content }`.
+- `GET /v1/notes/connections/{id}/index/{path}` answers `{ path, revision, backlinks: [{ path }] }`.
+
+A file path is one URL segment, encoded with `encodeURIComponent`.
+
+### D2. The capability name is `notes.vaults`
+
+The route and the navigation entry require `notes.vaults`. Platform must publish this name in the
+capability document. Until it does, the route shows the explained absence.
+
+### D3. Secrets are form state for one submit
+
+The password, the MFA code and the end-to-end password live only in React state. The submit sends
+them once in the request body. The form clears them when the request ends, with any result. They
+never enter a URL, browser storage, a log call, or an error message.
+
+### D4. The notice comes before the end-to-end password
+
+The end-to-end password field is not in the document until the owner accepts the notice. The submit
+refuses a form whose notice is not accepted.
+
+### D5. Progress uses the public operation API
+
+The connect answer carries the operation id. The view reads `/v1/operations/{id}`, follows
+`/v1/operations/{id}/events` when the gateway can stream, and polls when it cannot, and says so. The
+stage is shown as text and the view branches only on the status.
+
+## Risks / Trade-offs
+
+- [The read routes are not built] → The shapes in D1 are assumptions. The tests mock them, and the
+  coordinator checks them against `ratatoskr-notes` group 7.
+- [Hand-written wire types] → `AGENTS.md` asks for generated types. The pinned contract has none
+  for `/v1/notes`, so one module holds them until a contract change brings the routes.
