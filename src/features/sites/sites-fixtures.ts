@@ -170,3 +170,37 @@ export function publicationRoutes(request: GatewayRequest): unknown {
     }
   return siteRoutes(request)
 }
+
+/** The release history of `blog` that `GET /v1/sites/blog/releases` answers. */
+export interface ReleaseHistoryFixture {
+  readonly current_release_id: string | null
+  readonly releases: readonly object[]
+  readonly failed_builds: readonly object[]
+}
+
+/**
+ * The publication routes, the release history of `blog`, the build request,
+ * which answers 202 with an operation, and that operation, which runs.
+ */
+export function releaseRoutes(history: ReleaseHistoryFixture) {
+  return (request: GatewayRequest): unknown => {
+    if (request.path === "/v1/sites/blog/releases")
+      return request.method === "POST"
+        ? { operation_id: "operation-9", status: "accepted" }
+        : history
+    if (request.path === "/v1/operations/operation-9")
+      return {
+        operation_id: "operation-9",
+        kind: "sites.release.build",
+        status: "running",
+        stage: null,
+        progress_percent: null,
+        status_changed_at: "2026-10-15T10:00:00Z",
+        created_at: "2026-10-15T09:59:00Z",
+        retryable: false,
+        errors: [],
+        warnings: [],
+      }
+    return publicationRoutes(request)
+  }
+}
