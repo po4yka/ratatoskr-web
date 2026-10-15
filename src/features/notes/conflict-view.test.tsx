@@ -52,6 +52,24 @@ describe("the conflict view", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("shows no reason until the operation answers", async () => {
+    renderNotes({
+      path: "/notes/conflicts/conflict-1",
+      respond: (request) =>
+        request.path === "/v1/operations/operation-7"
+          ? new Promise(() => undefined)
+          : conflicts(request),
+    })
+
+    await screen.findByRole("radiogroup", { name: /resolve the conflict/i })
+    expect(
+      screen.queryByText(/the vault changed this file after you opened it/i)
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/applied only a part of the rename/i)
+    ).not.toBeInTheDocument()
+  })
+
   it("lists the stale paths of a write group", async () => {
     renderNotes({ path: "/notes/conflicts/conflict-4", respond: conflicts })
 
