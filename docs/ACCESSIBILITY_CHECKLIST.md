@@ -3,11 +3,12 @@
 Observed on 2026-08-27 with Playwright Chromium 151 and axe-core 4.13 through
 `npx playwright test e2e/accessibility.spec.ts e2e/keyboard-navigation.spec.ts`.
 This file records checks that were run. It does not stand in for assistive-technology testing.
+The `/sites/blog/sign-in` rows were observed on 2026-10-15 with Chromium 151 and the same suite.
 
 ## Route matrix
 
 The automated matrix covers each route in light and dark themes at 320 by 720 and 1280 by 800 CSS
-pixels. All 32 combinations passed after the fixes below.
+pixels. All 36 combinations passed after the fixes below.
 
 | Surface                  | State exercised                         | Result     |
 | ------------------------ | --------------------------------------- | ---------- |
@@ -16,6 +17,7 @@ pixels. All 32 combinations passed after the fixes below.
 | `/ops`                   | owner operation list                    | 4/4 passed |
 | `/ops/schedules`         | owner schedule status                   | 4/4 passed |
 | `/ops/audit`             | owner audit trail                       | 4/4 passed |
+| `/sites/blog/sign-in`    | owner consent to a site sign-in         | 4/4 passed |
 | `/login`                 | unauthenticated form                    | 4/4 passed |
 | `/`                      | authenticated search fixture            | 4/4 passed |
 | `/documents/document-ir` | authenticated reader fixture            | 4/4 passed |
@@ -36,6 +38,7 @@ Each combination asserts:
 | The skip link changed the fragment without focusing the landmark.                   | The same unit and browser tests.                                                         | Both public and protected `main` elements are explicit focus targets; skip activation focuses them.    | Enter activation focuses `main` in Chromium.                    |
 | Protected pages overflowed by 52–54px at 320px.                                     | First rendered matrix run failed member, owner, search, and reader cases in both themes. | The protected header stacks below the `sm` breakpoint and its navigation may wrap within the viewport. | All narrow cases report at most one rounding pixel of overflow. |
 | Theme, navigation, search-result, and provenance controls rendered at 18–24px high. | First rendered matrix run listed the undersized elements.                                | Authored controls now use a stable 28px minimum target.                                                | All 32 target-size assertions passed.                           |
+| The "Do not sign in" link of the site sign-in consent rendered 20px high.           | The first matrix run of `/sites/blog/sign-in` listed `A:88x20` in all four cases.        | The links of the consent page use the 28px minimum target of the other authored links.                 | All four consent cases passed.                                  |
 
 ## Keyboard and focus
 
@@ -56,7 +59,7 @@ Each combination asserts:
 | One named primary navigation and one main landmark.                                        | Passed                                                      | axe matrix and explicit landmark assertion                                                     |
 | Loading, error, empty, forbidden, degraded, and stale states remain text, not color alone. | Passed                                                      | component tests and axe matrix                                                                 |
 | Form control has an associated label and native required state.                            | Passed                                                      | login matrix                                                                                   |
-| Light and dark contrast has no serious/critical axe finding.                               | Passed                                                      | all 32 combinations                                                                            |
+| Light and dark contrast has no serious/critical axe finding.                               | Passed                                                      | all 36 combinations                                                                            |
 | Reduced-motion backstops remain present for declarative and vendored motion.               | Passed by existing automated coverage and source inspection | `src/components/animated-icon.test.tsx`; `src/test/design-libraries.test.tsx`; `src/index.css` |
 
 ## Not verified

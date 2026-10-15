@@ -100,6 +100,30 @@ const auditPage = {
   next_cursor: null,
 }
 
+const siteList = {
+  sites: [
+    {
+      site_id: "blog",
+      submitted_manifest_sha256: "2".repeat(64),
+      approved_manifest_sha256: "2".repeat(64),
+      approval_state: "approved",
+    },
+  ],
+}
+
+const blogManifest = {
+  site_id: "blog",
+  manifest_sha256: "2".repeat(64),
+  hostname: "blog.example.org",
+  publications: ["notes"],
+  capabilities: [
+    "pages.read",
+    "search.publication",
+    "draft.read",
+    "notes.edit",
+  ],
+}
+
 function send(response, code, body) {
   response.writeHead(code, {
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
@@ -178,6 +202,7 @@ async function route(request, response) {
             "platform.audit.inspect",
             "platform.operations.inspect",
             "platform.schedules.inspect",
+            "sites.manage",
           ]
         : [],
     })
@@ -190,6 +215,17 @@ async function route(request, response) {
       "Owner access is required."
     )
   }
+  if (url.pathname.startsWith("/v1/sites") && !isOwner(request)) {
+    return error(
+      response,
+      403,
+      "platform.auth.forbidden",
+      "Owner access is required."
+    )
+  }
+  if (url.pathname === "/v1/sites") return send(response, 200, siteList)
+  if (url.pathname === "/v1/sites/blog/manifest")
+    return send(response, 200, blogManifest)
   if (url.pathname === "/v1/admin/operations")
     return send(response, 200, operationPage)
   if (url.pathname === "/v1/admin/schedules")

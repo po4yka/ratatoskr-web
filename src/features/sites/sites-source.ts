@@ -1,13 +1,18 @@
 import type { Gateway } from "@/api/gateway/client"
+import type { components } from "@/api/generated/schema"
 
 /*
- * The site shapes of workspace change add-site-publications. The pinned Edge
- * contract (Platform 3b6efb1) has no site route yet, so this module holds
- * them as Platform 3a47f0f serves them: the schemas SiteList,
- * SiteManifestState, ActiveSiteManifest, SiteApprovalRequest and
- * SiteApproval of openapi/openapi.json, from
- * crates/public-api/src/site_reads.rs and site_approvals.rs.
+ * The site shapes of workspace change add-site-publications, as Platform
+ * 3a47f0f serves them: the schemas SiteList, SiteManifestState,
+ * ActiveSiteManifest, SiteApprovalRequest and SiteApproval of
+ * openapi/openapi.json, from crates/public-api/src/site_reads.rs and
+ * site_approvals.rs. They were written here while the pinned contract had
+ * no site route. The sign-in code of workspace change
+ * add-site-owner-editing-and-live uses the generated types.
  */
+
+type SignInCodeRequest = components["schemas"]["SignInCodeRequest"]
+type SignInCodeIssued = components["schemas"]["SignInCodeIssued"]
 
 export type SiteApprovalState = "unapproved" | "approved" | "withdrawn"
 
@@ -90,6 +95,19 @@ export function sitesSource(gateway: Gateway) {
         await gateway.request<SiteApproval>({
           path: `${site(siteId)}/manifest/approval`,
           method: "DELETE",
+        })
+      )
+    },
+    /** A single-use code that signs the owner in on the site. */
+    async signInCode(
+      siteId: string,
+      request: SignInCodeRequest
+    ): Promise<SignInCodeIssued> {
+      return required(
+        await gateway.request<SignInCodeIssued>({
+          path: `${site(siteId)}/sign-in-codes`,
+          method: "POST",
+          body: request,
         })
       )
     },

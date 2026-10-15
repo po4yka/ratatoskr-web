@@ -15,7 +15,14 @@ export default function SitesPage() {
   const source = useMemo(() => sitesSource(gateway), [gateway])
   const { siteId } = useParams()
   const signIn = useMatch("/sites/:siteId/sign-in")
-  if (signIn !== null) return <SiteSignInConsent />
+  if (signIn?.params.siteId !== undefined)
+    return (
+      <SiteSignInConsent
+        key={signIn.params.siteId}
+        siteId={signIn.params.siteId}
+        source={source}
+      />
+    )
   return siteId === undefined ? (
     <SiteRegistry source={source} />
   ) : (

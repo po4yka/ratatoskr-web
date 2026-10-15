@@ -20,7 +20,8 @@ import {
   type SitesSource,
 } from "./sites-source"
 
-function CapabilityGroup({
+/** One group of capabilities, with what it means for the site. */
+export function CapabilityGroup({
   id,
   title,
   summary,
@@ -65,7 +66,7 @@ function Capabilities({ names }: { readonly names: readonly string[] }) {
       <CapabilityGroup
         id="site-owner-capabilities"
         names={names.filter((name) => !PUBLIC_CAPABILITIES.includes(name))}
-        summary="Only an owner session of the site can use these. The server does not issue owner sessions yet, so these give no access now."
+        summary="Only an owner session of the site can use these. You start one on the site, and you confirm it in Ratatoskr."
         title="Owner capabilities"
       />
     </div>
@@ -92,7 +93,8 @@ function WithdrawDialog({
           </AlertDialogTitle>
           <AlertDialogDescription>
             The site stops serving content at once, and it answers as a site
-            that does not exist. Its releases stay stored.
+            that does not exist. Every owner session of the site ends. Its
+            releases stay stored.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
