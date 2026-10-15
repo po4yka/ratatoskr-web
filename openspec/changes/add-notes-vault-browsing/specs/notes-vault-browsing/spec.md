@@ -117,3 +117,20 @@ the owner can try again.
 
 - **WHEN** the disconnect answers `notes.connection.cleanup_failed`
 - **THEN** the view says that the vault is still connected and to try again later, verified by `src/features/notes/browse.test.tsx` "a disconnect that the server cannot finish says to try again"
+
+### Requirement: A file path from the address is checked before any request
+
+The view SHALL request a file and its index only for a path that is in the loaded file list of the
+vault. The notes calls SHALL refuse a path with an empty, `.` or `..` segment, also when the dots
+are percent-encoded, before they send a request, so that a crafted address cannot reach another
+Edge route.
+
+#### Scenario: The path has a dot segment or an empty segment
+
+- **WHEN** a file or index call gets a path such as `../../../../v1/other/route`, `%2E%2E/v1/other/route`, `/Inbox.md` or `Inbox.md/`
+- **THEN** the call fails with `notes.file.not_found` and sends no request, verified by `src/features/notes/file-path.test.tsx` "the path %j is refused before any request"
+
+#### Scenario: The address names a file that the vault does not list
+
+- **WHEN** the owner opens `?file=` with a dot segment, an empty segment, or a path that is not in the file list
+- **THEN** the view says that the file does not exist in the vault now and sends no file or index request, verified by `src/features/notes/file-path.test.tsx` "the address ?file=%s sends no file request" and "a file that is not in the loaded file list sends no file or index request"
