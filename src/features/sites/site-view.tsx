@@ -82,7 +82,10 @@ export function SiteView({
             names={state.manifest.publications}
             siteId={siteId}
           />
-          <ReleaseHistory siteId={siteId} />
+          <ReleaseHistory
+            approved={state.site.approval_state === "approved"}
+            siteId={siteId}
+          />
         </>
       ) : null}
     </section>

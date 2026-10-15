@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useGateway } from "@/api/gateway/context"
-import { Button } from "@/components/ui/button"
 import { useIdempotencyKey } from "@/features/notes/use-idempotency-key"
 import { BuildProgress } from "./build-progress"
+import { BuildRequest } from "./build-request"
 import {
   describeBuildFailure,
   releasesSource,
@@ -98,7 +98,13 @@ function HistoryLists({ history }: { readonly history: History }) {
 }
 
 /** The releases of a site, its failed builds and the build request. */
-export function ReleaseHistory({ siteId }: { readonly siteId: string }) {
+export function ReleaseHistory({
+  siteId,
+  approved,
+}: {
+  readonly siteId: string
+  readonly approved: boolean
+}) {
   const gateway = useGateway()
   const source = useMemo(() => releasesSource(gateway), [gateway])
   const idempotency = useIdempotencyKey()
@@ -132,7 +138,6 @@ export function ReleaseHistory({ siteId }: { readonly siteId: string }) {
     }
   }
 
-  const first = loaded.kind === "ready" && loaded.history.releases.length === 0
   return (
     <section
       aria-labelledby="site-releases-heading"
@@ -152,9 +157,11 @@ export function ReleaseHistory({ siteId }: { readonly siteId: string }) {
       {loaded.kind === "ready" ? (
         <>
           <HistoryLists history={loaded.history} />
-          <Button className="self-start" onClick={() => void build()}>
-            {first ? "Build the first release" : "Build a new release"}
-          </Button>
+          <BuildRequest
+            approved={approved}
+            first={loaded.history.releases.length === 0}
+            onBuild={() => void build()}
+          />
         </>
       ) : null}
       {problem === null ? null : (
