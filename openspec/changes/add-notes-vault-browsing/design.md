@@ -41,7 +41,10 @@ change. The shapes:
   has no place for it yet, so it does not call it.
 
 The routes match a file path with `{*path}`, so the path is sent as path segments, each encoded with
-`encodeURIComponent`.
+`encodeURIComponent`. That function keeps `.` and `..`, and fetch removes dot segments, so a path
+from `?file=` could reach another Edge route. The notes calls refuse a path with an empty, `.` or
+`..` segment, also with percent-encoded dots, before any request, and the view requests a file only
+when the loaded file list holds its path.
 
 ### D2. The capability name is `notes.vaults`
 

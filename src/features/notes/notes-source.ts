@@ -90,13 +90,33 @@ export interface FileIndex {
 
 const CONNECTIONS = "/v1/notes/connections"
 
+/** The failure of a path that cannot name a file of a vault. */
+const NOT_A_VAULT_PATH = {
+  kind: "not-found",
+  status: 404,
+  code: "notes.file.not_found",
+  message: "This path cannot name a file of the vault.",
+} as const
+
+/**
+ * The encoded segments of a vault path. `encodeURIComponent` keeps `.` and
+ * `..`, and fetch removes dot segments, so a path with an empty, `.` or `..`
+ * segment, also with percent-encoded dots, could reach another route. It is
+ * refused before any request.
+ */
+function segmentsOf(path: string): string {
+  const segments = path.split("/")
+  for (const segment of segments) {
+    const dots = segment.replace(/%2e/gi, ".")
+    if (segment === "" || dots === "." || dots === "..") throw NOT_A_VAULT_PATH
+  }
+  return segments.map(encodeURIComponent).join("/")
+}
+
 /** The routes match the file path with `{*path}`, so it goes as path segments. */
 function filePath(connectionId: string, route: "files" | "index") {
   return (path: string) =>
-    `${CONNECTIONS}/${encodeURIComponent(connectionId)}/${route}/${path
-      .split("/")
-      .map(encodeURIComponent)
-      .join("/")}`
+    `${CONNECTIONS}/${encodeURIComponent(connectionId)}/${route}/${segmentsOf(path)}`
 }
 
 function required<T>(value: T | undefined): T {

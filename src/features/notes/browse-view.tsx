@@ -1,19 +1,19 @@
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { Link, useSearchParams } from "react-router"
 import { FilePanel } from "./file-panel"
 import { Failure } from "./index-sections"
-import { fileLink, useRead } from "./notes-read"
-import type { NotesSource } from "./notes-source"
+import { fileLink, useRead, type Read } from "./notes-read"
+import {
+  describeNotesFailure,
+  type NotesFile,
+  type NotesSource,
+} from "./notes-source"
 
 function FileListPanel({
-  source,
-  connectionId,
+  files,
 }: {
-  readonly source: NotesSource
-  readonly connectionId: string
+  readonly files: Read<readonly NotesFile[]>
 }) {
-  const [load] = useState(() => () => source.files(connectionId))
-  const files = useRead(load, "The files of this vault could not load.")
   if (files.kind === "loading") return <p role="status">Loading the files</p>
   if (files.kind === "failed") return <Failure message={files.message} />
   if (files.value.length === 0)
@@ -40,6 +40,31 @@ function FileListPanel({
   )
 }
 
+/**
+ * Show `children` only for a path that the loaded file list holds. A path
+ * from the address that the vault does not list is never requested.
+ */
+function ListedFile({
+  files,
+  path,
+  children,
+}: {
+  readonly files: Read<readonly NotesFile[]>
+  readonly path: string
+  readonly children: ReactNode
+}) {
+  if (files.kind !== "ready") return null
+  if (files.value.some((file) => file.path === path)) return children
+  return (
+    <Failure
+      message={describeNotesFailure(
+        { code: "notes.file.not_found" },
+        "This file does not exist in the vault now."
+      )}
+    />
+  )
+}
+
 /** The read-only browse of one connection: its files, one file, its backlinks. */
 export function BrowseView({
   source,
@@ -50,6 +75,8 @@ export function BrowseView({
 }) {
   const [params] = useSearchParams()
   const path = params.get("file")
+  const [load] = useState(() => () => source.files(connectionId))
+  const files = useRead(load, "The files of this vault could not load.")
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 sm:p-6">
       <header>
@@ -65,22 +92,20 @@ export function BrowseView({
         </p>
       </header>
       <div className="grid gap-6 md:grid-cols-[minmax(0,16rem)_minmax(0,1fr)]">
-        <FileListPanel
-          connectionId={connectionId}
-          key={connectionId}
-          source={source}
-        />
+        <FileListPanel files={files} />
         {path === null ? (
           <p className="text-body text-muted-foreground">
             Select a file to read it.
           </p>
         ) : (
-          <FilePanel
-            connectionId={connectionId}
-            key={path}
-            path={path}
-            source={source}
-          />
+          <ListedFile files={files} path={path}>
+            <FilePanel
+              connectionId={connectionId}
+              key={path}
+              path={path}
+              source={source}
+            />
+          </ListedFile>
         )}
       </div>
     </section>
