@@ -6,7 +6,11 @@ import type { OperationSnapshot } from "@/features/operations/operation-state"
 import { ConflictSides } from "./conflict-sides"
 import { Failure } from "./index-sections"
 import { fileLink, useRead } from "./notes-read"
-import { describeWriteFailure, notesWrites } from "./notes-write"
+import {
+  describeWriteFailure,
+  notesWrites,
+  type NotesConflict,
+} from "./notes-write"
 import { ResolutionForm } from "./resolution-form"
 
 /** The code of a write group that the vault applied only in part. */
@@ -50,6 +54,39 @@ function ConflictReason({ operationId }: { readonly operationId?: string }) {
   )
 }
 
+/** The files of a write group that the conflict names, each with a link. */
+function StalePaths({ conflict }: { readonly conflict: NotesConflict }) {
+  const paths = conflict.stale_paths ?? []
+  if (paths.length === 0) return null
+  const connection = `/notes/${encodeURIComponent(conflict.connection_id)}`
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="text-subheading font-semibold" id="notes-conflict-files">
+        Files of the change
+      </h2>
+      <p className="text-body text-muted-foreground">
+        These files changed in the vault after you opened them, or the vault did
+        not apply the change to them.
+      </p>
+      <ul
+        aria-labelledby="notes-conflict-files"
+        className="flex flex-col gap-1"
+      >
+        {paths.map((path) => (
+          <li key={path}>
+            <Link
+              className="inline-flex min-h-7 items-center text-body break-all hover:underline"
+              to={`${connection}${fileLink(path)}`}
+            >
+              {path}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 function ConflictBody({
   conflictId,
   onReload,
@@ -80,6 +117,7 @@ function ConflictBody({
           Load the conflict again
         </Button>
       </div>
+      <StalePaths conflict={conflict} />
       <ConflictSides conflict={conflict} />
       {conflict.state === "open" ? (
         <ResolutionForm conflict={conflict} />

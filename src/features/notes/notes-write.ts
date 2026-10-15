@@ -53,6 +53,11 @@ export interface NotesConflict {
   readonly texts?: Readonly<Partial<Record<ConflictSide, string>>>
   /** The sides over the 1 MiB cap, whose text is not in `texts`. */
   readonly texts_over_limit?: readonly ConflictSide[]
+  /**
+   * A conflict of a write group: every stale or unapplied file, sorted.
+   * `path` is the first.
+   */
+  readonly stale_paths?: readonly string[]
 }
 
 /** The 202 answer of the three Edge routes: an operation to follow. */
