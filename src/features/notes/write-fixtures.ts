@@ -139,11 +139,47 @@ export function largeConflict(id: string) {
 }
 
 /**
+ * The conflict of a rename and its link updates that the vault applied only
+ * in part: `stale_paths` names every file that it did not change, `path` is
+ * the first, and its operation `operation-8` failed with
+ * `notes.write.partially_applied`.
+ */
+export function partialConflict(id: string) {
+  return {
+    ...conflict(id, false),
+    operation_id: "operation-8",
+    path: "Projects/Notes.md",
+    stale_paths: ["Projects/Notes.md", "Projects/Plan.md"],
+  }
+}
+
+/** The failed operation of `partialConflict`. */
+export function partialOperation() {
+  return {
+    ...writeOperation("notes.file.write", "failed"),
+    operation_id: "operation-8",
+    errors: [
+      {
+        code: "notes.write.partially_applied",
+        message: "The vault applied a part of the group.",
+        retryable: false,
+        conflict_id: "conflict-4",
+      },
+    ],
+  }
+}
+
+/**
  * The conflict routes: `conflict-1` has a proposal, `conflict-2` has none,
- * `conflict-3` has sides too large to show.
+ * `conflict-3` has sides too large to show, `conflict-4` is a write group
+ * that the vault applied only in part.
  */
 export function conflicts(request: GatewayRequest): unknown {
   switch (request.path) {
+    case "/v1/notes/conflicts/conflict-4":
+      return partialConflict("conflict-4")
+    case "/v1/operations/operation-8":
+      return partialOperation()
     case "/v1/notes/conflicts/conflict-1":
       return conflict("conflict-1", true)
     case "/v1/notes/conflicts/conflict-2":

@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react"
+import { MemoryRouter } from "react-router"
 import { describe, expect, it, vi } from "vitest"
 import { GatewayProvider } from "@/api/gateway/context"
 import { gatewayOf } from "@/test/app-harness"
 import { WriteProgress } from "./write-progress"
-import { writeOperation } from "./write-fixtures"
+import { partialOperation, writeOperation } from "./write-fixtures"
 
 /** Mount the progress of one operation that the gateway answers with `snapshot`. */
 async function progressOf(snapshot: object) {
@@ -69,6 +70,26 @@ describe("the progress of a write", () => {
     })
 
     expect(await screen.findByText(text)).toBeInTheDocument()
+  })
+
+  it("names the failure notes.write.partially_applied and links to its conflict", async () => {
+    const gateway = gatewayOf(async () => partialOperation())
+    render(
+      <MemoryRouter>
+        <GatewayProvider gateway={gateway}>
+          <WriteProgress done="Saved." operationId="operation-8" />
+        </GatewayProvider>
+      </MemoryRouter>
+    )
+
+    expect(
+      await screen.findByText(
+        "The vault applied only a part of the rename and its link updates. Resolve the conflict to finish the change."
+      )
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Resolve the conflict" })
+    ).toHaveAttribute("href", "/notes/conflicts/conflict-4")
   })
 
   it("names the warning notes.write.transformed of a succeeded write", async () => {

@@ -38,6 +38,20 @@ describe("the conflict view", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("says that the vault applied only a part of the change", async () => {
+    renderNotes({ path: "/notes/conflicts/conflict-4", respond: conflicts })
+
+    await screen.findByRole("radiogroup", { name: /resolve the conflict/i })
+    expect(
+      await screen.findByText(
+        "The vault applied only a part of the rename and its link updates. Resolve the conflict to finish the change."
+      )
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/the vault changed this file after you opened it/i)
+    ).not.toBeInTheDocument()
+  })
+
   it("says that a side over the limit is too large to show", async () => {
     renderNotes({ path: "/notes/conflicts/conflict-3", respond: conflicts })
 
