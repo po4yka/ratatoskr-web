@@ -134,7 +134,7 @@ export const signInCallback =
 
 /**
  * The site routes and `POST /v1/sites/{site}/sign-in-codes` of Platform
- * e7a1488 (crates/public-api/src/sites.rs): `blog` gets a code, and every
+ * e7a1488 (crates/public-api/src/site_sessions.rs): `blog` gets a code, and every
  * other site answers 404 `sites.site_not_found`.
  */
 export function signInRoutes(request: GatewayRequest): unknown {
