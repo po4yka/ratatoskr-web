@@ -44,9 +44,10 @@ first, and links to `/sites/<site>`.
 
 ### D4. The page goes only to the approved hostname
 
-After the `201`, the page goes to `redirect_url` with `location.replace`, so that the consent page
-is not in the history. It goes only when the origin of `redirect_url` is `https://` and the hostname
-of the loaded manifest. Another origin shows an error, and the page does not go there.
+After the `201`, the page goes to the parsed form of `redirect_url` with `location.replace`, so that
+the consent page is not in the history. It goes only when `redirect_url` is `https://`, the hostname
+of the loaded manifest with no port, no user name or password, and the path `/.ratatoskr/sign-in/`.
+Another address shows an error, and the page does not go there.
 
 ### D5. The session list groups the site sessions by site
 

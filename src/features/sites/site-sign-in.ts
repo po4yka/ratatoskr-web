@@ -24,11 +24,23 @@ export function signInRequestOf(
   return { challenge, return_path: returnPath }
 }
 
-/** Whether `url` is an HTTPS address on the approved `hostname`. */
+/** The path of the callback page that every site bundle ships. */
+const CALLBACK_PATH = "/.ratatoskr/sign-in/"
+
+/**
+ * Whether `url` is the callback page on the approved `hostname`: HTTPS,
+ * no port, no user name or password, and the path `/.ratatoskr/sign-in/`.
+ */
 export function isOnHostname(url: string, hostname: string): boolean {
   try {
     const parsed = new URL(url)
-    return parsed.protocol === "https:" && parsed.host === hostname
+    return (
+      parsed.protocol === "https:" &&
+      parsed.host === hostname &&
+      parsed.username === "" &&
+      parsed.password === "" &&
+      parsed.pathname === CALLBACK_PATH
+    )
   } catch {
     return false
   }

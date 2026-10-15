@@ -47,7 +47,7 @@ async function signIn(input: {
         message:
           "The server gave a sign-in address on another host. Ratatoskr did not go there.",
       }
-    browserLocation.replace(issued.redirect_url)
+    browserLocation.replace(new URL(issued.redirect_url).href)
     return { kind: "pending" }
   } catch (failure) {
     if ((failure as { code?: unknown } | null)?.code === "sites.site_not_found")
