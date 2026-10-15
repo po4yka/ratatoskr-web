@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest"
 import type { GatewayRequest } from "@/api/gateway/client"
 import { fileBytes } from "./browse-fixtures"
 import { renderNotes } from "./notes-fixtures"
-import { storedBlob, writes } from "./write-fixtures"
+import { storedBlob, writeOperation, writes } from "./write-fixtures"
 
 const PLAN = "/notes/connection-1?file=Projects%2FPlan.md"
 const CONNECTION = "/v1/notes/connections/connection-1"
@@ -100,5 +100,31 @@ describe("the note editor", () => {
     const put = recorded[indexOf(recorded, route)]
     expect(put.body).toEqual({ write_mode: "on" })
     expectKey(put)
+  })
+  it("save stays disabled while the write operation runs", async () => {
+    let status = "running"
+    const recorded: GatewayRequest[] = renderNotes({
+      path: PLAN,
+      respond: (request) =>
+        request.path === "/v1/operations/operation-7"
+          ? writeOperation("notes.file.write", status)
+          : writes(recorded)(request),
+      stream: fileBytes,
+    })
+    await screen.findByText(/ship the reader first/i)
+    fireEvent.click(screen.getByRole("button", { name: /edit this note/i }))
+    fireEvent.change(screen.getByRole("textbox", { name: /note text/i }), {
+      target: { value: EDITED },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /save the note/i }))
+
+    await screen.findByText(/the change waits for the vault/i)
+    expect(
+      screen.getByRole("button", { name: /save the note/i })
+    ).toBeDisabled()
+
+    status = "succeeded"
+    await screen.findByText(/saved\. the vault has the change/i)
+    expect(screen.getByRole("button", { name: /save the note/i })).toBeEnabled()
   })
 })
