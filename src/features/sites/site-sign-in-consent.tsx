@@ -24,6 +24,7 @@ type SignInCodeRequest = components["schemas"]["SignInCodeRequest"]
 type Loaded =
   | { readonly kind: "loading" }
   | { readonly kind: "failed"; readonly message: string }
+  | { readonly kind: "unapproved" }
   | {
       readonly kind: "ready"
       readonly site: SiteManifestState | undefined
@@ -61,6 +62,36 @@ async function signIn(input: {
       message: describeSitesFailure(failure, "The sign-in was not approved."),
     }
   }
+}
+
+function failedWith(failure: unknown): Loaded {
+  return {
+    kind: "failed",
+    message: describeSitesFailure(failure, "The site could not load."),
+  }
+}
+
+/**
+ * The site list and the manifest, read apart: a site that the list reports
+ * as not approved links to its approval even when the manifest read fails.
+ */
+async function readConsent(
+  source: SitesSource,
+  siteId: string
+): Promise<Loaded> {
+  const [sites, manifest] = await Promise.allSettled([
+    source.sites(),
+    source.manifest(siteId),
+  ])
+  const site =
+    sites.status === "fulfilled"
+      ? sites.value.find((entry) => entry.site_id === siteId)
+      : undefined
+  if (site !== undefined && site.approval_state !== "approved")
+    return { kind: "unapproved" }
+  if (sites.status === "rejected") return failedWith(sites.reason)
+  if (manifest.status === "rejected") return failedWith(manifest.reason)
+  return { kind: "ready", site, manifest: manifest.value }
 }
 
 /** The confirmation of an approved site, and the answer to it. */
@@ -133,21 +164,7 @@ export function SiteSignInConsent({
   const [loaded, setLoaded] = useState<Loaded>({ kind: "loading" })
   useEffect(() => {
     let alive = true
-    Promise.all([source.sites(), source.manifest(siteId)]).then(
-      ([sites, manifest]) =>
-        alive &&
-        setLoaded({
-          kind: "ready",
-          site: sites.find((entry) => entry.site_id === siteId),
-          manifest,
-        }),
-      (failure: unknown) =>
-        alive &&
-        setLoaded({
-          kind: "failed",
-          message: describeSitesFailure(failure, "The site could not load."),
-        })
-    )
+    void readConsent(source, siteId).then((next) => alive && setLoaded(next))
     return () => {
       alive = false
     }
@@ -168,6 +185,7 @@ export function SiteSignInConsent({
           {loaded.message}
         </p>
       ) : null}
+      {loaded.kind === "unapproved" ? <Unapproved siteId={siteId} /> : null}
       {loaded.kind === "ready" ? (
         <Confirmation
           manifest={loaded.manifest}
