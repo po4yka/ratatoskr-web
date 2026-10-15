@@ -1,4 +1,4 @@
-import { cleanup, screen } from "@testing-library/react"
+import { cleanup, screen, within } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import { renderNotes } from "./notes-fixtures"
 import { conflicts } from "./write-fixtures"
@@ -50,6 +50,23 @@ describe("the conflict view", () => {
     expect(
       screen.queryByText(/the vault changed this file after you opened it/i)
     ).not.toBeInTheDocument()
+  })
+
+  it("lists the stale paths of a write group", async () => {
+    renderNotes({ path: "/notes/conflicts/conflict-4", respond: conflicts })
+
+    const files = await screen.findByRole("list", {
+      name: "Files of the change",
+    })
+    const links = within(files).getAllByRole("link")
+    expect(links.map((link) => link.textContent)).toEqual([
+      "Projects/Notes.md",
+      "Projects/Plan.md",
+    ])
+    expect(links[1]).toHaveAttribute(
+      "href",
+      "/notes/connection-1?file=Projects%2FPlan.md"
+    )
   })
 
   it("says that a side over the limit is too large to show", async () => {
