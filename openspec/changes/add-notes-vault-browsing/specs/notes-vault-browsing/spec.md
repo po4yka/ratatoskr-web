@@ -32,21 +32,33 @@ log call or in the rendered document after the submit.
 ### Requirement: The connect operation and its failures are shown
 
 The view SHALL show the status and the stage of the `notes.connection.connect` operation, and SHALL
-show each stable notes error code as its own message. The view SHALL follow the operation that the
-`202` answer of Edge names, and the connect request SHALL NOT carry an `Idempotency-Key`, because
-Edge keeps no digest of the body. The view SHALL name the phases `login`, `setup`, `first_sync` and
-`indexing` as steps of four, and SHALL show one message for each terminal error code and warning of
-the operation, from `ratatoskr-notes`, from Edge, or from the stale-operation reaper of Platform.
+show each stable notes error code as its own message.
 
 #### Scenario: The operation is in its first sync
 
 - **WHEN** the connect answer names an operation whose snapshot is `running` with the stage `first_sync`
 - **THEN** the view shows the stage, verified by `src/features/notes/connect.test.tsx` "the connect operation shows its stage"
 
+#### Scenario: The end-to-end password is wrong
+
+- **WHEN** the connect request fails with `notes.sync.e2e_password_wrong`
+- **THEN** the view shows that the end-to-end password is wrong, verified by `src/features/notes/connect.test.tsx` "a failed login names its reason"
+
+### Requirement: The connect follows the operation that Edge names
+
+The view SHALL follow the operation that the `202` answer of Edge names. The connect request SHALL
+NOT carry an `Idempotency-Key`, because Edge keeps no digest of the body.
+
 #### Scenario: The connect follows the operation of Edge
 
 - **WHEN** Edge answers `202` with `{ operation_id, status, connection }`
 - **THEN** the view reads `/v1/operations/{operation_id}` and the request has no `Idempotency-Key`, verified by `src/features/notes/connect-operation.test.tsx` "the connect sends no Idempotency-Key and follows the operation that Edge names"
+
+### Requirement: Each phase and each terminal code of the connect has its own text
+
+The view SHALL name the phases `login`, `setup`, `first_sync` and `indexing` as steps of four. It
+SHALL show one message for each terminal error code and warning of the operation, from
+`ratatoskr-notes`, from Edge, or from the stale-operation reaper of Platform.
 
 #### Scenario: Each phase is a named step
 
@@ -58,20 +70,11 @@ the operation, from `ratatoskr-notes`, from Edge, or from the stale-operation re
 - **WHEN** the snapshot is `failed` with a code of `ratatoskr-notes`, of Edge or `platform.operation.stale`, or `partially_succeeded` with `notes.sync.journal_unreadable`
 - **THEN** the view shows the message of that code, verified by `src/features/notes/connect-operation.test.tsx` "a failed connect operation names the reason of %s" and "a connect that ends with a warning names the warning"
 
-#### Scenario: The end-to-end password is wrong
-
-- **WHEN** the connect request fails with `notes.sync.e2e_password_wrong`
-- **THEN** the view shows that the end-to-end password is wrong, verified by `src/features/notes/connect.test.tsx` "a failed login names its reason"
-
 ### Requirement: The vault is browsed read-only with backlinks
 
 The view SHALL list the connections with their channel and state, list the files of one connection,
 show the text of one file and the files that link to it, and offer no control that changes a file.
-A disconnect SHALL ask for a confirmation that names the vault. The view SHALL read the bytes of a
-file from `GET /v1/notes/connections/{id}/files/{*path}` and its links, tags, properties and
-backlinks from `GET /v1/notes/connections/{id}/index/{*path}`, with the file path sent as path
-segments. A file that is not UTF-8 text SHALL be named as not text, and `notes.file.not_found` and
-`notes.connection.cleanup_failed` SHALL each have their own message.
+A disconnect SHALL ask for a confirmation that names the vault.
 
 #### Scenario: The owner opens a file
 
@@ -82,6 +85,13 @@ segments. A file that is not UTF-8 text SHALL be named as not text, and `notes.f
 
 - **WHEN** the owner selects disconnect for a vault
 - **THEN** no request is sent until the owner confirms in a dialog that names the vault, verified by `src/features/notes/browse.test.tsx` "a disconnect is sent only after a confirmation that names the vault"
+
+### Requirement: The file and its index come from the notes read routes
+
+The view SHALL read the bytes of a file from `GET /v1/notes/connections/{id}/files/{*path}`, and its
+links, tags, properties and backlinks from `GET /v1/notes/connections/{id}/index/{*path}`, with the
+file path sent as path segments. A file that is not UTF-8 text SHALL be named as not text, and
+`notes.file.not_found` SHALL have its own message.
 
 #### Scenario: The file and its index come from the read routes
 
@@ -97,6 +107,11 @@ segments. A file that is not UTF-8 text SHALL be named as not text, and `notes.f
 
 - **WHEN** the bytes of the file are not UTF-8, or the file route answers `notes.file.not_found`
 - **THEN** the view says that the file is not text, or that it does not exist in the vault now, verified by `src/features/notes/file-panel.test.tsx` "a file that is not text says so" and "a file that is gone names the reason"
+
+### Requirement: A disconnect that the server cannot finish is named
+
+The view SHALL show `notes.connection.cleanup_failed` as a disconnect that did not happen and that
+the owner can try again.
 
 #### Scenario: The server cannot finish a disconnect
 
