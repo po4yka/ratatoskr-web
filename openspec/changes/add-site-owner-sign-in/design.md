@@ -63,5 +63,6 @@ revocation is outside this change.
 
 - The types come from a Platform commit that is not pushed (D context). A change to the routes
   before the push makes the generated types wrong until the next generation.
-- Platform publishes no site capability. The consent page stays unavailable until Platform publishes
-  `sites.manage`, as the rest of the section.
+- The consent page is behind `sites.manage`, as the rest of the section. Platform reports that name
+  only where Edge routes the sites service (Platform `943bc91`), so a deployment without the sites
+  service shows the explained absence of the capability.
