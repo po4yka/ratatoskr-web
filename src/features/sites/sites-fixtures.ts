@@ -127,3 +127,46 @@ export function renderSites(options: {
   renderApp({ gateway })
   return calls
 }
+
+/** The stored publication `notes` of `blog`, as the sites schema holds it. */
+export const storedPublication = {
+  publication_id: "notes",
+  connection_id: "connection-1",
+  mode: "flagged",
+  release_mode: "automatic",
+  state: "active",
+  included_folders: ["blog"],
+  excluded_folders: [],
+  included_tags: [],
+  frontmatter_allow: ["summary"],
+}
+
+function vault(id: string, name: string) {
+  return {
+    connection_id: id,
+    channel: "sync",
+    vault_display_name: name,
+    state: "active",
+    excluded_folders: [],
+  }
+}
+
+/**
+ * The site routes, the publications of `blog`, the vault connections and
+ * the save of a publication, which answers the publication it stored.
+ */
+export function publicationRoutes(request: GatewayRequest): unknown {
+  const publications = "/v1/sites/blog/publications"
+  if (request.path === publications)
+    return { publications: [storedPublication] }
+  if (request.path === `${publications}/notes`)
+    return { publication_id: "notes", state: "active", ...(request.body ?? {}) }
+  if (request.path === "/v1/notes/connections")
+    return {
+      connections: [
+        vault("connection-1", "Work"),
+        vault("connection-2", "Personal"),
+      ],
+    }
+  return siteRoutes(request)
+}
