@@ -155,12 +155,13 @@ export function notesWrites(gateway: Gateway) {
     async setWriteMode(input: {
       readonly connectionId: string
       readonly mode: "on" | "off"
+      readonly key: string
     }): Promise<WriteAccepted> {
       return accepted(
         await gateway.request<WriteAccepted>({
           path: `${connection(input.connectionId)}/write-mode`,
           method: "PUT",
-          headers: { "Idempotency-Key": newIdempotencyKey() },
+          headers: { "Idempotency-Key": input.key },
           body: { write_mode: input.mode },
         })
       )

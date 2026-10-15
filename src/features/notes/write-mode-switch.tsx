@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useGateway } from "@/api/gateway/context"
 import { Button } from "@/components/ui/button"
 import { describeWriteFailure, notesWrites } from "./notes-write"
+import { useIdempotencyKey } from "./use-idempotency-key"
 import { WriteProgress } from "./write-progress"
 
 type Mode = "on" | "off"
@@ -9,7 +10,8 @@ type Mode = "on" | "off"
 /**
  * The write-back switch of one connection. Notes does not report the mode of
  * a connection yet, so the switch offers both changes and shows the result of
- * the last one. Every connection starts with write-back off.
+ * the last one. Every connection starts with write-back off. A change sent
+ * again after a lost answer keeps its Idempotency-Key.
  */
 export function WriteModeSwitch({
   connectionId,
@@ -23,12 +25,18 @@ export function WriteModeSwitch({
   const [sent, setSent] = useState<{ mode: Mode; operationId: string } | null>(
     null
   )
+  const idempotency = useIdempotencyKey()
 
   async function change(mode: Mode) {
     setPending(true)
     setProblem(null)
     try {
-      const answer = await writes.setWriteMode({ connectionId, mode })
+      const answer = await writes.setWriteMode({
+        connectionId,
+        mode,
+        key: idempotency.keyFor(`${connectionId}\n${mode}`),
+      })
+      idempotency.accepted()
       setSent({ mode, operationId: answer.operation_id })
     } catch (failure) {
       setProblem(

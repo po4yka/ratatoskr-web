@@ -2,12 +2,8 @@ import { useState, type FormEvent } from "react"
 import { useGateway } from "@/api/gateway/context"
 import { Button } from "@/components/ui/button"
 import type { LoadedFile } from "./notes-source"
-import {
-  describeWriteFailure,
-  mediaTypeOf,
-  newIdempotencyKey,
-  notesWrites,
-} from "./notes-write"
+import { describeWriteFailure, mediaTypeOf, notesWrites } from "./notes-write"
+import { useIdempotencyKey } from "./use-idempotency-key"
 import { WriteProgress } from "./write-progress"
 
 interface Target {
@@ -25,9 +21,9 @@ function validateNote(bytes: Uint8Array): string | null {
 
 /**
  * The editor of one text note. A save uploads the new content first, and then
- * sends one `update` whose base is the revision that the editor loaded. A
- * second save names the hash of the first, because notes checks each base when
- * the write before it is acknowledged.
+ * sends one `update` whose base is the revision that the editor loaded. The
+ * content of a write becomes the base of the next save only when the write
+ * succeeds. A save sent again after a lost answer keeps its Idempotency-Key.
  */
 function NoteEditor({
   target,
@@ -43,7 +39,11 @@ function NoteEditor({
   const [base, setBase] = useState(loaded.revision)
   const [pending, setPending] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
-  const [operationId, setOperationId] = useState<string | null>(null)
+  const [sent, setSent] = useState<{
+    operationId: string
+    hash: string
+  } | null>(null)
+  const idempotency = useIdempotencyKey()
 
   async function save(event: FormEvent) {
     event.preventDefault()
@@ -52,7 +52,7 @@ function NoteEditor({
     if (invalid) return setProblem(invalid)
     setPending(true)
     setProblem(null)
-    setOperationId(null)
+    setSent(null)
     try {
       const blob = await writes.upload({
         connectionId,
@@ -61,11 +61,11 @@ function NoteEditor({
       })
       const answer = await writes.update({
         connectionId,
-        key: newIdempotencyKey(),
+        key: idempotency.keyFor(`${path}\n${base}\n${blob.digest.hex}`),
         operation: { update: { path, base_hash: base, blob } },
       })
-      setBase(blob.digest.hex)
-      setOperationId(answer.operation_id)
+      idempotency.accepted()
+      setSent({ operationId: answer.operation_id, hash: blob.digest.hex })
     } catch (failure) {
       setProblem(describeWriteFailure(failure, "The note could not be saved."))
     } finally {
@@ -102,11 +102,12 @@ function NoteEditor({
           Close the editor
         </Button>
       </div>
-      {operationId ? (
+      {sent ? (
         <WriteProgress
           done="Saved. The vault has the change."
-          key={operationId}
-          operationId={operationId}
+          key={sent.operationId}
+          onSucceeded={() => setBase(sent.hash)}
+          operationId={sent.operationId}
         />
       ) : null}
     </form>

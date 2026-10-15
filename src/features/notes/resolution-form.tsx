@@ -5,12 +5,12 @@ import {
   TEXT_MEDIA_TYPES,
   describeWriteFailure,
   mediaTypeOf,
-  newIdempotencyKey,
   notesWrites,
   type NotesConflict,
   type NotesWrites,
   type ResolutionChoice,
 } from "./notes-write"
+import { useIdempotencyKey } from "./use-idempotency-key"
 import { WriteProgress } from "./write-progress"
 
 /** Each choice, with the consequence that the owner confirms by sending it. */
@@ -62,6 +62,8 @@ interface Resolving {
   readonly conflict: NotesConflict
   readonly choice: ResolutionChoice
   readonly custom: string
+  /** The held key of this resolution: the same until an answer accepts it. */
+  readonly keyFor: (subject: string) => string
 }
 
 /** Upload the custom content first, then send the resolution. */
@@ -78,7 +80,8 @@ async function resolve(input: Resolving) {
           mediaType: mediaTypeOf(conflict.path),
         })
       : undefined
-  return writes.resolve({ conflict, choice, blob, key: newIdempotencyKey() })
+  const subject = `${conflict.conflict_id}\n${choice}\n${blob?.digest.hex ?? ""}`
+  return writes.resolve({ conflict, choice, blob, key: input.keyFor(subject) })
 }
 
 /** The choices that resolve an open conflict, and the result of the one sent. */
@@ -94,6 +97,7 @@ export function ResolutionForm({
   const [pending, setPending] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
   const [operationId, setOperationId] = useState<string | null>(null)
+  const idempotency = useIdempotencyKey()
   const choices = offered(conflict)
   const chosen = choices.find((entry) => entry.choice === choice)
 
@@ -103,7 +107,14 @@ export function ResolutionForm({
     setPending(true)
     setProblem(null)
     try {
-      const answer = await resolve({ writes, conflict, choice, custom })
+      const answer = await resolve({
+        writes,
+        conflict,
+        choice,
+        custom,
+        keyFor: idempotency.keyFor,
+      })
+      idempotency.accepted()
       setOperationId(answer.operation_id)
     } catch (failure) {
       setProblem(
