@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { Link } from "react-router"
 import {
   isTerminal,
@@ -58,22 +58,31 @@ function statusLine(
 
 /**
  * The progress of one write, resolution or write-mode operation. `done` is
- * the sentence for success. `onSucceeded` runs once when it succeeds.
+ * the sentence for success. When the operation ends, `onSucceeded` runs if
+ * it succeeded, and then `onEnded` runs: each once per operation, also when
+ * a render passes a new callback.
  */
 export function WriteProgress({
   operationId,
   done,
   onSucceeded,
+  onEnded,
 }: {
   readonly operationId: string
   readonly done: string
   readonly onSucceeded?: () => void
+  readonly onEnded?: () => void
 }) {
   const { snapshot, polling } = useOperation(operationId)
-  const succeeded = snapshot?.status === "succeeded"
+  const status = snapshot?.status
+  const reported = useRef<string | null>(null)
   useEffect(() => {
-    if (succeeded) onSucceeded?.()
-  }, [succeeded, onSucceeded])
+    if (status === undefined || !isTerminal(status)) return
+    if (reported.current === operationId) return
+    reported.current = operationId
+    if (status === "succeeded") onSucceeded?.()
+    onEnded?.()
+  }, [status, operationId, onSucceeded, onEnded])
   return (
     <div aria-live="polite" className="flex flex-col gap-2" role="status">
       <p className="text-body font-medium">{statusLine(snapshot, done)}</p>

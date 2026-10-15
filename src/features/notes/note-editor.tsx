@@ -23,7 +23,9 @@ function validateNote(bytes: Uint8Array): string | null {
  * The editor of one text note. A save uploads the new content first, and then
  * sends one `update` whose base is the revision that the editor loaded. The
  * content of a write becomes the base of the next save only when the write
- * succeeds. A save sent again after a lost answer keeps its Idempotency-Key.
+ * succeeds, and Save stays disabled while the write runs, so that a second
+ * save never names the old base. A save sent again after a lost answer keeps
+ * its Idempotency-Key.
  */
 function NoteEditor({
   target,
@@ -42,6 +44,7 @@ function NoteEditor({
   const [sent, setSent] = useState<{
     operationId: string
     hash: string
+    running: boolean
   } | null>(null)
   const idempotency = useIdempotencyKey()
 
@@ -65,7 +68,11 @@ function NoteEditor({
         operation: { update: { path, base_hash: base, blob } },
       })
       idempotency.accepted()
-      setSent({ operationId: answer.operation_id, hash: blob.digest.hex })
+      setSent({
+        operationId: answer.operation_id,
+        hash: blob.digest.hex,
+        running: true,
+      })
     } catch (failure) {
       setProblem(describeWriteFailure(failure, "The note could not be saved."))
     } finally {
@@ -95,7 +102,7 @@ function NoteEditor({
         </p>
       ) : null}
       <div className="flex gap-2">
-        <Button disabled={pending} type="submit">
+        <Button disabled={pending || sent?.running === true} type="submit">
           {pending ? "Saving the note…" : "Save the note"}
         </Button>
         <Button onClick={onClose} type="button" variant="outline">
@@ -106,6 +113,9 @@ function NoteEditor({
         <WriteProgress
           done="Saved. The vault has the change."
           key={sent.operationId}
+          onEnded={() =>
+            setSent((current) => current && { ...current, running: false })
+          }
           onSucceeded={() => setBase(sent.hash)}
           operationId={sent.operationId}
         />

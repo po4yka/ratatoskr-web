@@ -125,6 +125,11 @@ describe("the note editor", () => {
 
     status = "succeeded"
     await screen.findByText(/saved\. the vault has the change/i)
-    expect(screen.getByRole("button", { name: /save the note/i })).toBeEnabled()
+    // The operation ends in one render and enables Save in the next.
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: /save the note/i })
+      ).toBeEnabled()
+    )
   })
 })

@@ -27,6 +27,26 @@ succeeds.
 - **WHEN** a write fails and the owner saves again, and then a write succeeds and the owner saves again
 - **THEN** the second save names the loaded revision and the third names the content of the second, verified by `src/features/notes/write-retry.test.tsx` "the base becomes the written content only when the write succeeds"
 
+### Requirement: One save runs at a time
+
+The editor SHALL keep Save disabled from the save until its write operation ends, so that a second
+save never names a base that the first write replaces.
+
+#### Scenario: The owner saves while a write runs
+
+- **WHEN** a write operation of the editor runs, and then succeeds
+- **THEN** Save is disabled while it runs and enabled after it succeeds, verified by `src/features/notes/editor.test.tsx` "save stays disabled while the write operation runs"
+
+### Requirement: The end of an operation is reported once
+
+The progress of a write SHALL report the end of its operation to the view once per operation, also
+when the view renders again.
+
+#### Scenario: The view renders again after a success
+
+- **WHEN** the progress of a succeeded write renders three times
+- **THEN** its success callback runs once, verified by `src/features/notes/write-progress.test.tsx` "runs onSucceeded once for a succeeded operation, also after renders"
+
 ### Requirement: A request sent again keeps its key
 
 A save, a resolution and a write-mode change SHALL keep their `Idempotency-Key` while no answer
