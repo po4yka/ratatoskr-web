@@ -140,3 +140,8 @@ its file.
 
 - **WHEN** the owner opens a conflict with `stale_paths` that name two files
 - **THEN** the view lists both paths, each with a link to its file, verified by `src/features/notes/conflict-view.test.tsx` "lists the stale paths of a write group"
+
+#### Scenario: The operation of the conflict has not answered
+
+- **WHEN** the owner opens a conflict and the read of its operation has not answered
+- **THEN** the view shows no reason for the conflict, verified by `src/features/notes/conflict-view.test.tsx` "shows no reason until the operation answers"
