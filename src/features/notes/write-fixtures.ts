@@ -27,9 +27,9 @@ interface Declared {
   readonly declared_size_bytes: number
 }
 
-/** The declaration of the open upload, from the recorded calls. */
+/** The declaration of the last upload opened, from the recorded calls. */
 function declared(calls: readonly GatewayRequest[]): Declared {
-  const open = calls.find(
+  const open = calls.findLast(
     (call) => call.path === `${CONNECTION}/blobs` && call.method === "POST"
   )
   return open?.body as Declared
@@ -150,7 +150,33 @@ export function conflicts(request: GatewayRequest): unknown {
       return conflict("conflict-2", false)
     case "/v1/notes/conflicts/conflict-3":
       return largeConflict("conflict-3")
+    case "/v1/notes/conflicts/conflict-1/resolution":
+      return { operation_id: "operation-7", status: "accepted" }
+    case "/v1/operations/operation-7":
+      return writeOperation("notes.file.write", "running")
     default:
       return undefined
+  }
+}
+
+/**
+ * `respond`, except that the first `times` calls to `route`
+ * (`"<METHOD> <path>"`) get no answer: the gateway reports offline.
+ */
+export function withoutAnswer(input: {
+  readonly route: string
+  readonly times: number
+  readonly respond: (request: GatewayRequest) => unknown
+}) {
+  let lost = 0
+  return (request: GatewayRequest): unknown => {
+    if (
+      `${request.method} ${request.path}` === input.route &&
+      lost < input.times
+    ) {
+      lost += 1
+      throw { kind: "offline" }
+    }
+    return input.respond(request)
   }
 }
