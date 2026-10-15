@@ -86,20 +86,23 @@ export function PublicationsSection({
               {loaded.vaultProblem}
             </p>
           )}
-          {names.map((name) => (
-            <PublicationEditor
-              key={name}
-              onSave={(settings) =>
-                source.save({ siteId, publicationId: name, settings })
-              }
-              publicationId={name}
-              settings={
-                loaded.stored.find((entry) => entry.publication_id === name) ??
-                NEW_PUBLICATION
-              }
-              vaults={loaded.vaults}
-            />
-          ))}
+          {names.map((name) => {
+            const stored = loaded.stored.find(
+              (entry) => entry.publication_id === name
+            )
+            return (
+              <PublicationEditor
+                key={name}
+                onSave={(settings) =>
+                  source.save({ siteId, publicationId: name, settings })
+                }
+                publicationId={name}
+                settings={stored ?? NEW_PUBLICATION}
+                state={stored?.state}
+                vaults={loaded.vaults}
+              />
+            )
+          })}
         </>
       ) : null}
     </section>

@@ -28,16 +28,43 @@ function Choice({
   )
 }
 
+/** The state of a stored publication, as display text. */
+const STATE_TEXT: Readonly<Record<string, string>> = {
+  active: "Active",
+  suspended: "Suspended",
+}
+
+/** The state of a stored publication, and what a suspension means. */
+function PublicationState({ state }: { readonly state: string }) {
+  return (
+    <>
+      <p className="text-body">
+        State: <span className="font-medium">{STATE_TEXT[state] ?? state}</span>
+      </p>
+      {state === "suspended" ? (
+        <p className="text-body text-destructive" role="note">
+          The vault connection of this publication was removed. A new release
+          fails until you select a vault connection and save the publication.
+          The current release keeps its pages.
+        </p>
+      ) : null}
+    </>
+  )
+}
+
 /** The editor of one publication of a site. */
 // eslint-disable-next-line max-lines-per-function -- one form owns its fields and its save.
 export function PublicationEditor({
   publicationId,
   settings,
+  state,
   vaults,
   onSave,
 }: {
   readonly publicationId: string
   readonly settings: PublicationSettings
+  /** The state of the stored publication; absent before the first save. */
+  readonly state?: string
   readonly vaults: readonly NotesConnection[]
   readonly onSave: (settings: PublicationSettings) => Promise<void>
 }) {
@@ -104,6 +131,7 @@ export function PublicationEditor({
       <h3 className="text-subheading font-semibold" id={id("heading")}>
         Publication {publicationId}
       </h3>
+      {state === undefined ? null : <PublicationState state={state} />}
       <div className="flex flex-col gap-2">
         <label className="text-body font-medium" htmlFor={id("vault")}>
           Vault connection
