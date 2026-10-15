@@ -31,7 +31,7 @@ const CALLBACK_PATH = "/.ratatoskr/sign-in/"
  * Whether `url` is the callback page on the approved `hostname`: HTTPS,
  * no port, no user name or password, and the path `/.ratatoskr/sign-in/`.
  */
-export function isOnHostname(url: string, hostname: string): boolean {
+export function isSignInCallback(url: string, hostname: string): boolean {
   try {
     const parsed = new URL(url)
     return (

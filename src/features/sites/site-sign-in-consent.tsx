@@ -2,7 +2,11 @@ import { useEffect, useState } from "react"
 import { Link, useSearchParams } from "react-router"
 import type { components } from "@/api/generated/schema"
 import { Button } from "@/components/ui/button"
-import { browserLocation, isOnHostname, signInRequestOf } from "./site-sign-in"
+import {
+  browserLocation,
+  isSignInCallback,
+  signInRequestOf,
+} from "./site-sign-in"
 import {
   PendingManifest,
   SiteDetails,
@@ -41,7 +45,7 @@ async function signIn(input: {
 }): Promise<Step> {
   try {
     const issued = await input.source.signInCode(input.siteId, input.request)
-    if (!isOnHostname(issued.redirect_url, input.hostname))
+    if (!isSignInCallback(issued.redirect_url, input.hostname))
       return {
         kind: "problem",
         message:

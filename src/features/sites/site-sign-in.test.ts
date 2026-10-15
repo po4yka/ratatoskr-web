@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isOnHostname } from "./site-sign-in"
+import { isSignInCallback } from "./site-sign-in"
 
 const CALLBACK = "/.ratatoskr/sign-in/?code=code-1"
 
@@ -67,7 +67,7 @@ describe("the callback address of a site sign-in", () => {
   ])(
     "accepts only the callback page of the approved hostname: $name",
     ({ url, accepted }) => {
-      expect(isOnHostname(url, "blog.example.org")).toBe(accepted)
+      expect(isSignInCallback(url, "blog.example.org")).toBe(accepted)
     }
   )
 })
