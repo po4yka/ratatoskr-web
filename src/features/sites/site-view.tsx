@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Link } from "react-router"
 import { ManifestApproval } from "./manifest-approval"
 import { PublicationsSection } from "./publications-section"
+import { ReleaseHistory } from "./release-history"
 import {
   describeSitesFailure,
   type ActiveSiteManifest,
@@ -81,6 +82,7 @@ export function SiteView({
             names={state.manifest.publications}
             siteId={siteId}
           />
+          <ReleaseHistory siteId={siteId} />
         </>
       ) : null}
     </section>
