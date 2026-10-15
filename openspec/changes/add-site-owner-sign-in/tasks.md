@@ -18,4 +18,4 @@
 - [x] 2.9 GREEN: remove the ended sessions from the loaded pages, name the `revoked` count, disable the buttons of a group while its revocation runs, and show the absence text for an invalid time. Verify 2.8, and run the gate list of `DEVELOPMENT.md`.
 - [x] 2.10 Correct the comment on `sites.manage` in `src/capabilities/vocabulary.ts`. No test: comment text.
 - [x] 2.11 RED: `src/features/sessions/SessionList.test.tsx` `two_revocations_keep_their_own_pending`, `focus_moves_to_the_outcome_when_a_group_ends` and `not_found_removes_the_session`. Confirm that they fail on their assertions: the end of one revocation enables the group of another, focus stays on the body when a group ends, and a session that the server does not know stays in the list.
-- [ ] 2.12 GREEN: keep one pending entry per site, move focus to the outcome when a group ends, and remove a session whose `DELETE` answers not-found. Verify 2.11, and run the gate list of `DEVELOPMENT.md`.
+- [x] 2.12 GREEN: keep one pending entry per site, move focus to the outcome when a group ends, and remove a session whose `DELETE` answers not-found. Verify 2.11, and run the gate list of `DEVELOPMENT.md`.

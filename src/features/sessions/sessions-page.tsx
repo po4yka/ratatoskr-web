@@ -8,15 +8,7 @@ import {
   type SessionSummary,
 } from "./sessions-source"
 import { SiteSessionGroup, When } from "./site-session-group"
-
-type Loaded =
-  | { readonly kind: "loading" }
-  | { readonly kind: "failed"; readonly message: string }
-  | {
-      readonly kind: "ready"
-      readonly sessions: readonly SessionSummary[]
-      readonly next: string | null
-    }
+import { useSessionEnding, type Loaded } from "./use-session-ending"
 
 function OtherSessions({
   sessions,
@@ -49,14 +41,6 @@ function OtherSessions({
   )
 }
 
-/** One revocation: the group it belongs to, the call, and what it ends. */
-interface Ending {
-  readonly siteId: string
-  /** Sends the revocation and answers the sentence of its outcome. */
-  readonly run: () => Promise<string>
-  readonly ends: (session: SessionSummary) => boolean
-}
-
 function endedText(count: number, siteId: string): string {
   return count === 1
     ? `1 session of ${siteId} ended.`
@@ -68,8 +52,6 @@ export default function SessionsPage() {
   const gateway = useGateway()
   const source = useMemo(() => sessionsSource(gateway), [gateway])
   const [loaded, setLoaded] = useState<Loaded>({ kind: "loading" })
-  const [outcome, setOutcome] = useState<string | null>(null)
-  const [pendingSite, setPendingSite] = useState<string | null>(null)
   const load = useCallback(
     (cursor: string | null, before: readonly SessionSummary[]) =>
       source.page(cursor).then(
@@ -93,26 +75,10 @@ export default function SessionsPage() {
   useEffect(() => {
     void load(null, [])
   }, [load])
-
-  /** Run one revocation, and remove what it ended from the loaded pages. */
-  async function end({ siteId, run, ends }: Ending) {
-    setPendingSite(siteId)
-    try {
-      setOutcome(await run())
-      setLoaded((current) =>
-        current.kind === "ready"
-          ? {
-              ...current,
-              sessions: current.sessions.filter((session) => !ends(session)),
-            }
-          : current
-      )
-    } catch (failure) {
-      setOutcome(describeSessionsFailure(failure, "The session did not end."))
-    } finally {
-      setPendingSite(null)
-    }
-  }
+  const { outcome, outcomeRef, pendingSites, end } = useSessionEnding(
+    loaded,
+    setLoaded
+  )
 
   const groups = loaded.kind === "ready" ? groupBySite(loaded.sessions) : null
   return (
@@ -162,7 +128,7 @@ export default function SessionsPage() {
                         session.site_id === siteId,
                     })
                   }
-                  pending={pendingSite === group.siteId}
+                  pending={pendingSites.has(group.siteId)}
                 />
               ))
             )}
@@ -179,7 +145,13 @@ export default function SessionsPage() {
           Load more sessions
         </Button>
       ) : null}
-      <p aria-live="polite" className="text-body" role="status">
+      <p
+        aria-live="polite"
+        className="text-body outline-none"
+        ref={outcomeRef}
+        role="status"
+        tabIndex={-1}
+      >
         {outcome}
       </p>
     </section>
