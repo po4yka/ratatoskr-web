@@ -46,6 +46,8 @@ export interface GatewayRequest {
   method?: GatewayMethod
   /** A JSON-serializable request body. */
   body?: unknown
+  /** Raw bytes sent unchanged as `application/octet-stream`, such as one upload chunk. */
+  bytes?: Uint8Array<ArrayBuffer>
   query?: Record<string, string | number | boolean>
   /** Extra headers, e.g. an Idempotency-Key supplied by the calling feature. */
   headers?: Record<string, string>
@@ -181,6 +183,10 @@ export function createGateway(deps: GatewayDeps): Gateway {
     const headers: Record<string, string> = { ...request.headers }
     const token = deps.tokenSource.current()
     if (token !== null) headers.Authorization = `Bearer ${token}`
+    if (request.bytes !== undefined) {
+      headers["Content-Type"] = "application/octet-stream"
+      return { method, headers, signal: request.signal, body: request.bytes }
+    }
     if (request.body !== undefined) {
       headers["Content-Type"] = "application/json"
     }

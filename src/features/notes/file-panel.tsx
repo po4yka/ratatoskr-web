@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Failure, IndexSections } from "./index-sections"
+import { NoteText } from "./note-editor"
 import { useRead } from "./notes-read"
 import type { NotesSource } from "./notes-source"
 
@@ -32,15 +33,17 @@ export function FilePanel({
       </h2>
       {text.kind === "loading" ? <p role="status">Loading the file</p> : null}
       {text.kind === "failed" ? <Failure message={text.message} /> : null}
-      {text.kind === "ready" && text.value === null ? (
+      {text.kind === "ready" && text.value.text === null ? (
         <p className="text-body text-muted-foreground">
           This file is not text, so this view cannot show it.
         </p>
       ) : null}
-      {text.kind === "ready" && text.value !== null ? (
-        <pre className="max-w-[70ch] font-sans text-body-lg whitespace-pre-wrap">
-          {text.value}
-        </pre>
+      {text.kind === "ready" && text.value.text !== null ? (
+        <NoteText
+          connectionId={connectionId}
+          loaded={{ text: text.value.text, revision: text.value.revision }}
+          path={path}
+        />
       ) : null}
       <IndexSections index={index} />
     </article>

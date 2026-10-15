@@ -8,6 +8,7 @@ import {
   type NotesFile,
   type NotesSource,
 } from "./notes-source"
+import { WriteModeSwitch } from "./write-mode-switch"
 
 function FileListPanel({
   files,
@@ -65,7 +66,7 @@ function ListedFile({
   )
 }
 
-/** The read-only browse of one connection: its files, one file, its backlinks. */
+/** The browse of one connection: its files, one file, its backlinks, write-back. */
 export function BrowseView({
   source,
   connectionId,
@@ -87,10 +88,8 @@ export function BrowseView({
           All vaults
         </Link>
         <h1 className="mt-2 text-heading font-semibold">Vault files</h1>
-        <p className="mt-2 text-body text-muted-foreground">
-          This view is read-only. Change the files in Obsidian.
-        </p>
       </header>
+      <WriteModeSwitch connectionId={connectionId} />
       <div className="grid gap-6 md:grid-cols-[minmax(0,16rem)_minmax(0,1fr)]">
         <FileListPanel files={files} />
         {path === null ? (

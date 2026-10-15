@@ -1,4 +1,5 @@
 import type { Gateway } from "@/api/gateway/client"
+import { sha256Hex } from "./digest"
 
 /*
  * The /v1/notes wire shapes. The pinned Edge contract has no notes route yet,
@@ -63,6 +64,14 @@ export interface NotesFile {
   readonly revision: string
   readonly media_type: string
   readonly length_bytes: number
+}
+
+/** The bytes of one revision as the client loaded them. */
+export interface LoadedFile {
+  /** The UTF-8 text, or `null` when the bytes are not UTF-8. */
+  readonly text: string | null
+  /** The lowercase hex SHA-256 of the loaded bytes. */
+  readonly revision: string
 }
 
 /** The index of one Markdown note, as ratatoskr-notes builds it. */
@@ -155,18 +164,23 @@ export function notesSource(gateway: Gateway) {
       })
       return required(page).files
     },
-    /** The text of the current revision, or `null` when it is not UTF-8. */
-    async file(connectionId: string, path: string): Promise<string | null> {
+    /**
+     * The current revision: its text, `null` when it is not UTF-8, and the
+     * SHA-256 of the loaded bytes, which a write names as its base.
+     */
+    async file(connectionId: string, path: string): Promise<LoadedFile> {
       if (gateway.stream === undefined)
         throw new Error("This gateway cannot read bytes.")
       const body = await gateway.stream({
         path: filePath(connectionId, "files")(path),
       })
-      const bytes = await new Response(body).arrayBuffer()
+      const bytes = new Uint8Array(await new Response(body).arrayBuffer())
+      const revision = await sha256Hex(bytes)
       try {
-        return new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+        const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+        return { text, revision }
       } catch {
-        return null
+        return { text: null, revision }
       }
     },
     async index(connectionId: string, path: string): Promise<FileIndex> {
@@ -195,6 +209,8 @@ const MESSAGES: Readonly<Record<string, string>> = {
   "notes.request.invalid":
     "The server did not accept the form. Examine the fields and try again.",
   "notes.file.not_found": "This file does not exist in the vault now.",
+  "notes.conflict.not_found":
+    "The server does not know this conflict. It can be resolved already.",
   "notes.connection.cleanup_failed":
     "The server could not remove the vault now. The vault is still connected. Try again later.",
   "notes.service.unavailable":

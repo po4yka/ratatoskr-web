@@ -15,17 +15,27 @@ function sha256(text: string): string {
   return createHash("sha256").update(text, "utf8").digest("hex")
 }
 
-function indexOf(
-  calls: readonly GatewayRequest[],
-  method: string,
-  path: string
-): number {
-  return calls.findIndex((call) => call.method === method && call.path === path)
+/** The index of the call `"<METHOD> <path>"` among the recorded calls. */
+function indexOf(calls: readonly GatewayRequest[], route: string): number {
+  return calls.findIndex((call) => `${call.method} ${call.path}` === route)
 }
 
-function headerOf(call: GatewayRequest | undefined, name: string) {
-  const headers = new Headers(call?.headers ?? {})
-  return headers.get(name)
+/** The Idempotency-Key of a call has 1 to 255 characters. */
+function expectKey(call: GatewayRequest | undefined) {
+  const key = new Headers(call?.headers).get("idempotency-key") ?? ""
+  expect(key.length).toBeGreaterThan(0)
+  expect(key.length).toBeLessThanOrEqual(255)
+}
+
+/** The calls of the upload and the write, in the order they were sent. */
+function steps(recorded: readonly GatewayRequest[]) {
+  const blobs = `${CONNECTION}/blobs`
+  return {
+    open: indexOf(recorded, `POST ${blobs}`),
+    chunk: indexOf(recorded, `PUT ${blobs}/upload-1/chunks/0`),
+    finalize: indexOf(recorded, `POST ${blobs}/upload-1/finalize`),
+    write: indexOf(recorded, `POST ${CONNECTION}/writes`),
+  }
 }
 
 describe("the note editor", () => {
@@ -49,34 +59,21 @@ describe("the note editor", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /save the note/i }))
 
-    await waitFor(() =>
-      expect(indexOf(recorded, "POST", `${CONNECTION}/writes`)).not.toBe(-1)
-    )
-    const open = indexOf(recorded, "POST", `${CONNECTION}/blobs`)
-    const chunk = indexOf(
-      recorded,
-      "PUT",
-      `${CONNECTION}/blobs/upload-1/chunks/0`
-    )
-    const finalize = indexOf(
-      recorded,
-      "POST",
-      `${CONNECTION}/blobs/upload-1/finalize`
-    )
-    const write = indexOf(recorded, "POST", `${CONNECTION}/writes`)
+    await waitFor(() => expect(steps(recorded).write).not.toBe(-1))
+    const { open, chunk, finalize, write } = steps(recorded)
     expect(open).toBeGreaterThanOrEqual(0)
     expect(chunk).toBeGreaterThan(open)
     expect(finalize).toBeGreaterThan(chunk)
     expect(write).toBeGreaterThan(finalize)
 
     const length = new TextEncoder().encode(EDITED).length
-    expect(recorded[open]?.body).toMatchObject({
+    expect(recorded[open].body).toMatchObject({
       declared_size_bytes: length,
       digest: { algorithm: "sha256", hex: sha256(EDITED) },
     })
-    expect(new TextDecoder().decode(recorded[chunk]?.bytes)).toBe(EDITED)
-    expect(recorded[finalize]?.body).toEqual({ resumption_token: "upload-1" })
-    expect(recorded[write]?.body).toEqual({
+    expect(new TextDecoder().decode(recorded[chunk].bytes)).toBe(EDITED)
+    expect(recorded[finalize].body).toEqual({ resumption_token: "upload-1" })
+    expect(recorded[write].body).toEqual({
       operation: {
         update: {
           path: "Projects/Plan.md",
@@ -85,9 +82,7 @@ describe("the note editor", () => {
         },
       },
     })
-    const key = headerOf(recorded[write], "idempotency-key")
-    expect(key?.length ?? 0).toBeGreaterThan(0)
-    expect(key?.length ?? 0).toBeLessThanOrEqual(255)
+    expectKey(recorded[write])
   })
 
   it("write-mode switch sends PUT write-mode", async () => {
@@ -95,18 +90,15 @@ describe("the note editor", () => {
       path: "/notes/connection-1",
       respond: (request) => writes(recorded)(request),
     })
+    const route = `PUT ${CONNECTION}/write-mode`
 
     fireEvent.click(
       await screen.findByRole("button", { name: /turn write-back on/i })
     )
 
-    await waitFor(() =>
-      expect(indexOf(recorded, "PUT", `${CONNECTION}/write-mode`)).not.toBe(-1)
-    )
-    const put = recorded[indexOf(recorded, "PUT", `${CONNECTION}/write-mode`)]
-    expect(put?.body).toEqual({ write_mode: "on" })
-    const key = headerOf(put, "idempotency-key")
-    expect(key?.length ?? 0).toBeGreaterThan(0)
-    expect(key?.length ?? 0).toBeLessThanOrEqual(255)
+    await waitFor(() => expect(indexOf(recorded, route)).not.toBe(-1))
+    const put = recorded[indexOf(recorded, route)]
+    expect(put.body).toEqual({ write_mode: "on" })
+    expectKey(put)
   })
 })

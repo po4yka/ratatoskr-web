@@ -225,15 +225,17 @@ export function createAppRouter(
             />
           ),
         },
-        ...["notes", "notes/:connectionId"].map((path) => ({
-          path,
-          element: (
-            <FeatureRoute
-              entry={navEntries.find((entry) => entry.id === "notes")}
-              view={NotesRoute}
-            />
-          ),
-        })),
+        ...["notes", "notes/:connectionId", "notes/conflicts/:conflictId"].map(
+          (path) => ({
+            path,
+            element: (
+              <FeatureRoute
+                entry={navEntries.find((entry) => entry.id === "notes")}
+                view={NotesRoute}
+              />
+            ),
+          })
+        ),
         ...socialRoutes(navEntries, SocialRoute),
         {
           path: "archives/chatgpt/:view?/:itemId?",
