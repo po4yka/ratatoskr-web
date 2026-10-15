@@ -104,7 +104,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/ai-archives/{provider}/{operation_id}/content": {
+    "/v1/ai-archives/{provider}/{operation_id}/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open an AI archive transfer
+         * @description Opens bounded resumable staging under the prepared provider and operation. The declared media type must be `application/zip`; any other type is refused before a byte moves.
+         */
+        post: operations["openAiArchiveTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai-archives/{provider}/{operation_id}/uploads/{token}/chunks/{index}": {
         parameters: {
             query?: never;
             header?: never;
@@ -113,10 +133,50 @@ export interface paths {
         };
         get?: never;
         /**
-         * Deliver prepared AI archive bytes
-         * @description Streams bytes to the configured provider importer. Edge injects the operation, digest and size claims; callers cannot set them.
+         * Store one AI archive chunk
+         * @description Stores one exact indexed chunk beneath the operation-owned session.
          */
-        put: operations["uploadAiArchiveContent"];
+        put: operations["putAiArchiveTransferChunk"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai-archives/{provider}/{operation_id}/uploads/{token}/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finalize an AI archive transfer
+         * @description Verifies ordered staged bytes and delivers them only to the operation-bound provider receipt.
+         */
+        post: operations["finalizeAiArchiveTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai-archives/{provider}/{operation_id}/uploads/{token}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read AI archive transfer status
+         * @description Returns the exact acknowledged indices for restart-safe resume.
+         */
+        get: operations["readAiArchiveTransferStatus"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -166,6 +226,130 @@ export interface paths {
          *     The address is checked only for a usable scheme and host. Fetching it, following its redirects and bounding what it returns belong to the service that opens the connection, not to this one.
          */
         post: operations["submitCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/captures/blobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit stored bytes for capture
+         * @description Accepts, durably, a request to extract a document from bytes another service already stored, named by reference rather than carried. It returns the operation that tracks the work and no result: `GET /v1/operations/{operation_id}` is where the outcome appears.
+         *
+         *     Only the Telegram bot's session may call this route, and only for bytes the Telegram service owns (`owner_service` must be `ratatoskr-telegram`). The blob must declare between 1 byte and 50 MiB. Platform does not judge whether the media type can be extracted; the extractor reports that on the operation.
+         *
+         *     `Idempotency-Key` is required, exactly as on `POST /v1/captures`: the same key and body return the ORIGINAL operation, and the same key with a different body is refused. Members of the body other than `blob` are ignored.
+         */
+        post: operations["submitBlobCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/channel-digests/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the caller's digest results
+         * @description Summaries of the caller's digest results, newest first, without recap content. Read from the digest service on the caller's behalf; the response is never cached.
+         */
+        get: operations["listChannelDigestResults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/channel-digests/results/{result_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read one digest result
+         * @description One of the caller's digest results, with its recap when it has one. A result that does not exist and one that belongs to someone else are the same 404. The response is never cached.
+         */
+        get: operations["getChannelDigestResult"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/channel-digests/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request a digest of the last 24 hours
+         * @description Accepts the request durably and returns the operation that tracks it. The digest covers the 24 hours before acceptance. `Idempotency-Key` is required; retrying with the same key and body returns the original operation.
+         */
+        post: operations["requestChannelDigestRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/channel-digests/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the caller's channel subscriptions
+         * @description The caller's subscriptions, newest first. Read from the digest service on the caller's behalf; the response is never cached.
+         */
+        get: operations["listChannelDigestSubscriptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/channel-digests/subscriptions/{channel_username}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Subscribe to or unsubscribe from a public channel
+         * @description Accepts the change durably and returns the operation that tracks it; the digest service applies it and reports the outcome on the operation. The username must already be canonical: lowercase, 5 to 32 characters, starting with a letter. `Idempotency-Key` is required; retrying with the same key and body returns the original operation.
+         */
+        put: operations["setChannelDigestSubscription"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -274,6 +458,140 @@ export interface paths {
          *     The body shape is fixed by this API, not by the sender: a source that cannot emit it needs a shim in front, because parsing a provider's own format is provider-specific work that belongs in a provider's own service.
          */
         post: operations["receiveWebhookSignal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/library/items/{analysis_id}/read-state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace one library item's read state
+         * @description Idempotently replaces the complete read-state resource for a caller-owned accepted analysis.
+         */
+        put: operations["replaceLibraryReadState"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/library/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search or browse the caller's library
+         * @description Returns a bounded page owned by the authenticated principal. Tenant identity is derived by Edge and cannot be supplied by the caller.
+         */
+        get: operations["searchLibrary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notes/conflicts/{conflict_id}/resolution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve a conflict of a connected vault
+         * @description Accepts the resolution of one open conflict durably and returns the operation of kind `notes.file.write` that tracks it. A resolution is one more write, `resolve_conflict`: it waits in the queue of its file and is checked like any other write. `choice` is `keep_current`, `keep_writer`, `accept_merge` (only for a conflict with a merge proposal) or `custom`, which names content uploaded first to `/v1/notes/connections/{connection_id}/blobs` in `blob`.
+         *
+         *     The body names the connection of the conflict, as `GET /v1/notes/conflicts/{conflict_id}` gives it, because Edge holds no notes data. The notes service fails the operation with `notes.connection.not_found` when the caller does not own the connection or the connection does not hold the conflict.
+         *
+         *     `Idempotency-Key` is required, as on the write route, and one key names one write across both routes: a key that a write took is refused here with `409`.
+         */
+        post: operations["resolveNotesConflict"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notes/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Connect an Obsidian vault
+         * @description Starts the connection of one Obsidian vault to the notes service. Edge records an operation of kind `notes.connection.connect`, sends the body to the notes service unchanged with the operation id, and keeps no part of the body: the body holds the Obsidian password, the MFA code and the end-to-end password, so Edge does not store, audit or log it. The notes service owns the members of the body and reports the phases of the connection on the operation; poll `GET /v1/operations/{operation_id}`.
+         *
+         *     There is no `Idempotency-Key`: the ledger would keep a digest of the body. The notes service refuses a second connect of one vault. When the notes service does not take the connect, Edge terminates the operation as `failed` with the code of the failure before it answers.
+         *
+         *     Edge serves this route only when the deployment routes the notes service. The body budget is the `control` budget of that route.
+         */
+        post: operations["connectNotesVault"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notes/connections/{connection_id}/write-mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Turn write-back on or off for a connected vault
+         * @description Every connection starts with write mode off. Edge records an operation of kind `notes.connection.write_mode` and sends the request to the notes service with the operation id; the notes service reports the operation, because a `sync` connection must reconfigure its client before the mode is true. Turning write mode off fails every write that was not delivered yet.
+         *
+         *     When the notes service does not take the request, Edge terminates the operation as `failed` with the code of the failure before it answers. `Idempotency-Key` is required: the same key and body return the ORIGINAL operation and are not sent to the notes service again.
+         */
+        put: operations["setNotesWriteMode"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notes/connections/{connection_id}/writes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change one file of a connected vault
+         * @description Accepts one change of one file durably and returns the operation of kind `notes.file.write` that tracks it; the notes service reports the outcome on the operation. The body names exactly one operation of the contract `notes/write-request.v1`: `create`, `update`, `rename`, `move`, `delete`, `set_property` or `resolve_conflict`. Every operation on an existing file names the `base_hash` that the writer read, and a write on an older revision ends as a conflict, never as an overwrite.
+         *
+         *     Content never travels in this request. Upload the bytes first to `/v1/notes/connections/{connection_id}/blobs`, and name the resulting `BlobRef` (owner `ratatoskr-notes`); a frontmatter value is uploaded as one `application/json` document. Edge sets `origin` to `platform`. Edge holds no notes data: the notes service fails the operation with `notes.connection.not_found` for a connection that the caller does not own, and with `notes.write.disabled` while the write mode of the connection is off.
+         *
+         *     `Idempotency-Key` is required. The same key and body return the ORIGINAL operation; the same key with another body, another connection, or on `POST /v1/notes/conflicts/{conflict_id}/resolution` is refused with `409`.
+         */
+        post: operations["writeNotesFile"];
         delete?: never;
         options?: never;
         head?: never;
@@ -500,6 +818,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sessions/revoke-site": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke your sessions on one site
+         * @description Ends every `site_owner` session of yours for one site at once. The sessions of other sites and every other session stay. The session list shows each `site_owner` session with its site and the approved hostname.
+         */
+        post: operations["revokeSiteSessions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/sessions/telegram": {
         parameters: {
             query?: never;
@@ -546,6 +884,274 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the owner's sites
+         * @description Lists the owner's sites, each with the digest of its active manifest, the digest of its last approval or withdrawal and its approval state (`unapproved`, `approved` or `withdrawn`). The sites service answers; Edge forwards the request after it checks the caller. Only a primary session whose user holds the live `platform.owner` grant may call this route (class `management`, ADR-0017).
+         */
+        get: operations["listSites"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/conflicts/{conflict_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a conflict of an edit
+         * @description The base, current and proposed versions of a conflict of a note of the site's publications, and the merge proposal. The owner resolves it with a new edit whose `base_hash` is the current revision. Capability `draft.read`, for the site owner session of the site.
+         */
+        get: operations["readSiteConflict"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/drafts/pages/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the source of a published page
+         * @description The Markdown source, the reference and the current revision of the note behind a page of the current release. Capability `draft.read`, for the site owner session of the site.
+         */
+        get: operations["readSiteDraftPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/drafts/sources/{source_ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the source of a note of the site
+         * @description The Markdown source and the current revision of a note of the site's publications, published or not. Capability `draft.read`, for the site owner session of the site.
+         */
+        get: operations["readSiteDraftSource"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/drafts/sources/{source_ref}/blobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload the new content of a note
+         * @description The body is the new content of the note, at most 16 MiB. Edge stores it in `ratatoskr-notes` for the connection of the note and keeps none of it; the answer names the stored blob for the edit. Capability `notes.edit`, budget class `transfer`, for the site owner session of the site, with `X-Ratatoskr-Site-Request: 1` and the approved `Origin`.
+         */
+        post: operations["uploadSiteEditContent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/edits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change the content of one note
+         * @description Changes the content of one existing note of the site's publications to an uploaded blob, if the note is still at `base_hash`. The write is pending until the vault has it: the site's event stream sends `edit.completed` with the new revision, or `edit.conflicted` when the note changed in the meantime. A repeated request with the same `idempotency_key` answers the same operation. Capability `notes.edit`, for the site owner session of the site, with `X-Ratatoskr-Site-Request: 1` and the approved `Origin`.
+         */
+        post: operations["editSiteNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/knowledge/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search the owner's knowledge from the site
+         * @description Searches only what the user of the site owner session owns, with the bounds of `GET /v1/library/search`: a query of at most 512 Unicode scalar values and a `limit` from 1 through 100. A tenant parameter is refused. Capability `knowledge.search`, for the site owner session of the site.
+         */
+        get: operations["searchSiteKnowledge"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the owner's library from the site
+         * @description The same items, bounds and read state as `GET /v1/library/search`, for the user of the site owner session; that user is the only tenant, and a tenant parameter is refused. Capability `library.read`, for the site owner session of the site.
+         */
+        get: operations["readSiteLibrary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/manifest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the active manifest of a site
+         * @description Reads the active manifest of the site, the last valid submission, with its SHA-256. An approval names that digest. The sites service answers; Edge forwards the request after it checks the caller. Only a primary session whose user holds the live `platform.owner` grant may call this route (class `management`, ADR-0017).
+         */
+        get: operations["readSiteManifest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/manifest/approval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve the active manifest of a site
+         * @description Approves the manifest that the sites service holds as the active manifest of the site. The body names the SHA-256 of the manifest bytes that the owner read; Edge reads the active manifest from the sites service and refuses a digest that is not the active one with `platform.site.manifest_digest_stale`. A hostname belongs to one approved site: an approval that would give a hostname to a second site is refused with `platform.site.hostname_taken`.
+         *
+         *     Platform stores the approval and announces it to the sites service in the same transaction. An approval of the digest that is approved already changes nothing and announces nothing. Only a primary session whose user holds the live `platform.owner` grant may call this route (class `management`, ADR-0017).
+         */
+        post: operations["approveSiteManifest"];
+        /**
+         * Withdraw the approval of a site
+         * @description Withdraws the approval of the site. The site then serves nothing. Platform stores the state `withdrawn` and announces it to the sites service with the digest, the capabilities and the hostname of the approval it ends. A withdrawal of a withdrawn approval changes nothing and announces nothing. Only a primary session whose user holds the live `platform.owner` grant may call this route (class `management`, ADR-0017).
+         */
+        delete: operations["withdrawSiteManifest"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/releases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request a release build of a site
+         * @description Accepts a request to build a release of the site durably and returns the operation of kind `sites.release.build` that tracks it; the sites service builds the release and reports the outcome on the operation. A build that makes no new release succeeds and names the current release.
+         *
+         *     The first release that holds a publication is always requested here, whatever the release mode of the publication. `Idempotency-Key` is required: the same key for the same site returns the ORIGINAL operation. Only a primary session whose user holds the live `platform.owner` grant may call this route (class `release`, ADR-0017).
+         */
+        post: operations["requestSiteReleaseBuild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redeem a sign-in code on the site
+         * @description The site's callback page redeems the code with its PKCE verifier, from the approved hostname. The answer sets the host-only cookie `__Host-ratatoskr-site` of a site owner session (`HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/`), which ends 12 hours after issue or 1 hour after its last use. Every invalid code is the same `401`. Class `sign-in` (ADR-0017).
+         */
+        post: operations["openSiteSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sites/{site}/sign-in-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve a sign-in of the owner on one site
+         * @description The owner's primary session approves a sign-in on an approved site: the body names the PKCE S256 challenge of the site's verifier and the path to return to. The answer carries a single-use code that expires after 60 seconds, and the address of the site's callback page with the code. The answer is not stored and carries `Cache-Control: no-store` and `Referrer-Policy: no-referrer`. Class `management` (ADR-0017).
+         */
+        post: operations["requestSiteSignInCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/status": {
         parameters: {
             query?: never;
@@ -579,6 +1185,19 @@ export interface components {
          *     wire change that consumers adopt by upgrading.
          */
         AcquisitionMethod: "official_api" | "share_extension" | "browser_extension" | "public_resolution" | "data_export" | "legacy_import";
+        /** @description The answer of `GET /v1/sites/{site}/manifest`: the active manifest of the site. */
+        ActiveSiteManifest: {
+            /** @description The capabilities that the manifest requests. */
+            capabilities: string[];
+            /** @description The hostname of the manifest. */
+            hostname: string;
+            /** @description The SHA-256 of the manifest bytes, 64 lower-case hex digits. The owner approves this digest. */
+            manifest_sha256: string;
+            /** @description The publication ids of the manifest. */
+            publications: string[];
+            /** @description The site id. */
+            site_id: string;
+        };
         /**
          * @description Whether one import obtained the whole export, stated per `docs/ARCHITECTURE.md` S8.3.
          *
@@ -656,7 +1275,10 @@ export interface components {
             operation_id: string;
             /** @description Edge has durably accepted metadata only; it has not received the archive bytes yet. */
             status: string;
-            /** @description Relative operation-bound endpoint to which the archive bytes may be streamed with `PUT`. */
+            /**
+             * @description Relative operation-bound path at which the upload session is opened with `POST`; the chunks
+             *     are then sent with `PUT` to the paths that session returns.
+             */
             upload_path: string;
         };
         /**
@@ -769,6 +1391,144 @@ export interface components {
             /** @description Always `accepted` here. Present so a client never has to infer it from the status code. */
             status: string;
         };
+        /** @description What a client gets back from either command route: an operation to poll, never a result. */
+        ChannelDigestAccepted: {
+            /**
+             * Format: uuid
+             * @description The operation to poll at `/v1/operations/{id}`.
+             */
+            operation_id: string;
+            /** @description Always `accepted` here. */
+            status: string;
+        };
+        /**
+         * ChannelDigestFailureClass
+         * @description Content-free operational class explaining why a digest run or result failed, such as
+         *     `provider_unavailable` or `manifest_invalid`.
+         *
+         *     Open on purpose: the digest service owns the vocabulary and a consumer treats an
+         *     unrecognized class as opaque display text.
+         * @example provider_unavailable
+         * @example manifest_invalid
+         */
+        ChannelDigestFailureClass: string;
+        /**
+         * @description How a digest result ended.
+         *
+         *     Closed on purpose: a client branches on it to decide whether a recap exists, and an
+         *     unrecognized outcome must stop processing instead of being read as a success.
+         */
+        ChannelDigestOutcome: "completed" | "partial" | "failed";
+        /**
+         * @description The recap of a digest result: an opaque JSON object owned by Knowledge.
+         *
+         *     The digest service relays the object after checking its identity and digest against the stored
+         *     completion fact, and never interprets it. The contract names it so that an absent recap is a
+         *     typed optional member; its members are Knowledge's to define. On the wire it is exactly the
+         *     object, with no wrapper member.
+         */
+        ChannelDigestRecapDocument: {
+            [key: string]: unknown;
+        };
+        /**
+         * ChannelDigestResultId
+         * Format: uuid
+         * @description Canonical channel-digest UUID identity.
+         */
+        ChannelDigestResultId: string;
+        /** @description Response of `GET /v1/results`: the owner's results, newest first, summaries only. */
+        ChannelDigestResultPage: {
+            /** @description The result summaries in this page. */
+            results: components["schemas"]["ChannelDigestResultSummary"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description One entry of the result listing: linkage and outcome only, never recap content. */
+        ChannelDigestResultSummary: {
+            /** @description Instant the digest service recorded the result, on its own clock. */
+            created_at: components["schemas"]["WireTimestamp"];
+            /** @description How the result ended. */
+            outcome: components["schemas"]["ChannelDigestOutcome"];
+            /** @description Identity of the result. */
+            result_id: components["schemas"]["ChannelDigestResultId"];
+            /** @description The digest run the result belongs to. */
+            run_id: components["schemas"]["ChannelDigestRunId"];
+            /** @description Why a failed result failed. Present exactly for failed results. */
+            safe_failure_class?: components["schemas"]["ChannelDigestFailureClass"] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * @description Response of `GET /v1/results/{result_id}`.
+         *
+         *     A completed or partial result carries the local linkage and the Knowledge-owned recap, which
+         *     the digest service returns only after the analysis identity and digest match the stored
+         *     completion fact. A failed result is local and minimized to `result_id`, `run_id`, `outcome`
+         *     and `safe_failure_class`. Absent optionals are not serialized.
+         */
+        ChannelDigestResultView: {
+            /**
+             * Format: uint16
+             * @description Number of citations the recap carries. Absent for a failed result.
+             */
+            citation_count?: number | null;
+            /** @description How the result ended. */
+            outcome: components["schemas"]["ChannelDigestOutcome"];
+            /** @description The recap itself, an opaque JSON object owned by Knowledge. Absent for a failed result. */
+            recap?: components["schemas"]["ChannelDigestRecapDocument"] | null;
+            /**
+             * Format: uuid
+             * @description Knowledge's analysis identity of the recap, a bare canonical UUID. Absent for a failed
+             *     result.
+             */
+            recap_id?: string | null;
+            /** @description SHA-256 identity of the stored recap result. Absent for a failed result. */
+            result_digest?: components["schemas"]["ContentDigest"] | null;
+            /** @description Identity of the result. */
+            result_id: components["schemas"]["ChannelDigestResultId"];
+            /** @description The digest run the result belongs to. */
+            run_id: components["schemas"]["ChannelDigestRunId"];
+            /** @description Why a failed result failed. Present exactly for failed results. */
+            safe_failure_class?: components["schemas"]["ChannelDigestFailureClass"] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * ChannelDigestRunId
+         * Format: uuid
+         * @description Canonical channel-digest UUID identity.
+         */
+        ChannelDigestRunId: string;
+        /**
+         * ChannelDigestSubscriptionId
+         * Format: uuid
+         * @description Canonical channel-digest UUID identity.
+         */
+        ChannelDigestSubscriptionId: string;
+        /** @description Response of `GET /v1/subscriptions`: the owner's subscriptions, newest first. */
+        ChannelDigestSubscriptionPage: {
+            /** @description The subscriptions in this page. */
+            subscriptions: components["schemas"]["ChannelDigestSubscriptionView"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description One owner subscription to a public channel. */
+        ChannelDigestSubscriptionView: {
+            /** @description Canonical public channel username the owner subscribed to. */
+            channel_username: components["schemas"]["ChannelUsername"];
+            /** @description Whether the subscription currently feeds digest runs. */
+            enabled: boolean;
+            /** @description Identity of the subscription. */
+            subscription_id: components["schemas"]["ChannelDigestSubscriptionId"];
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * ChannelUsername
+         * @description Canonical lowercase public Telegram channel username.
+         * @example example_channel
+         */
+        ChannelUsername: string;
         /** @description A content digest with an explicit algorithm. */
         ContentDigest: {
             /** @description Hash algorithm used to produce `hex`. */
@@ -776,12 +1536,31 @@ export interface components {
             /** @description Lowercase hexadecimal digest bytes. */
             hex: components["schemas"]["DigestHex"];
         };
+        /** @description `create`: add a file at a path that no live file holds. */
+        CreateFile: {
+            /** @description The content of the new file, uploaded first to `ratatoskr-notes`. */
+            blob: components["schemas"]["BlobRef"];
+            /** @description The path of the new file, relative to the vault root, in NFC. */
+            path: components["schemas"]["VaultWritePath"];
+        };
         /** @description What creating a pairing code may ask for. */
         CreatePairingCode: {
             /** @description The kind of device expected to present this code, when the initiator wants to pin one. */
             expected_kind?: string | null;
             /** @description A free-text note about what is expected to pair, at most 120 characters. */
             label?: string | null;
+            /**
+             * @description The one site of a `site_deployer` code: required for that kind and refused for every other.
+             *     Only a session with the live owner grant creates such a code.
+             */
+            site_id?: string | null;
+        };
+        /** @description `delete`: move a file to the vault trash. */
+        DeleteFile: {
+            /** @description The lowercase hex SHA-256 of the revision that the writer read. */
+            base_hash: components["schemas"]["DigestHex"];
+            /** @description The path of the file, relative to the vault root, in NFC. */
+            path: components["schemas"]["VaultWritePath"];
         };
         /** @description One page of [`DeviceSummary`] rows, newest first. `next_cursor` nulls at the end of the walk. */
         DeviceList: {
@@ -927,6 +1706,47 @@ export interface components {
          * @example eyJvYnNlcnZlZF9hdCI6IjIwMjYtMDgtMjdUMDk6MDA6MDBaIn0
          */
         InspectionCursor: string;
+        /** @description One minimized public library result. */
+        LibraryItem: {
+            /**
+             * Format: uuid
+             * @description Accepted Knowledge analysis identity.
+             */
+            analysis_id: string;
+            /**
+             * Format: uuid
+             * @description Canonical document identity.
+             */
+            document_id: string;
+            /** @description The effective user read state. */
+            read_state: components["schemas"]["ReadState"];
+            /**
+             * Format: float
+             * @description A finite positive relevance score, absent for browse results.
+             */
+            score?: number | null;
+            /** @description A bounded result excerpt, absent for browse results. */
+            snippet?: string | null;
+            /** @description A bounded display title. */
+            title: string;
+        };
+        /** @description A bounded public page. */
+        LibraryPage: {
+            /** @description Whether at least one later result exists. */
+            has_more: boolean;
+            /** @description Ordered result summaries. */
+            items: components["schemas"]["LibraryItem"][];
+            /**
+             * Format: uint32
+             * @description Applied page size.
+             */
+            limit: number;
+            /**
+             * Format: uint64
+             * @description Applied zero-based offset.
+             */
+            offset: number;
+        };
         /**
          * MediaType
          * @description Internet media type of stored bytes, without parameters.
@@ -945,6 +1765,81 @@ export interface components {
             mobile: string;
             /** @description `ratatoskr-web`. */
             web: string;
+        };
+        /**
+         * NotesConflictId
+         * Format: uuid
+         * @description Identity of one conflict of a connected vault. Bare canonical lowercase hyphenated UUID; not namespaced.
+         * @example 018f0000-0000-7000-8000-000000000001
+         */
+        NotesConflictId: string;
+        /** @description What a client gets back from a connect that the notes service accepted. */
+        NotesConnectAccepted: {
+            /** @description The answer of the notes service, unchanged: the connection id, its channel and its state. */
+            connection: unknown;
+            /**
+             * Format: uuid
+             * @description The operation to poll at `/v1/operations/{id}`.
+             */
+            operation_id: string;
+            /** @description Always `accepted` here. */
+            status: string;
+        };
+        /**
+         * @description The body of a connect. The notes service owns its members, and Edge sends it to the notes service
+         *     unread.
+         */
+        NotesConnectRequest: {
+            [key: string]: unknown;
+        };
+        /**
+         * NotesConnectionId
+         * Format: uuid
+         * @description Identity of one vault connection of ratatoskr-notes. Bare canonical lowercase hyphenated UUID; not namespaced.
+         * @example 018f0000-0000-7000-8000-000000000001
+         */
+        NotesConnectionId: string;
+        /** @description What a client submits to end an open conflict. */
+        NotesResolutionRequest: {
+            /**
+             * @description The content to write, uploaded first to notes. Present exactly when `choice` is `custom`.
+             * @default null
+             */
+            blob: components["schemas"]["BlobRef"] | null;
+            /** @description How the owner resolves the conflict. */
+            choice: components["schemas"]["ResolutionChoice"];
+            /**
+             * @description The connection whose vault holds the file of the conflict, as
+             *     `GET /v1/notes/conflicts/{conflict_id}` names it. Edge holds no notes data; notes refuses a
+             *     connection that does not hold the conflict.
+             */
+            connection_id: components["schemas"]["NotesConnectionId"];
+        };
+        /** @description What a client gets back from the three routes: an operation to poll, never a result. */
+        NotesWriteAccepted: {
+            /**
+             * Format: uuid
+             * @description The operation to poll at `/v1/operations/{id}`.
+             */
+            operation_id: string;
+            /** @description Always `accepted` here. */
+            status: string;
+        };
+        /**
+         * @description What a client submits to turn write mode on or off. Notes owns the member; Edge checks it so
+         *     that it mints no operation for a body that notes cannot take.
+         */
+        NotesWriteModeRequest: {
+            /** @description The mode to set. */
+            write_mode: components["schemas"]["WriteMode"];
+        };
+        /** @description What a client submits to change one file of a connected vault. */
+        NotesWriteRequest: {
+            /**
+             * @description The one change: an object with one member, whose name is the operation kind (`create`,
+             *     `update`, `rename`, `move`, `delete`, `set_property` or `resolve_conflict`).
+             */
+            operation: components["schemas"]["WriteOperation"];
         };
         /** @description What a logging-in device presents. */
         OpenDeviceSession: {
@@ -1181,6 +2076,8 @@ export interface components {
             /** @description When it finished, if it has. */
             terminated_at?: components["schemas"]["WireTimestamp"] | null;
         };
+        /** @description Language of the requested first-version recap projection. */
+        OutputLanguage: "ru" | "en";
         /** @description What a pairing device presents. */
         PairDevice: {
             /** @description The single-use code minted by an authenticated session. */
@@ -1236,6 +2133,24 @@ export interface components {
          * @example 42
          */
         ProgressPercent: number;
+        /** @description What a `set_property` operation does to its property. A frontmatter value is note content, so the caller uploads it as one JSON document (`application/json`) to ratatoskr-notes first, and `set` names the resulting BlobRef. */
+        PropertyChange: {
+            set: components["schemas"]["BlobRef"] & {
+                /** @constant */
+                media_type: "application/json";
+            };
+        } | "remove";
+        /**
+         * PropertyKey
+         * @description The name of one frontmatter property of a Markdown file, as the owner wrote it.
+         *
+         *     1 to 255 characters with no C0 or DEL control character. The pattern carries the
+         *     255-character bound; the length guard is 1020 UTF-8 bytes, the most 255 characters can
+         *     take.
+         * @example tags
+         * @example status
+         */
+        PropertyKey: string;
         /** @description A stable public component group that reveals no private topology. */
         PublicComponentId: "api" | "storage" | "command_delivery" | "connected_services";
         /** @description Availability of one public component group. */
@@ -1262,6 +2177,13 @@ export interface components {
         };
         /** @description Overall public availability of Ratatoskr. */
         PublicStatusState: "operational" | "degraded" | "unavailable";
+        /** @description The effective read state of an accepted analysis. */
+        ReadState: "unread" | "read";
+        /** @description Authoritative read state returned after replacement. */
+        ReadStateResource: {
+            /** @description Stored effective state. */
+            read_state: components["schemas"]["ReadState"];
+        };
         /** @description What a refreshing client presents. */
         RefreshSession: {
             /** @description The current, unspent link of the session's refresh chain. */
@@ -1278,11 +2200,61 @@ export interface components {
             /** @description The `state` this service issued, so it can match the callback to its own flow. */
             state: string;
         };
+        /** @description `rename` and `move`: give a file a new path. Links to the file are rewritten. */
+        RelocateFile: {
+            /** @description The lowercase hex SHA-256 of the revision that the writer read. */
+            base_hash: components["schemas"]["DigestHex"];
+            /** @description The path of the file before the operation, relative to the vault root, in NFC. */
+            path: components["schemas"]["VaultWritePath"];
+            /** @description The path of the file after the operation, relative to the vault root, in NFC. */
+            target_path: components["schemas"]["VaultWritePath"];
+        };
+        /** @description The complete read-state resource accepted by `PUT`. */
+        ReplaceReadState: {
+            /** @description Replacement state. */
+            read_state: components["schemas"]["ReadState"];
+        };
+        /** @description What a client submits to ask for a digest now. */
+        RequestRun: {
+            /** @description The language of the recap. Required: there is no default language. */
+            output_language: components["schemas"]["OutputLanguage"];
+        };
+        /**
+         * @description How the owner resolves a conflict.
+         *
+         *     **Closed on purpose**: each choice selects different bytes, and an unknown choice must stop
+         *     the write instead of being read as one of them.
+         */
+        ResolutionChoice: "keep_current" | "keep_writer" | "accept_merge" | "custom";
+        /** @description `resolve_conflict`: end an open conflict with one choice. `blob` is present exactly when `choice` is `custom`. There is no `base_hash`: ratatoskr-notes checks the resolution against the current revision that the conflict recorded. */
+        ResolveConflict: {
+            /** @enum {string} */
+            choice: "keep_current" | "keep_writer" | "accept_merge";
+            conflict_id: components["schemas"]["NotesConflictId"];
+        } | {
+            blob: components["schemas"]["BlobRef"];
+            /** @constant */
+            choice: "custom";
+            conflict_id: components["schemas"]["NotesConflictId"];
+        };
+        /** @description What `POST /v1/sessions/revoke-site` takes. */
+        RevokeSiteSessions: {
+            /** @description The site whose owner sessions end. */
+            site_id: string;
+        };
         /** @description What revoke-all answers. */
         RevokedAll: {
             /**
              * Format: uint64
              * @description How many live sessions ended, including the calling one.
+             */
+            revoked: number;
+        };
+        /** @description What `POST /v1/sessions/revoke-site` answers. */
+        RevokedSiteSessions: {
+            /**
+             * Format: uint64
+             * @description How many live `site_owner` sessions of the site ended.
              */
             revoked: number;
         };
@@ -1410,6 +2382,8 @@ export interface components {
             device?: components["schemas"]["SessionDeviceRef"] | null;
             /** @description When it stops being valid on its own. */
             expires_at: string;
+            /** @description The approved hostname of the site of a `site_owner` session. */
+            hostname?: string | null;
             /** @description When it was issued. */
             issued_at: string;
             /** @description How it was established. */
@@ -1421,6 +2395,43 @@ export interface components {
              * @description The session's identity.
              */
             session_id: string;
+            /** @description The site of a `site_owner` session, and the approved hostname of that site. */
+            site_id?: string | null;
+        };
+        /** @description `set_property`: set or remove one frontmatter property of a Markdown file. */
+        SetFileProperty: {
+            /** @description The lowercase hex SHA-256 of the revision that the writer read. */
+            base_hash: components["schemas"]["DigestHex"];
+            /** @description The path of the file, relative to the vault root, in NFC. */
+            path: components["schemas"]["VaultWritePath"];
+            /**
+             * @description `{"set": <BlobRef of an application/json value>}` to set the property, or `"remove"` to
+             *     remove it.
+             */
+            property_change: components["schemas"]["PropertyChange"];
+            /** @description The frontmatter property to change. */
+            property_key: components["schemas"]["PropertyKey"];
+        };
+        /** @description What a client submits to set a subscription's state. */
+        SetSubscription: {
+            /** @description The state the subscription should end up in. */
+            desired_state: components["schemas"]["SubscriptionDesiredState"];
+        };
+        /** @description The answer of `POST /v1/sites/{site}/sign-in-codes`. */
+        SignInCodeIssued: {
+            /** @description The single-use code. It is shown once and expires after 60 seconds. */
+            code: string;
+            /** @description When the code expires. */
+            expires_at: string;
+            /** @description The SDK callback page of the approved hostname, with the code. */
+            redirect_url: string;
+        };
+        /** @description What the owner's primary session sends to `POST /v1/sites/{site}/sign-in-codes`. */
+        SignInCodeRequest: {
+            /** @description The PKCE S256 challenge of the site's verifier: 43 base64url characters. */
+            challenge: string;
+            /** @description The path on the site to return to: it starts with one `/`, at most 1024 bytes. */
+            return_path: string;
         };
         /** @description What a source gets back. */
         SignalAccepted: {
@@ -1432,6 +2443,173 @@ export interface components {
             operation_id: string;
             /** @description Always `accepted` here. Present so a caller never has to infer it from the status code. */
             status: string;
+        };
+        /** @description The approval of one site, as Platform stores it. */
+        SiteApproval: {
+            /** @description The capabilities of the approved manifest. */
+            capabilities: string[];
+            /** @description The hostname of the approved manifest. */
+            hostname: string;
+            /** @description The approved manifest digest. */
+            manifest_sha256: string;
+            /** @description The site. */
+            site_id: string;
+            /** @description `approved` or `withdrawn`. */
+            state: string;
+        };
+        /** @description The body of an approval: the digest of the manifest that the owner read. */
+        SiteApprovalRequest: {
+            /** @description The lowercase hex SHA-256 of the manifest bytes that the owner approves. */
+            manifest_sha256: string;
+        };
+        /** @description The approval state of a site in [`SiteManifestState`]. */
+        SiteApprovalState: "unapproved" | "approved" | "withdrawn";
+        /** @description The answer of `POST .../drafts/sources/{source_ref}/blobs`: the stored content of an edit. */
+        SiteBlobUploaded: {
+            /** @description The stored content, owned by `ratatoskr-notes`. */
+            content_blob: components["schemas"]["BlobRef"];
+            /** @description The lowercase hex SHA-256 of the content. */
+            content_hash: string;
+        };
+        /**
+         * @description The answer of `GET /v1/sites/{site}/conflicts/{conflict_id}`: one conflict of a note in the
+         *     site's publications, with no vault path and no connection.
+         */
+        SiteConflict: {
+            /** @description The hash of the revision that the edit read. */
+            base_hash?: string | null;
+            /**
+             * Format: uuid
+             * @description The conflict.
+             */
+            conflict_id: string;
+            /** @description The hash of the revision that the vault holds. */
+            current_hash?: string | null;
+            /** @description The merge proposal, when `ratatoskr-notes` made one. */
+            merge_proposal?: components["schemas"]["SiteMergeProposal"] | null;
+            /**
+             * Format: uuid
+             * @description The operation of the edit that met it.
+             */
+            operation_id: string;
+            /** @description The note of the conflict. */
+            source_ref: string;
+            /** @description `open` or `resolved`. */
+            state: string;
+            /** @description The texts of the sides and of the proposal. */
+            texts: components["schemas"]["SiteConflictTexts"];
+            /** @description The sides that are larger than 1 MiB and so are not in `texts`. */
+            texts_over_limit: string[];
+            /** @description The hash of the content of the edit. */
+            writer_hash?: string | null;
+        };
+        /** @description The texts of a conflict of a Markdown or plain-text note, when each is at most 1 MiB. */
+        SiteConflictTexts: {
+            /** @description The revision that the edit read. */
+            base?: string | null;
+            /** @description The revision that the vault holds. */
+            current?: string | null;
+            /** @description The merge proposal of `ratatoskr-notes`. */
+            merged?: string | null;
+            /** @description The content of the edit. */
+            writer?: string | null;
+        };
+        /**
+         * @description The source of one note in the site's publications, for the owner session of the site
+         *     (`GET .../drafts/pages/{slug}` and `GET .../drafts/sources/{source_ref}`).
+         */
+        SiteDraft: {
+            /** @description The Markdown source of the note. */
+            markdown: string;
+            /** @description The lowercase hex SHA-256 of the note's current bytes: the `base_hash` of the next edit. */
+            revision: string;
+            /** @description The slug of the note in the current release; absent when the note is not published. */
+            slug?: string | null;
+            /** @description The opaque reference of the note. Only a site owner session sees it; it names no vault path. */
+            source_ref: string;
+        };
+        /** @description The answer of `POST /v1/sites/{site}/edits`: an operation to follow, never a result. */
+        SiteEditAccepted: {
+            /**
+             * Format: uuid
+             * @description The operation of the write. The site's event stream sends `edit.completed` or
+             *     `edit.conflicted` with this id.
+             */
+            operation_id: string;
+            /** @description Always `accepted` here. */
+            status: string;
+        };
+        /**
+         * @description What the owner session sends to `POST /v1/sites/{site}/edits`: the content names a stored blob,
+         *     never inline text.
+         */
+        SiteEditRequest: {
+            /** @description The lowercase hex SHA-256 of the revision that the owner read and changed. */
+            base_hash: string;
+            /** @description The new content, uploaded first to `POST .../drafts/sources/{source_ref}/blobs`. */
+            content_blob: components["schemas"]["BlobRef"];
+            /** @description The lowercase hex SHA-256 of the new content. */
+            content_hash: string;
+            /**
+             * @description A client-chosen key, 1 to 255 characters: a repeated edit with the same key answers the
+             *     same operation and writes nothing more.
+             */
+            idempotency_key: string;
+            /** @description The note to change. */
+            source_ref: string;
+        };
+        /** @description The answer of `GET /v1/sites`: the owner's sites, each with the state of its manifest. */
+        SiteList: {
+            /** @description The sites, in ascending `site_id` order. */
+            sites: components["schemas"]["SiteManifestState"][];
+        };
+        /** @description One site of [`SiteList`]. */
+        SiteManifestState: {
+            /** @description The approval state of the site. */
+            approval_state: components["schemas"]["SiteApprovalState"];
+            /**
+             * @description The SHA-256 that the last approval or withdrawal named, from the projection of the approval
+             *     events; `null` when the site was never approved.
+             */
+            approved_manifest_sha256?: string | null;
+            /** @description The site id. */
+            site_id: string;
+            /**
+             * @description The SHA-256 of the active manifest, the last valid submission; `null` when the site has
+             *     none.
+             */
+            submitted_manifest_sha256?: string | null;
+        };
+        /** @description The merge proposal of a conflict. */
+        SiteMergeProposal: {
+            /** @description Whether the two changes overlap. */
+            has_overlapping_hunks: boolean;
+            /** @description The lowercase hex SHA-256 of the proposed merge. */
+            merged_hash: string;
+        };
+        /** @description What a client gets back from an accepted build request. */
+        SiteReleaseBuildAccepted: {
+            /**
+             * Format: uuid
+             * @description The operation to poll at `/v1/operations/{id}`.
+             */
+            operation_id: string;
+            /** @description Always `accepted` here. */
+            status: string;
+        };
+        /** @description The answer of `POST /v1/sites/{site}/sessions`. The credential is only in the cookie. */
+        SiteSessionOpened: {
+            /** @description When the session ends at the latest. */
+            expires_at: string;
+            /** @description The path on the site to return to. */
+            return_path: string;
+        };
+        /** @description What the site's callback page sends to `POST /v1/sites/{site}/sessions`. */
+        SiteSessionRequest: {
+            /** @description The code from the redirect. */
+            code: string;
+            /** @description The PKCE verifier that the site kept. */
+            verifier: string;
         };
         /** @description The social provenance a browser extension must assert explicitly. */
         SocialCaptureProvenance: {
@@ -1446,6 +2624,17 @@ export interface components {
         };
         /** @description The social owner to which Platform routes an explicit capture. */
         SocialCaptureProvider: "x" | "instagram" | "threads";
+        /**
+         * @description The members of `SubmitCapture`'s sibling for stored bytes: the blob a client names by reference.
+         *
+         *     Top-level members this struct does not name (the Telegram bot sends an `origin` that has no
+         *     meaning here) are tolerated and ignored, so the bot can add routing hints without a Platform
+         *     release. The blob itself is strict: a member the contract does not define is refused.
+         */
+        SubmitBlobCapture: {
+            /** @description The stored bytes to extract. Owned by the Telegram service, between 1 byte and 50 MiB. */
+            blob: components["schemas"]["BlobRef"];
+        };
         /** @description What a client submits. */
         SubmitCapture: {
             /** @description Provenance supplied by an explicit browser social capture, when this is a social permalink. */
@@ -1453,6 +2642,8 @@ export interface components {
             /** @description The address to capture. `http` or `https`, with a host, at most 2048 characters. */
             url: string;
         };
+        /** @description Desired state of one owner/public-channel subscription. */
+        SubscriptionDesiredState: "active" | "inactive";
         /**
          * TenantRef
          * @description The owner of the data a record concerns, wire form `user:<uuid>`. The kind set is closed: a consumer that cannot understand the owner kind must reject the record rather than process it.
@@ -1466,6 +2657,166 @@ export interface components {
          * @example 4bf92f3577b34da6a3ce929d0e0e4736
          */
         TraceId: string;
+        /** @description `update`: replace the bytes of a file. */
+        UpdateFile: {
+            /** @description The lowercase hex SHA-256 of the revision that the writer read and changed. */
+            base_hash: components["schemas"]["DigestHex"];
+            /** @description The new content of the file, uploaded first to `ratatoskr-notes`. */
+            blob: components["schemas"]["BlobRef"];
+            /** @description The path of the file, relative to the vault root, in NFC. */
+            path: components["schemas"]["VaultWritePath"];
+        };
+        /**
+         * @description One chunk accepted. Answers idempotently: the same bytes delivered twice for one index yield
+         *     two identical-success receipts and leave the recorded state unchanged.
+         */
+        UploadChunkReceipt: {
+            /**
+             * Format: uint32
+             * @description The zero-based index the bytes were recorded under. Required.
+             */
+            chunk_index: number;
+            /**
+             * @description `true` when this delivery replayed an already-recorded index with matching bytes and
+             *     changed nothing. Required; lets an at-least-once client distinguish news from echo.
+             */
+            idempotent_replay: boolean;
+            /**
+             * Format: uint32
+             * @description How many distinct indices are now recorded, including this one when newly recorded.
+             *     Required.
+             */
+            received_chunks_count: number;
+            /** @description The session the chunk joined. Required. */
+            resumption_token: components["schemas"]["UploadResumptionToken"];
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * @description The terminal answer to finalize. Both variants are truthful answers at `200` in the canonical
+         *     binding: a mismatch is an anticipated fact about the bytes, not a transport fault.
+         */
+        UploadCompletionOutcome: ({
+            /** @description The content-addressed reference to the sealed bytes, owned by the receiving service. */
+            blob_ref: components["schemas"]["BlobRef"];
+            /** @constant */
+            outcome: "stored";
+        } & {
+            [key: string]: unknown;
+        }) | ({
+            /** @description The digest the streamed bytes actually produced. */
+            computed_sha256_hex: components["schemas"]["DigestHex"];
+            /** @description The digest the declaration carried. */
+            declared_sha256_hex: components["schemas"]["DigestHex"];
+            /** @constant */
+            outcome: "digest_mismatch";
+        } & {
+            [key: string]: unknown;
+        });
+        /**
+         * @description Asks the receiver to verify and seal a completed session. Required after every derived chunk
+         *     index is recorded; premature calls are refused with
+         *     `blob_transfer.finalize_incomplete` while the session stays open.
+         */
+        UploadFinalizeRequest: {
+            /** @description The session to seal. Required. */
+            resumption_token: components["schemas"]["UploadResumptionToken"];
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * UploadResumptionToken
+         * @description Server-issued handle naming one upload session. Required on every chunk receipt, status
+         *     and finalize call after opening.
+         *
+         *     Opaque by contract: a client compares tokens, stores them and presents them back, and
+         *     never parses one. The issuing service mints it unguessable — at least 128 bits of entropy
+         *     — because whoever holds the token drives the session; expiry is the server's decision,
+         *     carried beside the token as `expires_at`, and an expired token is refused with
+         *     `blob_transfer.session_expired`, distinct from `blob_transfer.session_unknown`.
+         * @example rst_0v8k4a2j9pm1d7n5tp3es6uabfhij1cm4nop5qrs
+         */
+        UploadResumptionToken: string;
+        /** @description The receiver's answer to a session declaration: the session exists, here is its handle. */
+        UploadSessionOpened: {
+            /**
+             * Format: uint32
+             * @description The chunk size the session actually runs with. Required; equals the requested value —
+             *     version 1 has no negotiation: a receiver that cannot accept the declared chunking refuses
+             *     the session outright instead of answering a different arithmetic.
+             */
+            chunk_size_bytes: number;
+            /**
+             * @description Instant after which the receiver refuses the token with
+             *     `blob_transfer.session_expired`. Required; server-asserted; RFC 3339 UTC canonical.
+             */
+            expires_at: components["schemas"]["WireTimestamp"];
+            /** @description The opaque handle driving every later call. Required; see [`UploadResumptionToken`]. */
+            resumption_token: components["schemas"]["UploadResumptionToken"];
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * @description Opens an upload session: the digest-first declaration a client sends before any payload byte
+         *     moves.
+         *
+         *     The declaration is what a receiver refuses on when it refuses at all — size, media type and
+         *     digest are all known here, so an unwanted upload never transfers its first chunk. The digest
+         *     algorithm travels inside `digest` and version 1 speaks exactly
+         *     [`DigestAlgorithm::Sha256`]; the closed enum leaves no stringly-typed escape hatch, and a
+         *     future algorithm arrives as an additive variant.
+         */
+        UploadSessionRequest: {
+            /**
+             * Format: uint32
+             * @description Fixed size of every chunk except, possibly, the last. Required; within
+             *     [`CHUNK_SIZE_MIN_BYTES`](crate::CHUNK_SIZE_MIN_BYTES) ..
+             *     [`CHUNK_SIZE_MAX_BYTES`](crate::CHUNK_SIZE_MAX_BYTES).
+             */
+            chunk_size_bytes: number;
+            /**
+             * Format: uint64
+             * @description Exact byte size of the whole payload. Required; greater than zero; the chunk count and
+             *     the last chunk's length derive from this and `chunk_size_bytes` alone.
+             */
+            declared_size_bytes: number;
+            /** @description Digest of the whole payload. Required; finalize verifies the streamed bytes against it. */
+            digest: components["schemas"]["ContentDigest"];
+            /**
+             * @description Internet media type of the payload, without parameters. Required; grammar per
+             *     [`MediaType`]. Whether the type is wanted is the receiver's admission policy, surfaced as
+             *     `blob_transfer.media_type_rejected`.
+             */
+            media_type: components["schemas"]["MediaType"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description The phase of the session answering a status or finalize call. */
+        UploadSessionState: "open" | "finalized" | "failed";
+        /**
+         * @description The resume view an interrupted client asks for: exactly which indices are recorded, so the
+         *     remaining chunks can be sent without duplication or guessed gaps.
+         */
+        UploadStatusResponse: {
+            /**
+             * Format: uint32
+             * @description How many derived indices remain unrecorded. Required.
+             */
+            missing_chunks_count: number;
+            /** @description Every recorded index, sorted ascending. Required; empty only for a fresh open session. */
+            received_chunks: number[];
+            /**
+             * Format: uint32
+             * @description How many indices are recorded. Required; equals `received_chunks`' length.
+             */
+            received_chunks_count: number;
+            /** @description The session being surveyed. Required. */
+            resumption_token: components["schemas"]["UploadResumptionToken"];
+            /** @description The phase of the session. Required. */
+            session_state: components["schemas"]["UploadSessionState"];
+        } & {
+            [key: string]: unknown;
+        };
         /**
          * UserId
          * Format: uuid
@@ -1473,6 +2824,25 @@ export interface components {
          * @example 018f0000-0000-7000-8000-000000000001
          */
         UserId: string;
+        /**
+         * VaultWritePath
+         * @description A path that a write may change: a [`crate::VaultPath`] whose first segment is not
+         *     `.obsidian` in any ASCII case.
+         *
+         *     Not empty, at most 1024 UTF-8 bytes, segments separated by `/`, no leading or trailing
+         *     `/`, no empty, `.` or `..` segment, no backslash and no C0 or DEL control character, so a
+         *     path can never name a file outside the vault. `.obsidian/` is the vault configuration, and
+         *     Ratatoskr never writes it; a case-insensitive file system maps `.OBSIDIAN/` to the same
+         *     folder, so every case is refused. The pattern spells the first segment without
+         *     look-ahead: any segment, except one that starts with `.o` and continues with exactly
+         *     `bsidian`.
+         *
+         *     The path is in Unicode NFC. This contract does not check NFC: the producer normalises
+         *     every path before it sends one.
+         * @example Projects/Plan.md
+         * @example Archive/2026/Plan.md
+         */
+        VaultWritePath: string;
         /**
          * @description A non-terminal problem that did not prevent the recorded outcome.
          *
@@ -1502,6 +2872,30 @@ export interface components {
          * @example 2026-08-17T10:00:00Z
          */
         WireTimestamp: string;
+        /** @description Whether Ratatoskr may write the vault of a connection. */
+        WriteMode: "on" | "off";
+        /**
+         * @description The one change that a write asks for. On the wire it is an object with exactly one member,
+         *     whose name is the operation kind.
+         *
+         *     **Closed on purpose**: a consumer that does not know an operation must refuse the write rather
+         *     than guess what it changes.
+         */
+        WriteOperation: {
+            create: components["schemas"]["CreateFile"];
+        } | {
+            update: components["schemas"]["UpdateFile"];
+        } | {
+            rename: components["schemas"]["RelocateFile"];
+        } | {
+            move: components["schemas"]["RelocateFile"];
+        } | {
+            delete: components["schemas"]["DeleteFile"];
+        } | {
+            set_property: components["schemas"]["SetFileProperty"];
+        } | {
+            resolve_conflict: components["schemas"]["ResolveConflict"];
+        };
     };
     responses: never;
     parameters: never;
@@ -1859,17 +3253,86 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
+            /** @description The declared archive is larger than this deployment accepts. Permanent for this archive: retrying cannot help. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
         };
     };
-    uploadAiArchiveContent: {
+    openAiArchiveTransfer: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description The provider selected during preparation. */
+                /** @description The prepared provider. */
                 provider: string;
-                /** @description The prepared operation identifier. */
+                /** @description The prepared operation. */
                 operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description The resumable session is durable. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadSessionOpened"];
+                };
+            };
+            /** @description The declaration is invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The credential does not authenticate. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The bound operation is unavailable to this device. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    putAiArchiveTransferChunk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The prepared provider. */
+                provider: string;
+                /** @description The prepared operation. */
+                operation_id: string;
+                /** @description The opaque resumption token. */
+                token: string;
+                /** @description The zero-based chunk index. */
+                index: string;
             };
             cookie?: never;
         };
@@ -1879,15 +3342,17 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The importer accepted the streamed archive for asynchronous processing. */
-            202: {
+            /** @description The chunk is acknowledged. */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UploadChunkReceipt"];
+                };
             };
-            /** @description No credential, or one that does not authenticate here. */
-            401: {
+            /** @description The chunk does not match the declared plan. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1895,7 +3360,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
-            /** @description The operation is not a deliverable archive owned by this device. */
+            /** @description The bound session is unavailable to this device. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1904,8 +3369,8 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
-            /** @description The configured importer could not be reached; the operation is marked failed with a safe retryable diagnostic. */
-            503: {
+            /** @description The chunk is larger than the route accepts. Permanent for this chunk: retrying the same bytes cannot help. */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1913,8 +3378,102 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
-            /** @description The configured importer did not respond within its bounded receipt budget. */
-            504: {
+        };
+    };
+    finalizeAiArchiveTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The prepared provider. */
+                provider: string;
+                /** @description The prepared operation. */
+                operation_id: string;
+                /** @description The opaque resumption token. */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadFinalizeRequest"];
+            };
+        };
+        responses: {
+            /** @description Verification produced a truthful stored or digest-mismatch outcome. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadCompletionOutcome"];
+                };
+            };
+            /** @description Chunks are incomplete or the finalize request is invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The receiver refused the archive for good (any client error other than 408 and 429 is relayed unchanged; 403 is the receiver's answer for a user it is not set up for). The transfer session and the operation have failed and the staged bytes are gone; the token is no longer valid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The bound session is unavailable to this device. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The receiver answered something Edge cannot relay, including an authentication challenge. Nothing has ended: finalize may be retried. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    readAiArchiveTransferStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The prepared provider. */
+                provider: string;
+                /** @description The prepared operation. */
+                operation_id: string;
+                /** @description The opaque resumption token. */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current resumable view. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadStatusResponse"];
+                };
+            };
+            /** @description The bound session is unavailable to this device. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2024,6 +3583,447 @@ export interface operations {
                 };
             };
             /** @description A dependency did not answer in time. Nothing was written; retrying with the same key is safe and is the intended response. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    submitBlobCapture: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored, so it may carry meaning the client considers private. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitBlobCapture"];
+            };
+        };
+        responses: {
+            /** @description Accepted durably. The body carries the operation to poll. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureAccepted"];
+                };
+            };
+            /** @description No `Idempotency-Key`, a body that is not readable, or a blob outside the accepted size. The `code` in the envelope distinguishes them. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The session is not a Telegram Mini App session, or the blob is owned by another service. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The key is in use for a different body, or an earlier attempt with it has not finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description This caller has spent its request allowance. Retryable: the allowance refills continuously, so waiting is the fix. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was written; retrying with the same key is safe and is the intended response. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listChannelDigestResults: {
+        parameters: {
+            query?: {
+                /** @description Page size from 1 through 100; the digest service applies its own default when absent. */
+                page_size?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of result summaries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelDigestResultPage"];
+                };
+            };
+            /** @description An invalid page size. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The digest service returned an invalid response. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The digest service is unavailable or not configured. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The digest service did not answer in time. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getChannelDigestResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The result's identity, as a lowercase UUID. */
+                result_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelDigestResultView"];
+                };
+            };
+            /** @description An identifier that is not a result id. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No such result for this caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The digest service returned an invalid response. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The digest service is unavailable or not configured. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The digest service did not answer in time. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    requestChannelDigestRun: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestRun"];
+            };
+        };
+        responses: {
+            /** @description Accepted durably; the body carries the operation to poll. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelDigestAccepted"];
+                };
+            };
+            /** @description A key or body that is not valid; the language is required. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The key is in use for a different request. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description This caller has spent its request allowance. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time; retrying with the same key is safe. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listChannelDigestSubscriptions: {
+        parameters: {
+            query?: {
+                /** @description Page size from 1 through 100; the digest service applies its own default when absent. */
+                page_size?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of subscriptions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelDigestSubscriptionPage"];
+                };
+            };
+            /** @description An invalid page size. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The digest service returned an invalid response. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The digest service is unavailable or not configured. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The digest service did not answer in time. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    setChannelDigestSubscription: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description The canonical public channel username. */
+                channel_username: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetSubscription"];
+            };
+        };
+        responses: {
+            /** @description Accepted durably; the body carries the operation to poll. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelDigestAccepted"];
+                };
+            };
+            /** @description A username, key or body that is not valid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The key is in use for a different request. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description This caller has spent its request allowance. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time; retrying with the same key is safe. */
             504: {
                 headers: {
                     [name: string]: unknown;
@@ -2301,6 +4301,563 @@ export interface operations {
                 };
             };
             /** @description A dependency did not answer in time. Nothing was written; redelivering the same signal is safe and is the intended response. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    replaceLibraryReadState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque accepted analysis identity. */
+                analysis_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplaceReadState"];
+            };
+        };
+        responses: {
+            /** @description The authoritative effective state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadStateResource"];
+                };
+            };
+            /** @description The identifier or exact body is invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The session does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The item is absent or belongs to another principal. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Knowledge returned an invalid response. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Knowledge is unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Knowledge exceeded its response budget. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    searchLibrary: {
+        parameters: {
+            query?: {
+                /** @description Optional search text, at most 512 Unicode scalar values. */
+                q?: string;
+                /** @description Optional effective state: read or unread. */
+                read_state?: string;
+                /** @description Page size from 1 through 100; defaults to 25. */
+                limit?: string;
+                /** @description Non-negative zero-based page offset; defaults to 0. */
+                offset?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A bounded library page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryPage"];
+                };
+            };
+            /** @description One or more search parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The session does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Knowledge returned an invalid response. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Knowledge is unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Knowledge exceeded its response budget. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    resolveNotesConflict: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored, so it may carry meaning the client considers private. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description The open conflict. */
+                conflict_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesResolutionRequest"];
+            };
+        };
+        responses: {
+            /** @description Accepted durably. The body carries the operation to poll. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesWriteAccepted"];
+                };
+            };
+            /** @description No `Idempotency-Key`, an id in the path that is not a UUID, or a body that fails `notes/write-request.v1`. The `code` in the envelope distinguishes them. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A device credential. A device calls only the device routes of notes. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The key is in use for a different request, or an earlier attempt with it has not finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The body is larger than the `control` budget of the notes route. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description This caller has spent its request allowance. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was written; retrying with the same key is safe. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    connectNotesVault: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesConnectRequest"];
+            };
+        };
+        responses: {
+            /** @description The notes service accepted the connect. The body carries the operation to poll and the answer of the notes service. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesConnectAccepted"];
+                };
+            };
+            /** @description The notes service refused the body, and the `code` in the envelope is the code of the notes service. Or the body failed while Edge sent it, for example because the client stopped the upload (`platform.request.invalid`). The operation is `failed`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The notes service refused the connect, for example `notes.connection.vault_already_connected`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The body is larger than the `control` budget of the notes route (`platform.request.payload_too_large`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description This caller has spent its request allowance. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The notes service gave an answer that Edge cannot use (`edge.upstream_invalid_response`): a status other than `202` that is not an error envelope, or a `202` that is not JSON. Edge does not relay a redirect. The operation is `failed`. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The notes service could not be reached (`edge.upstream_unavailable`). The operation is `failed`. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The notes service did not answer within the `control` budget (`edge.upstream_timeout`). The operation is `failed`. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    setNotesWriteMode: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored, so it may carry meaning the client considers private. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description The vault connection. */
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesWriteModeRequest"];
+            };
+        };
+        responses: {
+            /** @description The notes service took the request. The body carries the operation to poll. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesWriteAccepted"];
+                };
+            };
+            /** @description No `Idempotency-Key`, a connection id that is not a UUID, or a body other than `{"write_mode":"on"}` or `{"write_mode":"off"}`. Or the notes service refused the request, with its own code; the operation is then `failed`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A device credential. A device calls only the device routes of notes. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The notes service does not know the connection for this caller (`notes.connection.not_found`). The operation is `failed`. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The key is in use for a different request. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The body is larger than the `control` budget of the notes route. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description This caller has spent its request allowance. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The notes service gave an answer that Edge cannot use. The operation is `failed`. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The notes service could not be reached. The operation is `failed`. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The notes service did not answer within the `control` budget, or a dependency of Edge did not answer in time. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    writeNotesFile: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored, so it may carry meaning the client considers private. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description The vault connection. */
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description Accepted durably. The body carries the operation to poll. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesWriteAccepted"];
+                };
+            };
+            /** @description No `Idempotency-Key`, an id in the path that is not a UUID, or a body that fails `notes/write-request.v1`. The `code` in the envelope distinguishes them. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A device credential. A device calls only the device routes of notes. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The key is in use for a different request, or an earlier attempt with it has not finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The body is larger than the `control` budget of the notes route. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description This caller has spent its request allowance. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was written; retrying with the same key is safe. */
             504: {
                 headers: {
                     [name: string]: unknown;
@@ -2844,6 +5401,57 @@ export interface operations {
             };
         };
     };
+    revokeSiteSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevokeSiteSessions"];
+            };
+        };
+        responses: {
+            /** @description The live sessions of the site are revoked; the answer counts them. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevokedSiteSessions"];
+                };
+            };
+            /** @description The body is not a site id. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was changed. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     exchangeTelegramAssertion: {
         parameters: {
             query?: never;
@@ -2934,6 +5542,944 @@ export interface operations {
             };
             /** @description A dependency did not answer in time. Nothing was changed. */
             504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listSites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The owner's sites. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteList"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The session is not a primary session whose user holds the live `platform.owner` grant. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The sites service could not be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The sites service did not answer in time. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    readSiteConflict: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The site id: 3 to 40 lower-case letters, digits and `-`. */
+                site: string;
+                /** @description The conflict that the event stream named in `edit.conflicted`. */
+                conflict_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The conflict. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteConflict"];
+                };
+            };
+            /** @description No site owner session of this site, in its cookie. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The note, the page or the conflict is not in the site's publications. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The effective capability set or the service behind the route could not be read; retryable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    readSiteDraftPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The site id: 3 to 40 lower-case letters, digits and `-`. */
+                site: string;
+                /** @description The slug of a page of the site's current release. */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The source of the note. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteDraft"];
+                };
+            };
+            /** @description No site owner session of this site, in its cookie. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The note, the page or the conflict is not in the site's publications. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The effective capability set or the service behind the route could not be read; retryable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    readSiteDraftSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The site id: 3 to 40 lower-case letters, digits and `-`. */
+                site: string;
+                /** @description The opaque reference of a note of the site. */
+                source_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The source of the note. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteDraft"];
+                };
+            };
+            /** @description No site owner session of this site, in its cookie. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The note, the page or the conflict is not in the site's publications. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The effective capability set or the service behind the route could not be read; retryable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    uploadSiteEditContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The site id: 3 to 40 lower-case letters, digits and `-`. */
+                site: string;
+                /** @description The opaque reference of a note of the site. */
+                source_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description The stored content. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteBlobUploaded"];
+                };
+            };
+            /** @description An empty body. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No site owner session of this site, in its cookie. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The note, the page or the conflict is not in the site's publications. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The content is larger than 16 MiB. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The effective capability set or the service behind the route could not be read; retryable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    editSiteNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The site id: 3 to 40 lower-case letters, digits and `-`. */
+                site: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteEditRequest"];
+            };
+        };
+        responses: {
+            /** @description Accepted; follow the operation. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteEditAccepted"];
+                };
+            };
+            /** @description The body is not an edit. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No site owner session of this site, in its cookie. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The note, the page or the conflict is not in the site's publications. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The `idempotency_key` names another edit. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The effective capability set or the service behind the route could not be read; retryable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    searchSiteKnowledge: {
+        parameters: {
+            query?: {
+                /** @description Optional search text, at most 512 Unicode scalar values. */
+                q?: string;
+                /** @description Optional effective state: read or unread. */
+                read_state?: string;
+                /** @description Page size from 1 through 100; defaults to 25. */
+                limit?: string;
+                /** @description Non-negative zero-based page offset; defaults to 0. */
+                offset?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the owner's items. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryPage"];
+                };
+            };
+            /** @description A parameter is invalid, or a tenant is named. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No site owner session of this site, in its cookie. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The effective capability set or the service behind the route could not be read; retryable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    readSiteLibrary: {
+        parameters: {
+            query?: {
+                /** @description Optional search text, at most 512 Unicode scalar values. */
+                q?: string;
+                /** @description Optional effective state: read or unread. */
+                read_state?: string;
+                /** @description Page size from 1 through 100; defaults to 25. */
+                limit?: string;
+                /** @description Non-negative zero-based page offset; defaults to 0. */
+                offset?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the owner's library. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryPage"];
+                };
+            };
+            /** @description A parameter is invalid, or a tenant is named. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No site owner session of this site, in its cookie. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The effective capability set or the service behind the route could not be read; retryable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    readSiteManifest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The site id: 3 to 40 lower-case ASCII letters, digits and `-`. */
+                site: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The active manifest of the site. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveSiteManifest"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The session is not a primary session whose user holds the live `platform.owner` grant. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The site has no active manifest. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The sites service could not be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The sites service did not answer in time. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    approveSiteManifest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The site id: 3 to 40 lower-case ASCII letters, digits and `-`. */
+                site: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteApprovalRequest"];
+            };
+        };
+        responses: {
+            /** @description The approval of the site. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteApproval"];
+                };
+            };
+            /** @description The body is not one `manifest_sha256` of 64 lower-case hex digits. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The session is not a primary session whose user holds the live `platform.owner` grant. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The sites service holds no manifest for the site. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description `platform.site.manifest_digest_stale`: the digest is not the active manifest. `platform.site.hostname_taken`: another approved site has the hostname. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The sites service answered something that is not an active manifest. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The sites service could not be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The sites service did not answer in time. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    withdrawSiteManifest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The site id: 3 to 40 lower-case ASCII letters, digits and `-`. */
+                site: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The approval of the site, now withdrawn. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteApproval"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The session is not a primary session whose user holds the live `platform.owner` grant. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The site has no approval. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    requestSiteReleaseBuild: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description The site id: 3 to 40 lower-case ASCII letters, digits and `-`. */
+                site: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted durably. The body carries the operation to poll. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteReleaseBuildAccepted"];
+                };
+            };
+            /** @description No `Idempotency-Key`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate here. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The session is not a primary session whose user holds the live `platform.owner` grant. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The site id is not a valid site id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The key is in use for a different request, or an earlier attempt with it has not finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description A dependency did not answer in time. Nothing was written; retrying with the same key is safe. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    openSiteSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The site id: 3 to 40 lower-case letters, digits and `-`. */
+                site: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description The session is in the cookie. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteSessionOpened"];
+                };
+            };
+            /** @description The body is not a code and a verifier. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The code was not accepted. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    requestSiteSignInCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The site id: 3 to 40 lower-case letters, digits and `-`. */
+                site: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignInCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description The code and the callback address. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignInCodeIssued"];
+                };
+            };
+            /** @description The body is not a challenge and a path. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description No credential, or one that does not authenticate. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not a primary session with the live `platform.owner` grant. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description `sites.site_not_found`: the site has no approved manifest. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

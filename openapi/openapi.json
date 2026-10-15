@@ -36,6 +36,45 @@
           }
         ]
       },
+      "ActiveSiteManifest": {
+        "description": "The answer of `GET /v1/sites/{site}/manifest`: the active manifest of the site.",
+        "properties": {
+          "capabilities": {
+            "description": "The capabilities that the manifest requests.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "hostname": {
+            "description": "The hostname of the manifest.",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "description": "The SHA-256 of the manifest bytes, 64 lower-case hex digits. The owner approves this digest.",
+            "type": "string"
+          },
+          "publications": {
+            "description": "The publication ids of the manifest.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "site_id": {
+            "description": "The site id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "site_id",
+          "manifest_sha256",
+          "hostname",
+          "publications",
+          "capabilities"
+        ],
+        "type": "object"
+      },
       "AiArchiveCompleteness": {
         "description": "Whether one import obtained the whole export, stated per `docs/ARCHITECTURE.md` S8.3.\n\n**Closed on purpose**: indexing depth, retention and re-import scheduling hang off this\nstate, so an unrecognized value must stop processing rather than be read as \"whole enough\".\nCompleteness is evidence-based: a parser may not mark an import `complete` merely because it\nparsed every file it knows about.",
         "oneOf": [
@@ -164,7 +203,7 @@
             "type": "string"
           },
           "upload_path": {
-            "description": "Relative operation-bound endpoint to which the archive bytes may be streamed with `PUT`.",
+            "description": "Relative operation-bound path at which the upload session is opened with `POST`; the chunks\nare then sent with `PUT` to the paths that session returns.",
             "type": "string"
           }
         },
@@ -406,6 +445,271 @@
         ],
         "type": "object"
       },
+      "ChannelDigestAccepted": {
+        "description": "What a client gets back from either command route: an operation to poll, never a result.",
+        "properties": {
+          "operation_id": {
+            "description": "The operation to poll at `/v1/operations/{id}`.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "description": "Always `accepted` here.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "status"
+        ],
+        "type": "object"
+      },
+      "ChannelDigestFailureClass": {
+        "description": "Content-free operational class explaining why a digest run or result failed, such as\n`provider_unavailable` or `manifest_invalid`.\n\nOpen on purpose: the digest service owns the vocabulary and a consumer treats an\nunrecognized class as opaque display text.",
+        "examples": [
+          "provider_unavailable",
+          "manifest_invalid"
+        ],
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_.-]{0,63}$",
+        "title": "ChannelDigestFailureClass",
+        "type": "string"
+      },
+      "ChannelDigestOutcome": {
+        "description": "How a digest result ended.\n\nClosed on purpose: a client branches on it to decide whether a recap exists, and an\nunrecognized outcome must stop processing instead of being read as a success.",
+        "oneOf": [
+          {
+            "const": "completed",
+            "description": "Every selected source entered the recap.",
+            "type": "string"
+          },
+          {
+            "const": "partial",
+            "description": "A recap exists, but some selected sources were omitted from it.",
+            "type": "string"
+          },
+          {
+            "const": "failed",
+            "description": "No recap exists; `safe_failure_class` says why.",
+            "type": "string"
+          }
+        ]
+      },
+      "ChannelDigestRecapDocument": {
+        "additionalProperties": true,
+        "description": "The recap of a digest result: an opaque JSON object owned by Knowledge.\n\nThe digest service relays the object after checking its identity and digest against the stored\ncompletion fact, and never interprets it. The contract names it so that an absent recap is a\ntyped optional member; its members are Knowledge's to define. On the wire it is exactly the\nobject, with no wrapper member.",
+        "type": "object"
+      },
+      "ChannelDigestResultId": {
+        "description": "Canonical channel-digest UUID identity.",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "title": "ChannelDigestResultId",
+        "type": "string"
+      },
+      "ChannelDigestResultPage": {
+        "additionalProperties": true,
+        "description": "Response of `GET /v1/results`: the owner's results, newest first, summaries only.",
+        "properties": {
+          "results": {
+            "description": "The result summaries in this page.",
+            "items": {
+              "$ref": "#/components/schemas/ChannelDigestResultSummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "type": "object",
+        "x-ratatoskr-unknown-policy": "preserve"
+      },
+      "ChannelDigestResultSummary": {
+        "additionalProperties": true,
+        "description": "One entry of the result listing: linkage and outcome only, never recap content.",
+        "properties": {
+          "created_at": {
+            "$ref": "#/components/schemas/WireTimestamp",
+            "description": "Instant the digest service recorded the result, on its own clock."
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/ChannelDigestOutcome",
+            "description": "How the result ended."
+          },
+          "result_id": {
+            "$ref": "#/components/schemas/ChannelDigestResultId",
+            "description": "Identity of the result."
+          },
+          "run_id": {
+            "$ref": "#/components/schemas/ChannelDigestRunId",
+            "description": "The digest run the result belongs to."
+          },
+          "safe_failure_class": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChannelDigestFailureClass"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why a failed result failed. Present exactly for failed results."
+          }
+        },
+        "required": [
+          "result_id",
+          "run_id",
+          "outcome",
+          "created_at"
+        ],
+        "type": "object",
+        "x-ratatoskr-unknown-policy": "preserve"
+      },
+      "ChannelDigestResultView": {
+        "additionalProperties": true,
+        "description": "Response of `GET /v1/results/{result_id}`.\n\nA completed or partial result carries the local linkage and the Knowledge-owned recap, which\nthe digest service returns only after the analysis identity and digest match the stored\ncompletion fact. A failed result is local and minimized to `result_id`, `run_id`, `outcome`\nand `safe_failure_class`. Absent optionals are not serialized.",
+        "properties": {
+          "citation_count": {
+            "description": "Number of citations the recap carries. Absent for a failed result.",
+            "format": "uint16",
+            "maximum": 65535,
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/ChannelDigestOutcome",
+            "description": "How the result ended."
+          },
+          "recap": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChannelDigestRecapDocument"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The recap itself, an opaque JSON object owned by Knowledge. Absent for a failed result."
+          },
+          "recap_id": {
+            "description": "Knowledge's analysis identity of the recap, a bare canonical UUID. Absent for a failed\nresult.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "result_digest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContentDigest"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SHA-256 identity of the stored recap result. Absent for a failed result."
+          },
+          "result_id": {
+            "$ref": "#/components/schemas/ChannelDigestResultId",
+            "description": "Identity of the result."
+          },
+          "run_id": {
+            "$ref": "#/components/schemas/ChannelDigestRunId",
+            "description": "The digest run the result belongs to."
+          },
+          "safe_failure_class": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChannelDigestFailureClass"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why a failed result failed. Present exactly for failed results."
+          }
+        },
+        "required": [
+          "result_id",
+          "run_id",
+          "outcome"
+        ],
+        "type": "object",
+        "x-ratatoskr-unknown-policy": "preserve"
+      },
+      "ChannelDigestRunId": {
+        "description": "Canonical channel-digest UUID identity.",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "title": "ChannelDigestRunId",
+        "type": "string"
+      },
+      "ChannelDigestSubscriptionId": {
+        "description": "Canonical channel-digest UUID identity.",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "title": "ChannelDigestSubscriptionId",
+        "type": "string"
+      },
+      "ChannelDigestSubscriptionPage": {
+        "additionalProperties": true,
+        "description": "Response of `GET /v1/subscriptions`: the owner's subscriptions, newest first.",
+        "properties": {
+          "subscriptions": {
+            "description": "The subscriptions in this page.",
+            "items": {
+              "$ref": "#/components/schemas/ChannelDigestSubscriptionView"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "subscriptions"
+        ],
+        "type": "object",
+        "x-ratatoskr-unknown-policy": "preserve"
+      },
+      "ChannelDigestSubscriptionView": {
+        "additionalProperties": true,
+        "description": "One owner subscription to a public channel.",
+        "properties": {
+          "channel_username": {
+            "$ref": "#/components/schemas/ChannelUsername",
+            "description": "Canonical public channel username the owner subscribed to."
+          },
+          "enabled": {
+            "description": "Whether the subscription currently feeds digest runs.",
+            "type": "boolean"
+          },
+          "subscription_id": {
+            "$ref": "#/components/schemas/ChannelDigestSubscriptionId",
+            "description": "Identity of the subscription."
+          }
+        },
+        "required": [
+          "subscription_id",
+          "channel_username",
+          "enabled"
+        ],
+        "type": "object",
+        "x-ratatoskr-unknown-policy": "preserve"
+      },
+      "ChannelUsername": {
+        "description": "Canonical lowercase public Telegram channel username.",
+        "examples": [
+          "example_channel"
+        ],
+        "maxLength": 32,
+        "minLength": 5,
+        "pattern": "^[a-z][a-z0-9_]{4,31}$",
+        "title": "ChannelUsername",
+        "type": "string"
+      },
       "ContentDigest": {
         "additionalProperties": false,
         "description": "A content digest with an explicit algorithm.",
@@ -425,6 +729,25 @@
         ],
         "type": "object"
       },
+      "CreateFile": {
+        "additionalProperties": false,
+        "description": "`create`: add a file at a path that no live file holds.",
+        "properties": {
+          "blob": {
+            "$ref": "#/components/schemas/BlobRef",
+            "description": "The content of the new file, uploaded first to `ratatoskr-notes`."
+          },
+          "path": {
+            "$ref": "#/components/schemas/VaultWritePath",
+            "description": "The path of the new file, relative to the vault root, in NFC."
+          }
+        },
+        "required": [
+          "path",
+          "blob"
+        ],
+        "type": "object"
+      },
       "CreatePairingCode": {
         "description": "What creating a pairing code may ask for.",
         "properties": {
@@ -441,8 +764,34 @@
               "string",
               "null"
             ]
+          },
+          "site_id": {
+            "description": "The one site of a `site_deployer` code: required for that kind and refused for every other.\nOnly a session with the live owner grant creates such a code.",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
+        "type": "object"
+      },
+      "DeleteFile": {
+        "additionalProperties": false,
+        "description": "`delete`: move a file to the vault trash.",
+        "properties": {
+          "base_hash": {
+            "$ref": "#/components/schemas/DigestHex",
+            "description": "The lowercase hex SHA-256 of the revision that the writer read."
+          },
+          "path": {
+            "$ref": "#/components/schemas/VaultWritePath",
+            "description": "The path of the file, relative to the vault root, in NFC."
+          }
+        },
+        "required": [
+          "path",
+          "base_hash"
+        ],
         "type": "object"
       },
       "DeviceList": {
@@ -701,6 +1050,86 @@
         "title": "InspectionCursor",
         "type": "string"
       },
+      "LibraryItem": {
+        "description": "One minimized public library result.",
+        "properties": {
+          "analysis_id": {
+            "description": "Accepted Knowledge analysis identity.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "document_id": {
+            "description": "Canonical document identity.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "read_state": {
+            "$ref": "#/components/schemas/ReadState",
+            "description": "The effective user read state."
+          },
+          "score": {
+            "description": "A finite positive relevance score, absent for browse results.",
+            "format": "float",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "snippet": {
+            "description": "A bounded result excerpt, absent for browse results.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "description": "A bounded display title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "analysis_id",
+          "document_id",
+          "title",
+          "read_state"
+        ],
+        "type": "object"
+      },
+      "LibraryPage": {
+        "description": "A bounded public page.",
+        "properties": {
+          "has_more": {
+            "description": "Whether at least one later result exists.",
+            "type": "boolean"
+          },
+          "items": {
+            "description": "Ordered result summaries.",
+            "items": {
+              "$ref": "#/components/schemas/LibraryItem"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "description": "Applied page size.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Applied zero-based offset.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "type": "object"
+      },
       "MediaType": {
         "description": "Internet media type of stored bytes, without parameters.",
         "examples": [
@@ -727,6 +1156,132 @@
         "required": [
           "web",
           "mobile"
+        ],
+        "type": "object"
+      },
+      "NotesConflictId": {
+        "description": "Identity of one conflict of a connected vault. Bare canonical lowercase hyphenated UUID; not namespaced.",
+        "examples": [
+          "018f0000-0000-7000-8000-000000000001"
+        ],
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "title": "NotesConflictId",
+        "type": "string"
+      },
+      "NotesConnectAccepted": {
+        "description": "What a client gets back from a connect that the notes service accepted.",
+        "properties": {
+          "connection": {
+            "description": "The answer of the notes service, unchanged: the connection id, its channel and its state."
+          },
+          "operation_id": {
+            "description": "The operation to poll at `/v1/operations/{id}`.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "description": "Always `accepted` here.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "status",
+          "connection"
+        ],
+        "type": "object"
+      },
+      "NotesConnectRequest": {
+        "additionalProperties": true,
+        "description": "The body of a connect. The notes service owns its members, and Edge sends it to the notes service\nunread.",
+        "type": "object"
+      },
+      "NotesConnectionId": {
+        "description": "Identity of one vault connection of ratatoskr-notes. Bare canonical lowercase hyphenated UUID; not namespaced.",
+        "examples": [
+          "018f0000-0000-7000-8000-000000000001"
+        ],
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "title": "NotesConnectionId",
+        "type": "string"
+      },
+      "NotesResolutionRequest": {
+        "additionalProperties": false,
+        "description": "What a client submits to end an open conflict.",
+        "properties": {
+          "blob": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BlobRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The content to write, uploaded first to notes. Present exactly when `choice` is `custom`."
+          },
+          "choice": {
+            "$ref": "#/components/schemas/ResolutionChoice",
+            "description": "How the owner resolves the conflict."
+          },
+          "connection_id": {
+            "$ref": "#/components/schemas/NotesConnectionId",
+            "description": "The connection whose vault holds the file of the conflict, as\n`GET /v1/notes/conflicts/{conflict_id}` names it. Edge holds no notes data; notes refuses a\nconnection that does not hold the conflict."
+          }
+        },
+        "required": [
+          "connection_id",
+          "choice"
+        ],
+        "type": "object"
+      },
+      "NotesWriteAccepted": {
+        "description": "What a client gets back from the three routes: an operation to poll, never a result.",
+        "properties": {
+          "operation_id": {
+            "description": "The operation to poll at `/v1/operations/{id}`.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "description": "Always `accepted` here.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "status"
+        ],
+        "type": "object"
+      },
+      "NotesWriteModeRequest": {
+        "additionalProperties": false,
+        "description": "What a client submits to turn write mode on or off. Notes owns the member; Edge checks it so\nthat it mints no operation for a body that notes cannot take.",
+        "properties": {
+          "write_mode": {
+            "$ref": "#/components/schemas/WriteMode",
+            "description": "The mode to set."
+          }
+        },
+        "required": [
+          "write_mode"
+        ],
+        "type": "object"
+      },
+      "NotesWriteRequest": {
+        "additionalProperties": false,
+        "description": "What a client submits to change one file of a connected vault.",
+        "properties": {
+          "operation": {
+            "$ref": "#/components/schemas/WriteOperation",
+            "description": "The one change: an object with one member, whose name is the operation kind (`create`,\n`update`, `rename`, `move`, `delete`, `set_property` or `resolve_conflict`)."
+          }
+        },
+        "required": [
+          "operation"
         ],
         "type": "object"
       },
@@ -1157,6 +1712,21 @@
         ],
         "type": "object"
       },
+      "OutputLanguage": {
+        "description": "Language of the requested first-version recap projection.",
+        "oneOf": [
+          {
+            "const": "ru",
+            "description": "Russian recap.",
+            "type": "string"
+          },
+          {
+            "const": "en",
+            "description": "English recap.",
+            "type": "string"
+          }
+        ]
+      },
       "PairDevice": {
         "description": "What a pairing device presents.",
         "properties": {
@@ -1273,6 +1843,56 @@
         "minimum": 0,
         "title": "ProgressPercent",
         "type": "integer"
+      },
+      "PropertyChange": {
+        "description": "What a `set_property` operation does to its property. A frontmatter value is note content, so the caller uploads it as one JSON document (`application/json`) to ratatoskr-notes first, and `set` names the resulting BlobRef.",
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "Set the property to the uploaded JSON value, and add the property when the file has none.",
+            "properties": {
+              "set": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/BlobRef"
+                  },
+                  {
+                    "properties": {
+                      "media_type": {
+                        "const": "application/json",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "media_type"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "set"
+            ],
+            "type": "object"
+          },
+          {
+            "const": "remove",
+            "description": "Remove the property from the frontmatter.",
+            "type": "string"
+          }
+        ]
+      },
+      "PropertyKey": {
+        "description": "The name of one frontmatter property of a Markdown file, as the owner wrote it.\n\n1 to 255 characters with no C0 or DEL control character. The pattern carries the\n255-character bound; the length guard is 1020 UTF-8 bytes, the most 255 characters can\ntake.",
+        "examples": [
+          "tags",
+          "status"
+        ],
+        "maxLength": 1020,
+        "pattern": "^[^\\x00-\\x1f\\x7f]{1,255}$",
+        "title": "PropertyKey",
+        "type": "string"
       },
       "PublicComponentId": {
         "description": "A stable public component group that reveals no private topology.",
@@ -1408,6 +2028,35 @@
           }
         ]
       },
+      "ReadState": {
+        "description": "The effective read state of an accepted analysis.",
+        "oneOf": [
+          {
+            "const": "unread",
+            "description": "The user has not marked the analysis as read.",
+            "type": "string"
+          },
+          {
+            "const": "read",
+            "description": "The user has marked the analysis as read.",
+            "type": "string"
+          }
+        ]
+      },
+      "ReadStateResource": {
+        "additionalProperties": false,
+        "description": "Authoritative read state returned after replacement.",
+        "properties": {
+          "read_state": {
+            "$ref": "#/components/schemas/ReadState",
+            "description": "Stored effective state."
+          }
+        },
+        "required": [
+          "read_state"
+        ],
+        "type": "object"
+      },
       "RefreshSession": {
         "description": "What a refreshing client presents.",
         "properties": {
@@ -1453,11 +2102,166 @@
         ],
         "type": "object"
       },
+      "RelocateFile": {
+        "additionalProperties": false,
+        "description": "`rename` and `move`: give a file a new path. Links to the file are rewritten.",
+        "properties": {
+          "base_hash": {
+            "$ref": "#/components/schemas/DigestHex",
+            "description": "The lowercase hex SHA-256 of the revision that the writer read."
+          },
+          "path": {
+            "$ref": "#/components/schemas/VaultWritePath",
+            "description": "The path of the file before the operation, relative to the vault root, in NFC."
+          },
+          "target_path": {
+            "$ref": "#/components/schemas/VaultWritePath",
+            "description": "The path of the file after the operation, relative to the vault root, in NFC."
+          }
+        },
+        "required": [
+          "path",
+          "base_hash",
+          "target_path"
+        ],
+        "type": "object"
+      },
+      "ReplaceReadState": {
+        "additionalProperties": false,
+        "description": "The complete read-state resource accepted by `PUT`.",
+        "properties": {
+          "read_state": {
+            "$ref": "#/components/schemas/ReadState",
+            "description": "Replacement state."
+          }
+        },
+        "required": [
+          "read_state"
+        ],
+        "type": "object"
+      },
+      "RequestRun": {
+        "additionalProperties": false,
+        "description": "What a client submits to ask for a digest now.",
+        "properties": {
+          "output_language": {
+            "$ref": "#/components/schemas/OutputLanguage",
+            "description": "The language of the recap. Required: there is no default language."
+          }
+        },
+        "required": [
+          "output_language"
+        ],
+        "type": "object"
+      },
+      "ResolutionChoice": {
+        "description": "How the owner resolves a conflict.\n\n**Closed on purpose**: each choice selects different bytes, and an unknown choice must stop\nthe write instead of being read as one of them.",
+        "oneOf": [
+          {
+            "const": "keep_current",
+            "description": "Keep the current revision of the vault.",
+            "type": "string"
+          },
+          {
+            "const": "keep_writer",
+            "description": "Write the writer's content of the conflict.",
+            "type": "string"
+          },
+          {
+            "const": "accept_merge",
+            "description": "Write the merge proposal of the conflict. Notes refuses it for a conflict without one.",
+            "type": "string"
+          },
+          {
+            "const": "custom",
+            "description": "Write content that the owner uploaded for this resolution, named by `blob`.",
+            "type": "string"
+          }
+        ]
+      },
+      "ResolveConflict": {
+        "description": "`resolve_conflict`: end an open conflict with one choice. `blob` is present exactly when `choice` is `custom`. There is no `base_hash`: ratatoskr-notes checks the resolution against the current revision that the conflict recorded.",
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "Keep the current revision, write the writer's content, or write the merge proposal.",
+            "properties": {
+              "choice": {
+                "enum": [
+                  "keep_current",
+                  "keep_writer",
+                  "accept_merge"
+                ],
+                "type": "string"
+              },
+              "conflict_id": {
+                "$ref": "#/components/schemas/NotesConflictId"
+              }
+            },
+            "required": [
+              "conflict_id",
+              "choice"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Write content that the owner uploaded for this resolution.",
+            "properties": {
+              "blob": {
+                "$ref": "#/components/schemas/BlobRef"
+              },
+              "choice": {
+                "const": "custom",
+                "type": "string"
+              },
+              "conflict_id": {
+                "$ref": "#/components/schemas/NotesConflictId"
+              }
+            },
+            "required": [
+              "conflict_id",
+              "choice",
+              "blob"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "RevokeSiteSessions": {
+        "additionalProperties": false,
+        "description": "What `POST /v1/sessions/revoke-site` takes.",
+        "properties": {
+          "site_id": {
+            "description": "The site whose owner sessions end.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "site_id"
+        ],
+        "type": "object"
+      },
       "RevokedAll": {
         "description": "What revoke-all answers.",
         "properties": {
           "revoked": {
             "description": "How many live sessions ended, including the calling one.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revoked"
+        ],
+        "type": "object"
+      },
+      "RevokedSiteSessions": {
+        "description": "What `POST /v1/sessions/revoke-site` answers.",
+        "properties": {
+          "revoked": {
+            "description": "How many live `site_owner` sessions of the site ended.",
             "format": "uint64",
             "minimum": 0,
             "type": "integer"
@@ -1758,6 +2562,13 @@
             "description": "When it stops being valid on its own.",
             "type": "string"
           },
+          "hostname": {
+            "description": "The approved hostname of the site of a `site_owner` session.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "issued_at": {
             "description": "When it was issued.",
             "type": "string"
@@ -1777,6 +2588,13 @@
             "description": "The session's identity.",
             "format": "uuid",
             "type": "string"
+          },
+          "site_id": {
+            "description": "The site of a `site_owner` session, and the approved hostname of that site.",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -1784,6 +2602,91 @@
           "kind",
           "issued_at",
           "expires_at"
+        ],
+        "type": "object"
+      },
+      "SetFileProperty": {
+        "additionalProperties": false,
+        "description": "`set_property`: set or remove one frontmatter property of a Markdown file.",
+        "properties": {
+          "base_hash": {
+            "$ref": "#/components/schemas/DigestHex",
+            "description": "The lowercase hex SHA-256 of the revision that the writer read."
+          },
+          "path": {
+            "$ref": "#/components/schemas/VaultWritePath",
+            "description": "The path of the file, relative to the vault root, in NFC."
+          },
+          "property_change": {
+            "$ref": "#/components/schemas/PropertyChange",
+            "description": "`{\"set\": <BlobRef of an application/json value>}` to set the property, or `\"remove\"` to\nremove it."
+          },
+          "property_key": {
+            "$ref": "#/components/schemas/PropertyKey",
+            "description": "The frontmatter property to change."
+          }
+        },
+        "required": [
+          "path",
+          "base_hash",
+          "property_key",
+          "property_change"
+        ],
+        "type": "object"
+      },
+      "SetSubscription": {
+        "additionalProperties": false,
+        "description": "What a client submits to set a subscription's state.",
+        "properties": {
+          "desired_state": {
+            "$ref": "#/components/schemas/SubscriptionDesiredState",
+            "description": "The state the subscription should end up in."
+          }
+        },
+        "required": [
+          "desired_state"
+        ],
+        "type": "object"
+      },
+      "SignInCodeIssued": {
+        "description": "The answer of `POST /v1/sites/{site}/sign-in-codes`.",
+        "properties": {
+          "code": {
+            "description": "The single-use code. It is shown once and expires after 60 seconds.",
+            "type": "string"
+          },
+          "expires_at": {
+            "description": "When the code expires.",
+            "type": "string"
+          },
+          "redirect_url": {
+            "description": "The SDK callback page of the approved hostname, with the code.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "redirect_url",
+          "expires_at"
+        ],
+        "type": "object"
+      },
+      "SignInCodeRequest": {
+        "additionalProperties": false,
+        "description": "What the owner's primary session sends to `POST /v1/sites/{site}/sign-in-codes`.",
+        "properties": {
+          "challenge": {
+            "description": "The PKCE S256 challenge of the site's verifier: 43 base64url characters.",
+            "type": "string"
+          },
+          "return_path": {
+            "description": "The path on the site to return to: it starts with one `/`, at most 1024 bytes.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challenge",
+          "return_path"
         ],
         "type": "object"
       },
@@ -1803,6 +2706,417 @@
         "required": [
           "operation_id",
           "status"
+        ],
+        "type": "object"
+      },
+      "SiteApproval": {
+        "description": "The approval of one site, as Platform stores it.",
+        "properties": {
+          "capabilities": {
+            "description": "The capabilities of the approved manifest.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "hostname": {
+            "description": "The hostname of the approved manifest.",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "description": "The approved manifest digest.",
+            "type": "string"
+          },
+          "site_id": {
+            "description": "The site.",
+            "type": "string"
+          },
+          "state": {
+            "description": "`approved` or `withdrawn`.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "site_id",
+          "manifest_sha256",
+          "capabilities",
+          "hostname",
+          "state"
+        ],
+        "type": "object"
+      },
+      "SiteApprovalRequest": {
+        "additionalProperties": false,
+        "description": "The body of an approval: the digest of the manifest that the owner read.",
+        "properties": {
+          "manifest_sha256": {
+            "description": "The lowercase hex SHA-256 of the manifest bytes that the owner approves.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "manifest_sha256"
+        ],
+        "type": "object"
+      },
+      "SiteApprovalState": {
+        "description": "The approval state of a site in [`SiteManifestState`].",
+        "oneOf": [
+          {
+            "const": "unapproved",
+            "description": "No approval was ever announced for the site.",
+            "type": "string"
+          },
+          {
+            "const": "approved",
+            "description": "The approval is in force.",
+            "type": "string"
+          },
+          {
+            "const": "withdrawn",
+            "description": "The approval was withdrawn.",
+            "type": "string"
+          }
+        ]
+      },
+      "SiteBlobUploaded": {
+        "additionalProperties": false,
+        "description": "The answer of `POST .../drafts/sources/{source_ref}/blobs`: the stored content of an edit.",
+        "properties": {
+          "content_blob": {
+            "$ref": "#/components/schemas/BlobRef",
+            "description": "The stored content, owned by `ratatoskr-notes`."
+          },
+          "content_hash": {
+            "description": "The lowercase hex SHA-256 of the content.",
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content_blob",
+          "content_hash"
+        ],
+        "type": "object"
+      },
+      "SiteConflict": {
+        "additionalProperties": false,
+        "description": "The answer of `GET /v1/sites/{site}/conflicts/{conflict_id}`: one conflict of a note in the\nsite's publications, with no vault path and no connection.",
+        "properties": {
+          "base_hash": {
+            "description": "The hash of the revision that the edit read.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "conflict_id": {
+            "description": "The conflict.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "current_hash": {
+            "description": "The hash of the revision that the vault holds.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "merge_proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteMergeProposal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The merge proposal, when `ratatoskr-notes` made one."
+          },
+          "operation_id": {
+            "description": "The operation of the edit that met it.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "source_ref": {
+            "description": "The note of the conflict.",
+            "type": "string"
+          },
+          "state": {
+            "description": "`open` or `resolved`.",
+            "type": "string"
+          },
+          "texts": {
+            "$ref": "#/components/schemas/SiteConflictTexts",
+            "description": "The texts of the sides and of the proposal."
+          },
+          "texts_over_limit": {
+            "description": "The sides that are larger than 1 MiB and so are not in `texts`.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "writer_hash": {
+            "description": "The hash of the content of the edit.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "conflict_id",
+          "operation_id",
+          "source_ref",
+          "state",
+          "texts",
+          "texts_over_limit"
+        ],
+        "type": "object"
+      },
+      "SiteConflictTexts": {
+        "additionalProperties": false,
+        "description": "The texts of a conflict of a Markdown or plain-text note, when each is at most 1 MiB.",
+        "properties": {
+          "base": {
+            "description": "The revision that the edit read.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "current": {
+            "description": "The revision that the vault holds.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "merged": {
+            "description": "The merge proposal of `ratatoskr-notes`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "writer": {
+            "description": "The content of the edit.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "SiteDraft": {
+        "additionalProperties": false,
+        "description": "The source of one note in the site's publications, for the owner session of the site\n(`GET .../drafts/pages/{slug}` and `GET .../drafts/sources/{source_ref}`).",
+        "properties": {
+          "markdown": {
+            "description": "The Markdown source of the note.",
+            "type": "string"
+          },
+          "revision": {
+            "description": "The lowercase hex SHA-256 of the note's current bytes: the `base_hash` of the next edit.",
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "slug": {
+            "description": "The slug of the note in the current release; absent when the note is not published.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_ref": {
+            "description": "The opaque reference of the note. Only a site owner session sees it; it names no vault path.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_ref",
+          "revision",
+          "markdown"
+        ],
+        "type": "object"
+      },
+      "SiteEditAccepted": {
+        "description": "The answer of `POST /v1/sites/{site}/edits`: an operation to follow, never a result.",
+        "properties": {
+          "operation_id": {
+            "description": "The operation of the write. The site's event stream sends `edit.completed` or\n`edit.conflicted` with this id.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "description": "Always `accepted` here.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "status"
+        ],
+        "type": "object"
+      },
+      "SiteEditRequest": {
+        "additionalProperties": false,
+        "description": "What the owner session sends to `POST /v1/sites/{site}/edits`: the content names a stored blob,\nnever inline text.",
+        "properties": {
+          "base_hash": {
+            "description": "The lowercase hex SHA-256 of the revision that the owner read and changed.",
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "content_blob": {
+            "$ref": "#/components/schemas/BlobRef",
+            "description": "The new content, uploaded first to `POST .../drafts/sources/{source_ref}/blobs`."
+          },
+          "content_hash": {
+            "description": "The lowercase hex SHA-256 of the new content.",
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "description": "A client-chosen key, 1 to 255 characters: a repeated edit with the same key answers the\nsame operation and writes nothing more.",
+            "type": "string"
+          },
+          "source_ref": {
+            "description": "The note to change.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_ref",
+          "base_hash",
+          "content_blob",
+          "content_hash",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "SiteList": {
+        "description": "The answer of `GET /v1/sites`: the owner's sites, each with the state of its manifest.",
+        "properties": {
+          "sites": {
+            "description": "The sites, in ascending `site_id` order.",
+            "items": {
+              "$ref": "#/components/schemas/SiteManifestState"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "sites"
+        ],
+        "type": "object"
+      },
+      "SiteManifestState": {
+        "description": "One site of [`SiteList`].",
+        "properties": {
+          "approval_state": {
+            "$ref": "#/components/schemas/SiteApprovalState",
+            "description": "The approval state of the site."
+          },
+          "approved_manifest_sha256": {
+            "description": "The SHA-256 that the last approval or withdrawal named, from the projection of the approval\nevents; `null` when the site was never approved.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "site_id": {
+            "description": "The site id.",
+            "type": "string"
+          },
+          "submitted_manifest_sha256": {
+            "description": "The SHA-256 of the active manifest, the last valid submission; `null` when the site has\nnone.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "site_id",
+          "approval_state"
+        ],
+        "type": "object"
+      },
+      "SiteMergeProposal": {
+        "additionalProperties": false,
+        "description": "The merge proposal of a conflict.",
+        "properties": {
+          "has_overlapping_hunks": {
+            "description": "Whether the two changes overlap.",
+            "type": "boolean"
+          },
+          "merged_hash": {
+            "description": "The lowercase hex SHA-256 of the proposed merge.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "merged_hash",
+          "has_overlapping_hunks"
+        ],
+        "type": "object"
+      },
+      "SiteReleaseBuildAccepted": {
+        "description": "What a client gets back from an accepted build request.",
+        "properties": {
+          "operation_id": {
+            "description": "The operation to poll at `/v1/operations/{id}`.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "description": "Always `accepted` here.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "status"
+        ],
+        "type": "object"
+      },
+      "SiteSessionOpened": {
+        "description": "The answer of `POST /v1/sites/{site}/sessions`. The credential is only in the cookie.",
+        "properties": {
+          "expires_at": {
+            "description": "When the session ends at the latest.",
+            "type": "string"
+          },
+          "return_path": {
+            "description": "The path on the site to return to.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "return_path",
+          "expires_at"
+        ],
+        "type": "object"
+      },
+      "SiteSessionRequest": {
+        "additionalProperties": false,
+        "description": "What the site's callback page sends to `POST /v1/sites/{site}/sessions`.",
+        "properties": {
+          "code": {
+            "description": "The code from the redirect.",
+            "type": "string"
+          },
+          "verifier": {
+            "description": "The PKCE verifier that the site kept.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "verifier"
         ],
         "type": "object"
       },
@@ -1854,6 +3168,19 @@
           }
         ]
       },
+      "SubmitBlobCapture": {
+        "description": "The members of `SubmitCapture`'s sibling for stored bytes: the blob a client names by reference.\n\nTop-level members this struct does not name (the Telegram bot sends an `origin` that has no\nmeaning here) are tolerated and ignored, so the bot can add routing hints without a Platform\nrelease. The blob itself is strict: a member the contract does not define is refused.",
+        "properties": {
+          "blob": {
+            "$ref": "#/components/schemas/BlobRef",
+            "description": "The stored bytes to extract. Owned by the Telegram service, between 1 byte and 50 MiB."
+          }
+        },
+        "required": [
+          "blob"
+        ],
+        "type": "object"
+      },
       "SubmitCapture": {
         "description": "What a client submits.",
         "properties": {
@@ -1878,6 +3205,21 @@
         ],
         "type": "object"
       },
+      "SubscriptionDesiredState": {
+        "description": "Desired state of one owner/public-channel subscription.",
+        "oneOf": [
+          {
+            "const": "active",
+            "description": "Acquire the public channel for future digest runs.",
+            "type": "string"
+          },
+          {
+            "const": "inactive",
+            "description": "Stop acquiring the public channel for future digest runs.",
+            "type": "string"
+          }
+        ]
+      },
       "TenantRef": {
         "description": "The owner of the data a record concerns, wire form `user:<uuid>`. The kind set is closed: a consumer that cannot understand the owner kind must reject the record rather than process it.",
         "examples": [
@@ -1898,6 +3240,264 @@
         "title": "TraceId",
         "type": "string"
       },
+      "UpdateFile": {
+        "additionalProperties": false,
+        "description": "`update`: replace the bytes of a file.",
+        "properties": {
+          "base_hash": {
+            "$ref": "#/components/schemas/DigestHex",
+            "description": "The lowercase hex SHA-256 of the revision that the writer read and changed."
+          },
+          "blob": {
+            "$ref": "#/components/schemas/BlobRef",
+            "description": "The new content of the file, uploaded first to `ratatoskr-notes`."
+          },
+          "path": {
+            "$ref": "#/components/schemas/VaultWritePath",
+            "description": "The path of the file, relative to the vault root, in NFC."
+          }
+        },
+        "required": [
+          "path",
+          "base_hash",
+          "blob"
+        ],
+        "type": "object"
+      },
+      "UploadChunkReceipt": {
+        "additionalProperties": true,
+        "description": "One chunk accepted. Answers idempotently: the same bytes delivered twice for one index yield\ntwo identical-success receipts and leave the recorded state unchanged.",
+        "properties": {
+          "chunk_index": {
+            "description": "The zero-based index the bytes were recorded under. Required.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "idempotent_replay": {
+            "description": "`true` when this delivery replayed an already-recorded index with matching bytes and\nchanged nothing. Required; lets an at-least-once client distinguish news from echo.",
+            "type": "boolean"
+          },
+          "received_chunks_count": {
+            "description": "How many distinct indices are now recorded, including this one when newly recorded.\nRequired.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "resumption_token": {
+            "$ref": "#/components/schemas/UploadResumptionToken",
+            "description": "The session the chunk joined. Required."
+          }
+        },
+        "required": [
+          "resumption_token",
+          "chunk_index",
+          "received_chunks_count",
+          "idempotent_replay"
+        ],
+        "type": "object",
+        "x-ratatoskr-unknown-policy": "preserve"
+      },
+      "UploadCompletionOutcome": {
+        "description": "The terminal answer to finalize. Both variants are truthful answers at `200` in the canonical\nbinding: a mismatch is an anticipated fact about the bytes, not a transport fault.",
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "description": "The streamed digest equaled the declaration. The reference below is everything the\nworkspace store spec `blob-references` requires to resolve the stored bytes.",
+            "properties": {
+              "blob_ref": {
+                "$ref": "#/components/schemas/BlobRef",
+                "description": "The content-addressed reference to the sealed bytes, owned by the receiving service."
+              },
+              "outcome": {
+                "const": "stored",
+                "type": "string"
+              }
+            },
+            "required": [
+              "outcome",
+              "blob_ref"
+            ],
+            "type": "object",
+            "x-ratatoskr-unknown-policy": "preserve"
+          },
+          {
+            "additionalProperties": true,
+            "description": "The streamed digest differed from the declaration. Terminal-failed: the token is dead\nafterwards, and the client restarts with a new session rather than patching chunks.",
+            "properties": {
+              "computed_sha256_hex": {
+                "$ref": "#/components/schemas/DigestHex",
+                "description": "The digest the streamed bytes actually produced."
+              },
+              "declared_sha256_hex": {
+                "$ref": "#/components/schemas/DigestHex",
+                "description": "The digest the declaration carried."
+              },
+              "outcome": {
+                "const": "digest_mismatch",
+                "type": "string"
+              }
+            },
+            "required": [
+              "outcome",
+              "declared_sha256_hex",
+              "computed_sha256_hex"
+            ],
+            "type": "object",
+            "x-ratatoskr-unknown-policy": "preserve"
+          }
+        ]
+      },
+      "UploadFinalizeRequest": {
+        "additionalProperties": true,
+        "description": "Asks the receiver to verify and seal a completed session. Required after every derived chunk\nindex is recorded; premature calls are refused with\n`blob_transfer.finalize_incomplete` while the session stays open.",
+        "properties": {
+          "resumption_token": {
+            "$ref": "#/components/schemas/UploadResumptionToken",
+            "description": "The session to seal. Required."
+          }
+        },
+        "required": [
+          "resumption_token"
+        ],
+        "type": "object",
+        "x-ratatoskr-unknown-policy": "preserve"
+      },
+      "UploadResumptionToken": {
+        "description": "Server-issued handle naming one upload session. Required on every chunk receipt, status\nand finalize call after opening.\n\nOpaque by contract: a client compares tokens, stores them and presents them back, and\nnever parses one. The issuing service mints it unguessable — at least 128 bits of entropy\n— because whoever holds the token drives the session; expiry is the server's decision,\ncarried beside the token as `expires_at`, and an expired token is refused with\n`blob_transfer.session_expired`, distinct from `blob_transfer.session_unknown`.",
+        "examples": [
+          "rst_0v8k4a2j9pm1d7n5tp3es6uabfhij1cm4nop5qrs"
+        ],
+        "maxLength": 68,
+        "pattern": "^rst_[0-9a-v]{24,64}$",
+        "title": "UploadResumptionToken",
+        "type": "string"
+      },
+      "UploadSessionOpened": {
+        "additionalProperties": true,
+        "description": "The receiver's answer to a session declaration: the session exists, here is its handle.",
+        "properties": {
+          "chunk_size_bytes": {
+            "description": "The chunk size the session actually runs with. Required; equals the requested value —\nversion 1 has no negotiation: a receiver that cannot accept the declared chunking refuses\nthe session outright instead of answering a different arithmetic.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "expires_at": {
+            "$ref": "#/components/schemas/WireTimestamp",
+            "description": "Instant after which the receiver refuses the token with\n`blob_transfer.session_expired`. Required; server-asserted; RFC 3339 UTC canonical."
+          },
+          "resumption_token": {
+            "$ref": "#/components/schemas/UploadResumptionToken",
+            "description": "The opaque handle driving every later call. Required; see [`UploadResumptionToken`]."
+          }
+        },
+        "required": [
+          "resumption_token",
+          "chunk_size_bytes",
+          "expires_at"
+        ],
+        "type": "object",
+        "x-ratatoskr-unknown-policy": "preserve"
+      },
+      "UploadSessionRequest": {
+        "additionalProperties": true,
+        "description": "Opens an upload session: the digest-first declaration a client sends before any payload byte\nmoves.\n\nThe declaration is what a receiver refuses on when it refuses at all — size, media type and\ndigest are all known here, so an unwanted upload never transfers its first chunk. The digest\nalgorithm travels inside `digest` and version 1 speaks exactly\n[`DigestAlgorithm::Sha256`]; the closed enum leaves no stringly-typed escape hatch, and a\nfuture algorithm arrives as an additive variant.",
+        "properties": {
+          "chunk_size_bytes": {
+            "description": "Fixed size of every chunk except, possibly, the last. Required; within\n[`CHUNK_SIZE_MIN_BYTES`](crate::CHUNK_SIZE_MIN_BYTES) ..\n[`CHUNK_SIZE_MAX_BYTES`](crate::CHUNK_SIZE_MAX_BYTES).",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "declared_size_bytes": {
+            "description": "Exact byte size of the whole payload. Required; greater than zero; the chunk count and\nthe last chunk's length derive from this and `chunk_size_bytes` alone.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "digest": {
+            "$ref": "#/components/schemas/ContentDigest",
+            "description": "Digest of the whole payload. Required; finalize verifies the streamed bytes against it."
+          },
+          "media_type": {
+            "$ref": "#/components/schemas/MediaType",
+            "description": "Internet media type of the payload, without parameters. Required; grammar per\n[`MediaType`]. Whether the type is wanted is the receiver's admission policy, surfaced as\n`blob_transfer.media_type_rejected`."
+          }
+        },
+        "required": [
+          "declared_size_bytes",
+          "media_type",
+          "digest",
+          "chunk_size_bytes"
+        ],
+        "type": "object",
+        "x-ratatoskr-unknown-policy": "preserve"
+      },
+      "UploadSessionState": {
+        "description": "The phase of the session answering a status or finalize call.",
+        "oneOf": [
+          {
+            "const": "open",
+            "description": "Chunks are still being accepted.",
+            "type": "string"
+          },
+          {
+            "const": "finalized",
+            "description": "Finalize verified the streamed digest; the blob is sealed under its reference.",
+            "type": "string"
+          },
+          {
+            "const": "failed",
+            "description": "Finalize proved the streamed digest differs from the declaration; the session is dead.",
+            "type": "string"
+          }
+        ]
+      },
+      "UploadStatusResponse": {
+        "additionalProperties": true,
+        "description": "The resume view an interrupted client asks for: exactly which indices are recorded, so the\nremaining chunks can be sent without duplication or guessed gaps.",
+        "properties": {
+          "missing_chunks_count": {
+            "description": "How many derived indices remain unrecorded. Required.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "received_chunks": {
+            "description": "Every recorded index, sorted ascending. Required; empty only for a fresh open session.",
+            "items": {
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "received_chunks_count": {
+            "description": "How many indices are recorded. Required; equals `received_chunks`' length.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "resumption_token": {
+            "$ref": "#/components/schemas/UploadResumptionToken",
+            "description": "The session being surveyed. Required."
+          },
+          "session_state": {
+            "$ref": "#/components/schemas/UploadSessionState",
+            "description": "The phase of the session. Required."
+          }
+        },
+        "required": [
+          "resumption_token",
+          "session_state",
+          "received_chunks",
+          "received_chunks_count",
+          "missing_chunks_count"
+        ],
+        "type": "object",
+        "x-ratatoskr-unknown-policy": "preserve"
+      },
       "UserId": {
         "description": "Identity of a Ratatoskr end user. Bare canonical lowercase hyphenated UUID; not namespaced.",
         "examples": [
@@ -1906,6 +3506,17 @@
         "format": "uuid",
         "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
         "title": "UserId",
+        "type": "string"
+      },
+      "VaultWritePath": {
+        "description": "A path that a write may change: a [`crate::VaultPath`] whose first segment is not\n`.obsidian` in any ASCII case.\n\nNot empty, at most 1024 UTF-8 bytes, segments separated by `/`, no leading or trailing\n`/`, no empty, `.` or `..` segment, no backslash and no C0 or DEL control character, so a\npath can never name a file outside the vault. `.obsidian/` is the vault configuration, and\nRatatoskr never writes it; a case-insensitive file system maps `.OBSIDIAN/` to the same\nfolder, so every case is refused. The pattern spells the first segment without\nlook-ahead: any segment, except one that starts with `.o` and continues with exactly\n`bsidian`.\n\nThe path is in Unicode NFC. This contract does not check NFC: the producer normalises\nevery path before it sends one.",
+        "examples": [
+          "Projects/Plan.md",
+          "Archive/2026/Plan.md"
+        ],
+        "maxLength": 1024,
+        "pattern": "^(?:[^./\\\\\\x00-\\x1f\\x7f][^/\\\\\\x00-\\x1f\\x7f]*|\\.[^./oO\\\\\\x00-\\x1f\\x7f][^/\\\\\\x00-\\x1f\\x7f]*|\\.[oO](?:|[^bB/\\\\\\x00-\\x1f\\x7f][^/\\\\\\x00-\\x1f\\x7f]*|[bB](?:|[^sS/\\\\\\x00-\\x1f\\x7f][^/\\\\\\x00-\\x1f\\x7f]*|[sS](?:|[^iI/\\\\\\x00-\\x1f\\x7f][^/\\\\\\x00-\\x1f\\x7f]*|[iI](?:|[^dD/\\\\\\x00-\\x1f\\x7f][^/\\\\\\x00-\\x1f\\x7f]*|[dD](?:|[^iI/\\\\\\x00-\\x1f\\x7f][^/\\\\\\x00-\\x1f\\x7f]*|[iI](?:|[^aA/\\\\\\x00-\\x1f\\x7f][^/\\\\\\x00-\\x1f\\x7f]*|[aA](?:|[^nN/\\\\\\x00-\\x1f\\x7f][^/\\\\\\x00-\\x1f\\x7f]*|[nN][^/\\\\\\x00-\\x1f\\x7f]+)))))))|\\.\\.[^/\\\\\\x00-\\x1f\\x7f][^/\\\\\\x00-\\x1f\\x7f]*)(?:/(?:[^./\\\\\\x00-\\x1f\\x7f]|\\.[^./\\\\\\x00-\\x1f\\x7f]|\\.\\.[^/\\\\\\x00-\\x1f\\x7f])[^/\\\\\\x00-\\x1f\\x7f]*)*$",
+        "title": "VaultWritePath",
         "type": "string"
       },
       "WarningEnvelope": {
@@ -1961,6 +3572,117 @@
         "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$",
         "title": "WireTimestamp",
         "type": "string"
+      },
+      "WriteMode": {
+        "description": "Whether Ratatoskr may write the vault of a connection.",
+        "oneOf": [
+          {
+            "const": "on",
+            "description": "Writes are delivered.",
+            "type": "string"
+          },
+          {
+            "const": "off",
+            "description": "Writes are refused, and every write not yet delivered fails.",
+            "type": "string"
+          }
+        ]
+      },
+      "WriteOperation": {
+        "description": "The one change that a write asks for. On the wire it is an object with exactly one member,\nwhose name is the operation kind.\n\n**Closed on purpose**: a consumer that does not know an operation must refuse the write rather\nthan guess what it changes.",
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "Add a file.",
+            "properties": {
+              "create": {
+                "$ref": "#/components/schemas/CreateFile"
+              }
+            },
+            "required": [
+              "create"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Replace the bytes of a file.",
+            "properties": {
+              "update": {
+                "$ref": "#/components/schemas/UpdateFile"
+              }
+            },
+            "required": [
+              "update"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Give a file a new name.",
+            "properties": {
+              "rename": {
+                "$ref": "#/components/schemas/RelocateFile"
+              }
+            },
+            "required": [
+              "rename"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Give a file a new folder.",
+            "properties": {
+              "move": {
+                "$ref": "#/components/schemas/RelocateFile"
+              }
+            },
+            "required": [
+              "move"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Move a file to the vault trash.",
+            "properties": {
+              "delete": {
+                "$ref": "#/components/schemas/DeleteFile"
+              }
+            },
+            "required": [
+              "delete"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Set or remove one frontmatter property.",
+            "properties": {
+              "set_property": {
+                "$ref": "#/components/schemas/SetFileProperty"
+              }
+            },
+            "required": [
+              "set_property"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "End an open conflict.",
+            "properties": {
+              "resolve_conflict": {
+                "$ref": "#/components/schemas/ResolveConflict"
+              }
+            },
+            "required": [
+              "resolve_conflict"
+            ],
+            "type": "object"
+          }
+        ]
       }
     },
     "securitySchemes": {
@@ -1968,6 +3690,12 @@
         "description": "A session credential, presented as `Authorization: Bearer <credential>`. It must have been issued for this listener's audience; one issued for another surface does not authenticate here.",
         "scheme": "bearer",
         "type": "http"
+      },
+      "siteSessionCookie": {
+        "description": "A site owner session, presented only in the host-only cookie `__Host-ratatoskr-site` that the sign-in of one site sets. It authenticates only on the owner routes of that site; a bearer header is never read as one.",
+        "in": "cookie",
+        "name": "__Host-ratatoskr-site",
+        "type": "apiKey"
       },
       "sourceBearer": {
         "description": "The credential issued to a registered webhook source, presented as `Authorization: Bearer <credential>`. It authenticates the source, not a person.",
@@ -2480,6 +4208,16 @@
               }
             },
             "description": "The idempotency key is in use for different metadata."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The declared archive is larger than this deployment accepts. Permanent for this archive: retrying cannot help."
           }
         },
         "security": [
@@ -2493,13 +4231,13 @@
         ]
       }
     },
-    "/v1/ai-archives/{provider}/{operation_id}/content": {
-      "put": {
-        "description": "Streams bytes to the configured provider importer. Edge injects the operation, digest and size claims; callers cannot set them.",
-        "operationId": "uploadAiArchiveContent",
+    "/v1/ai-archives/{provider}/{operation_id}/uploads": {
+      "post": {
+        "description": "Opens bounded resumable staging under the prepared provider and operation. The declared media type must be `application/zip`; any other type is refused before a byte moves.",
+        "operationId": "openAiArchiveTransfer",
         "parameters": [
           {
-            "description": "The provider selected during preparation.",
+            "description": "The prepared provider.",
             "in": "path",
             "name": "provider",
             "required": true,
@@ -2508,12 +4246,118 @@
             }
           },
           {
-            "description": "The prepared operation identifier.",
+            "description": "The prepared operation.",
             "in": "path",
             "name": "operation_id",
             "required": true,
             "schema": {
               "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadSessionOpened"
+                }
+              }
+            },
+            "description": "The resumable session is durable."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The declaration is invalid."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The credential does not authenticate."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The bound operation is unavailable to this device."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Open an AI archive transfer",
+        "tags": [
+          "ai-archives"
+        ]
+      }
+    },
+    "/v1/ai-archives/{provider}/{operation_id}/uploads/{token}/chunks/{index}": {
+      "put": {
+        "description": "Stores one exact indexed chunk beneath the operation-owned session.",
+        "operationId": "putAiArchiveTransferChunk",
+        "parameters": [
+          {
+            "description": "The prepared provider.",
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The prepared operation.",
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The opaque resumption token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based chunk index.",
+            "in": "path",
+            "name": "index",
+            "required": true,
+            "schema": {
               "type": "string"
             }
           }
@@ -2530,10 +4374,17 @@
           "required": true
         },
         "responses": {
-          "202": {
-            "description": "The importer accepted the streamed archive for asynchronous processing."
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadChunkReceipt"
+                }
+              }
+            },
+            "description": "The chunk is acknowledged."
           },
-          "401": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
@@ -2541,7 +4392,7 @@
                 }
               }
             },
-            "description": "No credential, or one that does not authenticate here."
+            "description": "The chunk does not match the declared plan."
           },
           "404": {
             "content": {
@@ -2551,9 +4402,9 @@
                 }
               }
             },
-            "description": "The operation is not a deliverable archive owned by this device."
+            "description": "The bound session is unavailable to this device."
           },
-          "503": {
+          "413": {
             "content": {
               "application/json": {
                 "schema": {
@@ -2561,17 +4412,7 @@
                 }
               }
             },
-            "description": "The configured importer could not be reached; the operation is marked failed with a safe retryable diagnostic."
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "The configured importer did not respond within its bounded receipt budget."
+            "description": "The chunk is larger than the route accepts. Permanent for this chunk: retrying the same bytes cannot help."
           }
         },
         "security": [
@@ -2579,7 +4420,181 @@
             "sessionBearer": []
           }
         ],
-        "summary": "Deliver prepared AI archive bytes",
+        "summary": "Store one AI archive chunk",
+        "tags": [
+          "ai-archives"
+        ]
+      }
+    },
+    "/v1/ai-archives/{provider}/{operation_id}/uploads/{token}/finalize": {
+      "post": {
+        "description": "Verifies ordered staged bytes and delivers them only to the operation-bound provider receipt.",
+        "operationId": "finalizeAiArchiveTransfer",
+        "parameters": [
+          {
+            "description": "The prepared provider.",
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The prepared operation.",
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The opaque resumption token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadFinalizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadCompletionOutcome"
+                }
+              }
+            },
+            "description": "Verification produced a truthful stored or digest-mismatch outcome."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Chunks are incomplete or the finalize request is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The receiver refused the archive for good (any client error other than 408 and 429 is relayed unchanged; 403 is the receiver's answer for a user it is not set up for). The transfer session and the operation have failed and the staged bytes are gone; the token is no longer valid."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The bound session is unavailable to this device."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The receiver answered something Edge cannot relay, including an authentication challenge. Nothing has ended: finalize may be retried."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Finalize an AI archive transfer",
+        "tags": [
+          "ai-archives"
+        ]
+      }
+    },
+    "/v1/ai-archives/{provider}/{operation_id}/uploads/{token}/status": {
+      "get": {
+        "description": "Returns the exact acknowledged indices for restart-safe resume.",
+        "operationId": "readAiArchiveTransferStatus",
+        "parameters": [
+          {
+            "description": "The prepared provider.",
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The prepared operation.",
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The opaque resumption token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadStatusResponse"
+                }
+              }
+            },
+            "description": "The current resumable view."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The bound session is unavailable to this device."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Read AI archive transfer status",
         "tags": [
           "ai-archives"
         ]
@@ -2727,6 +4742,596 @@
         "summary": "Submit an address for capture",
         "tags": [
           "captures"
+        ]
+      }
+    },
+    "/v1/captures/blobs": {
+      "post": {
+        "description": "Accepts, durably, a request to extract a document from bytes another service already stored, named by reference rather than carried. It returns the operation that tracks the work and no result: `GET /v1/operations/{operation_id}` is where the outcome appears.\n\nOnly the Telegram bot's session may call this route, and only for bytes the Telegram service owns (`owner_service` must be `ratatoskr-telegram`). The blob must declare between 1 byte and 50 MiB. Platform does not judge whether the media type can be extracted; the extractor reports that on the operation.\n\n`Idempotency-Key` is required, exactly as on `POST /v1/captures`: the same key and body return the ORIGINAL operation, and the same key with a different body is refused. Members of the body other than `blob` are ignored.",
+        "operationId": "submitBlobCapture",
+        "parameters": [
+          {
+            "description": "A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored, so it may carry meaning the client considers private.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitBlobCapture"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureAccepted"
+                }
+              }
+            },
+            "description": "Accepted durably. The body carries the operation to poll."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No `Idempotency-Key`, a body that is not readable, or a blob outside the accepted size. The `code` in the envelope distinguishes them."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The session is not a Telegram Mini App session, or the blob is owned by another service."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The key is in use for a different body, or an earlier attempt with it has not finished."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "This caller has spent its request allowance. Retryable: the allowance refills continuously, so waiting is the fix."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A dependency did not answer in time. Nothing was written; retrying with the same key is safe and is the intended response."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Submit stored bytes for capture",
+        "tags": [
+          "captures"
+        ]
+      }
+    },
+    "/v1/channel-digests/results": {
+      "get": {
+        "description": "Summaries of the caller's digest results, newest first, without recap content. Read from the digest service on the caller's behalf; the response is never cached.",
+        "operationId": "listChannelDigestResults",
+        "parameters": [
+          {
+            "description": "Page size from 1 through 100; the digest service applies its own default when absent.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "format": "uint32",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelDigestResultPage"
+                }
+              }
+            },
+            "description": "A page of result summaries."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "An invalid page size."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The digest service returned an invalid response."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The digest service is unavailable or not configured."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The digest service did not answer in time."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "List the caller's digest results",
+        "tags": [
+          "channel-digests"
+        ]
+      }
+    },
+    "/v1/channel-digests/results/{result_id}": {
+      "get": {
+        "description": "One of the caller's digest results, with its recap when it has one. A result that does not exist and one that belongs to someone else are the same 404. The response is never cached.",
+        "operationId": "getChannelDigestResult",
+        "parameters": [
+          {
+            "description": "The result's identity, as a lowercase UUID.",
+            "in": "path",
+            "name": "result_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelDigestResultView"
+                }
+              }
+            },
+            "description": "The result."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "An identifier that is not a result id."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No such result for this caller."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The digest service returned an invalid response."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The digest service is unavailable or not configured."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The digest service did not answer in time."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Read one digest result",
+        "tags": [
+          "channel-digests"
+        ]
+      }
+    },
+    "/v1/channel-digests/runs": {
+      "post": {
+        "description": "Accepts the request durably and returns the operation that tracks it. The digest covers the 24 hours before acceptance. `Idempotency-Key` is required; retrying with the same key and body returns the original operation.",
+        "operationId": "requestChannelDigestRun",
+        "parameters": [
+          {
+            "description": "A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestRun"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelDigestAccepted"
+                }
+              }
+            },
+            "description": "Accepted durably; the body carries the operation to poll."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A key or body that is not valid; the language is required."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The key is in use for a different request."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "This caller has spent its request allowance."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A dependency did not answer in time; retrying with the same key is safe."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Request a digest of the last 24 hours",
+        "tags": [
+          "channel-digests"
+        ]
+      }
+    },
+    "/v1/channel-digests/subscriptions": {
+      "get": {
+        "description": "The caller's subscriptions, newest first. Read from the digest service on the caller's behalf; the response is never cached.",
+        "operationId": "listChannelDigestSubscriptions",
+        "parameters": [
+          {
+            "description": "Page size from 1 through 100; the digest service applies its own default when absent.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "format": "uint32",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelDigestSubscriptionPage"
+                }
+              }
+            },
+            "description": "A page of subscriptions."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "An invalid page size."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The digest service returned an invalid response."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The digest service is unavailable or not configured."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The digest service did not answer in time."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "List the caller's channel subscriptions",
+        "tags": [
+          "channel-digests"
+        ]
+      }
+    },
+    "/v1/channel-digests/subscriptions/{channel_username}": {
+      "put": {
+        "description": "Accepts the change durably and returns the operation that tracks it; the digest service applies it and reports the outcome on the operation. The username must already be canonical: lowercase, 5 to 32 characters, starting with a letter. `Idempotency-Key` is required; retrying with the same key and body returns the original operation.",
+        "operationId": "setChannelDigestSubscription",
+        "parameters": [
+          {
+            "description": "The canonical public channel username.",
+            "in": "path",
+            "name": "channel_username",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSubscription"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelDigestAccepted"
+                }
+              }
+            },
+            "description": "Accepted durably; the body carries the operation to poll."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A username, key or body that is not valid."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The key is in use for a different request."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "This caller has spent its request allowance."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A dependency did not answer in time; retrying with the same key is safe."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Subscribe to or unsubscribe from a public channel",
+        "tags": [
+          "channel-digests"
         ]
       }
     },
@@ -3104,6 +5709,763 @@
         "summary": "Push a signal from a registered source",
         "tags": [
           "ingest"
+        ]
+      }
+    },
+    "/v1/library/items/{analysis_id}/read-state": {
+      "put": {
+        "description": "Idempotently replaces the complete read-state resource for a caller-owned accepted analysis.",
+        "operationId": "replaceLibraryReadState",
+        "parameters": [
+          {
+            "description": "Opaque accepted analysis identity.",
+            "in": "path",
+            "name": "analysis_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceReadState"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadStateResource"
+                }
+              }
+            },
+            "description": "The authoritative effective state."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The identifier or exact body is invalid."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The session does not authenticate here."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The item is absent or belongs to another principal."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Knowledge returned an invalid response."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Knowledge is unavailable."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Knowledge exceeded its response budget."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Replace one library item's read state",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/v1/library/search": {
+      "get": {
+        "description": "Returns a bounded page owned by the authenticated principal. Tenant identity is derived by Edge and cannot be supplied by the caller.",
+        "operationId": "searchLibrary",
+        "parameters": [
+          {
+            "description": "Optional search text, at most 512 Unicode scalar values.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional effective state: read or unread.",
+            "in": "query",
+            "name": "read_state",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size from 1 through 100; defaults to 25.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "uint32",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Non-negative zero-based page offset; defaults to 0.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "format": "uint64",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryPage"
+                }
+              }
+            },
+            "description": "A bounded library page."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "One or more search parameters are invalid."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The session does not authenticate here."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Knowledge returned an invalid response."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Knowledge is unavailable."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Knowledge exceeded its response budget."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Search or browse the caller's library",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/v1/notes/conflicts/{conflict_id}/resolution": {
+      "post": {
+        "description": "Accepts the resolution of one open conflict durably and returns the operation of kind `notes.file.write` that tracks it. A resolution is one more write, `resolve_conflict`: it waits in the queue of its file and is checked like any other write. `choice` is `keep_current`, `keep_writer`, `accept_merge` (only for a conflict with a merge proposal) or `custom`, which names content uploaded first to `/v1/notes/connections/{connection_id}/blobs` in `blob`.\n\nThe body names the connection of the conflict, as `GET /v1/notes/conflicts/{conflict_id}` gives it, because Edge holds no notes data. The notes service fails the operation with `notes.connection.not_found` when the caller does not own the connection or the connection does not hold the conflict.\n\n`Idempotency-Key` is required, as on the write route, and one key names one write across both routes: a key that a write took is refused here with `409`.",
+        "operationId": "resolveNotesConflict",
+        "parameters": [
+          {
+            "description": "The open conflict.",
+            "in": "path",
+            "name": "conflict_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored, so it may carry meaning the client considers private.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotesResolutionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesWriteAccepted"
+                }
+              }
+            },
+            "description": "Accepted durably. The body carries the operation to poll."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No `Idempotency-Key`, an id in the path that is not a UUID, or a body that fails `notes/write-request.v1`. The `code` in the envelope distinguishes them."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A device credential. A device calls only the device routes of notes."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The key is in use for a different request, or an earlier attempt with it has not finished."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The body is larger than the `control` budget of the notes route."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "This caller has spent its request allowance."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A dependency did not answer in time. Nothing was written; retrying with the same key is safe."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Resolve a conflict of a connected vault",
+        "tags": [
+          "notes"
+        ]
+      }
+    },
+    "/v1/notes/connections": {
+      "post": {
+        "description": "Starts the connection of one Obsidian vault to the notes service. Edge records an operation of kind `notes.connection.connect`, sends the body to the notes service unchanged with the operation id, and keeps no part of the body: the body holds the Obsidian password, the MFA code and the end-to-end password, so Edge does not store, audit or log it. The notes service owns the members of the body and reports the phases of the connection on the operation; poll `GET /v1/operations/{operation_id}`.\n\nThere is no `Idempotency-Key`: the ledger would keep a digest of the body. The notes service refuses a second connect of one vault. When the notes service does not take the connect, Edge terminates the operation as `failed` with the code of the failure before it answers.\n\nEdge serves this route only when the deployment routes the notes service. The body budget is the `control` budget of that route.",
+        "operationId": "connectNotesVault",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotesConnectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesConnectAccepted"
+                }
+              }
+            },
+            "description": "The notes service accepted the connect. The body carries the operation to poll and the answer of the notes service."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The notes service refused the body, and the `code` in the envelope is the code of the notes service. Or the body failed while Edge sent it, for example because the client stopped the upload (`platform.request.invalid`). The operation is `failed`."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The notes service refused the connect, for example `notes.connection.vault_already_connected`."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The body is larger than the `control` budget of the notes route (`platform.request.payload_too_large`)."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "This caller has spent its request allowance."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The notes service gave an answer that Edge cannot use (`edge.upstream_invalid_response`): a status other than `202` that is not an error envelope, or a `202` that is not JSON. Edge does not relay a redirect. The operation is `failed`."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The notes service could not be reached (`edge.upstream_unavailable`). The operation is `failed`."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The notes service did not answer within the `control` budget (`edge.upstream_timeout`). The operation is `failed`."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Connect an Obsidian vault",
+        "tags": [
+          "notes"
+        ]
+      }
+    },
+    "/v1/notes/connections/{connection_id}/write-mode": {
+      "put": {
+        "description": "Every connection starts with write mode off. Edge records an operation of kind `notes.connection.write_mode` and sends the request to the notes service with the operation id; the notes service reports the operation, because a `sync` connection must reconfigure its client before the mode is true. Turning write mode off fails every write that was not delivered yet.\n\nWhen the notes service does not take the request, Edge terminates the operation as `failed` with the code of the failure before it answers. `Idempotency-Key` is required: the same key and body return the ORIGINAL operation and are not sent to the notes service again.",
+        "operationId": "setNotesWriteMode",
+        "parameters": [
+          {
+            "description": "The vault connection.",
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored, so it may carry meaning the client considers private.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotesWriteModeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesWriteAccepted"
+                }
+              }
+            },
+            "description": "The notes service took the request. The body carries the operation to poll."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No `Idempotency-Key`, a connection id that is not a UUID, or a body other than `{\"write_mode\":\"on\"}` or `{\"write_mode\":\"off\"}`. Or the notes service refused the request, with its own code; the operation is then `failed`."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A device credential. A device calls only the device routes of notes."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The notes service does not know the connection for this caller (`notes.connection.not_found`). The operation is `failed`."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The key is in use for a different request."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The body is larger than the `control` budget of the notes route."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "This caller has spent its request allowance."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The notes service gave an answer that Edge cannot use. The operation is `failed`."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The notes service could not be reached. The operation is `failed`."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The notes service did not answer within the `control` budget, or a dependency of Edge did not answer in time."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Turn write-back on or off for a connected vault",
+        "tags": [
+          "notes"
+        ]
+      }
+    },
+    "/v1/notes/connections/{connection_id}/writes": {
+      "post": {
+        "description": "Accepts one change of one file durably and returns the operation of kind `notes.file.write` that tracks it; the notes service reports the outcome on the operation. The body names exactly one operation of the contract `notes/write-request.v1`: `create`, `update`, `rename`, `move`, `delete`, `set_property` or `resolve_conflict`. Every operation on an existing file names the `base_hash` that the writer read, and a write on an older revision ends as a conflict, never as an overwrite.\n\nContent never travels in this request. Upload the bytes first to `/v1/notes/connections/{connection_id}/blobs`, and name the resulting `BlobRef` (owner `ratatoskr-notes`); a frontmatter value is uploaded as one `application/json` document. Edge sets `origin` to `platform`. Edge holds no notes data: the notes service fails the operation with `notes.connection.not_found` for a connection that the caller does not own, and with `notes.write.disabled` while the write mode of the connection is off.\n\n`Idempotency-Key` is required. The same key and body return the ORIGINAL operation; the same key with another body, another connection, or on `POST /v1/notes/conflicts/{conflict_id}/resolution` is refused with `409`.",
+        "operationId": "writeNotesFile",
+        "parameters": [
+          {
+            "description": "The vault connection.",
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored, so it may carry meaning the client considers private.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotesWriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesWriteAccepted"
+                }
+              }
+            },
+            "description": "Accepted durably. The body carries the operation to poll."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No `Idempotency-Key`, an id in the path that is not a UUID, or a body that fails `notes/write-request.v1`. The `code` in the envelope distinguishes them."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A device credential. A device calls only the device routes of notes."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The key is in use for a different request, or an earlier attempt with it has not finished."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The body is larger than the `control` budget of the notes route."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "This caller has spent its request allowance."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A dependency did not answer in time. Nothing was written; retrying with the same key is safe."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Change one file of a connected vault",
+        "tags": [
+          "notes"
         ]
       }
     },
@@ -3852,6 +7214,73 @@
         ]
       }
     },
+    "/v1/sessions/revoke-site": {
+      "post": {
+        "description": "Ends every `site_owner` session of yours for one site at once. The sessions of other sites and every other session stay. The session list shows each `site_owner` session with its site and the approved hostname.",
+        "operationId": "revokeSiteSessions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeSiteSessions"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokedSiteSessions"
+                }
+              }
+            },
+            "description": "The live sessions of the site are revoked; the answer counts them."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The body is not a site id."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A dependency did not answer in time. Nothing was changed."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Revoke your sessions on one site",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
     "/v1/sessions/telegram": {
       "post": {
         "description": "Takes a short-lived assertion issued by `ratatoskr-telegram` — which is the service that owns the bot token and validates the raw Mini App `initData` — and returns a Platform session credential.\n\nThe credential is returned ONCE. Only its digest is stored, so it cannot be recovered afterwards; a client that loses it exchanges a new assertion.\n\nAn assertion is single-use. Presenting the same one twice mints one session, and the second attempt is refused exactly as an invalid one is. Every refusal is the same 401: a missing key, a bad signature, a wrong audience, an expired assertion and a replayed one are indistinguishable from outside, because the difference is a fact about the verification and not about the caller.\n\nThe internal user is independent of the Telegram account. Signing in for the first time creates one.",
@@ -3974,6 +7403,1316 @@
         "summary": "Revoke one of your sessions",
         "tags": [
           "sessions"
+        ]
+      }
+    },
+    "/v1/sites": {
+      "get": {
+        "description": "Lists the owner's sites, each with the digest of its active manifest, the digest of its last approval or withdrawal and its approval state (`unapproved`, `approved` or `withdrawn`). The sites service answers; Edge forwards the request after it checks the caller. Only a primary session whose user holds the live `platform.owner` grant may call this route (class `management`, ADR-0017).",
+        "operationId": "listSites",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteList"
+                }
+              }
+            },
+            "description": "The owner's sites."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The session is not a primary session whose user holds the live `platform.owner` grant."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The sites service could not be reached."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The sites service did not answer in time."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "List the owner's sites",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/conflicts/{conflict_id}": {
+      "get": {
+        "description": "The base, current and proposed versions of a conflict of a note of the site's publications, and the merge proposal. The owner resolves it with a new edit whose `base_hash` is the current revision. Capability `draft.read`, for the site owner session of the site.",
+        "operationId": "readSiteConflict",
+        "parameters": [
+          {
+            "description": "The site id: 3 to 40 lower-case letters, digits and `-`.",
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The conflict that the event stream named in `edit.conflicted`.",
+            "in": "path",
+            "name": "conflict_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteConflict"
+                }
+              }
+            },
+            "description": "The conflict."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No site owner session of this site, in its cookie."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The note, the page or the conflict is not in the site's publications."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The effective capability set or the service behind the route could not be read; retryable."
+          }
+        },
+        "security": [
+          {
+            "siteSessionCookie": []
+          }
+        ],
+        "summary": "Read a conflict of an edit",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/drafts/pages/{slug}": {
+      "get": {
+        "description": "The Markdown source, the reference and the current revision of the note behind a page of the current release. Capability `draft.read`, for the site owner session of the site.",
+        "operationId": "readSiteDraftPage",
+        "parameters": [
+          {
+            "description": "The site id: 3 to 40 lower-case letters, digits and `-`.",
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The slug of a page of the site's current release.",
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteDraft"
+                }
+              }
+            },
+            "description": "The source of the note."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No site owner session of this site, in its cookie."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The note, the page or the conflict is not in the site's publications."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The effective capability set or the service behind the route could not be read; retryable."
+          }
+        },
+        "security": [
+          {
+            "siteSessionCookie": []
+          }
+        ],
+        "summary": "Read the source of a published page",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/drafts/sources/{source_ref}": {
+      "get": {
+        "description": "The Markdown source and the current revision of a note of the site's publications, published or not. Capability `draft.read`, for the site owner session of the site.",
+        "operationId": "readSiteDraftSource",
+        "parameters": [
+          {
+            "description": "The site id: 3 to 40 lower-case letters, digits and `-`.",
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The opaque reference of a note of the site.",
+            "in": "path",
+            "name": "source_ref",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteDraft"
+                }
+              }
+            },
+            "description": "The source of the note."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No site owner session of this site, in its cookie."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The note, the page or the conflict is not in the site's publications."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The effective capability set or the service behind the route could not be read; retryable."
+          }
+        },
+        "security": [
+          {
+            "siteSessionCookie": []
+          }
+        ],
+        "summary": "Read the source of a note of the site",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/drafts/sources/{source_ref}/blobs": {
+      "post": {
+        "description": "The body is the new content of the note, at most 16 MiB. Edge stores it in `ratatoskr-notes` for the connection of the note and keeps none of it; the answer names the stored blob for the edit. Capability `notes.edit`, budget class `transfer`, for the site owner session of the site, with `X-Ratatoskr-Site-Request: 1` and the approved `Origin`.",
+        "operationId": "uploadSiteEditContent",
+        "parameters": [
+          {
+            "description": "The site id: 3 to 40 lower-case letters, digits and `-`.",
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The opaque reference of a note of the site.",
+            "in": "path",
+            "name": "source_ref",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteBlobUploaded"
+                }
+              }
+            },
+            "description": "The stored content."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "An empty body."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No site owner session of this site, in its cookie."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The note, the page or the conflict is not in the site's publications."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The content is larger than 16 MiB."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The effective capability set or the service behind the route could not be read; retryable."
+          }
+        },
+        "security": [
+          {
+            "siteSessionCookie": []
+          }
+        ],
+        "summary": "Upload the new content of a note",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/edits": {
+      "post": {
+        "description": "Changes the content of one existing note of the site's publications to an uploaded blob, if the note is still at `base_hash`. The write is pending until the vault has it: the site's event stream sends `edit.completed` with the new revision, or `edit.conflicted` when the note changed in the meantime. A repeated request with the same `idempotency_key` answers the same operation. Capability `notes.edit`, for the site owner session of the site, with `X-Ratatoskr-Site-Request: 1` and the approved `Origin`.",
+        "operationId": "editSiteNote",
+        "parameters": [
+          {
+            "description": "The site id: 3 to 40 lower-case letters, digits and `-`.",
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteEditRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteEditAccepted"
+                }
+              }
+            },
+            "description": "Accepted; follow the operation."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The body is not an edit."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No site owner session of this site, in its cookie."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The note, the page or the conflict is not in the site's publications."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The `idempotency_key` names another edit."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The effective capability set or the service behind the route could not be read; retryable."
+          }
+        },
+        "security": [
+          {
+            "siteSessionCookie": []
+          }
+        ],
+        "summary": "Change the content of one note",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/knowledge/search": {
+      "get": {
+        "description": "Searches only what the user of the site owner session owns, with the bounds of `GET /v1/library/search`: a query of at most 512 Unicode scalar values and a `limit` from 1 through 100. A tenant parameter is refused. Capability `knowledge.search`, for the site owner session of the site.",
+        "operationId": "searchSiteKnowledge",
+        "parameters": [
+          {
+            "description": "Optional search text, at most 512 Unicode scalar values.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional effective state: read or unread.",
+            "in": "query",
+            "name": "read_state",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size from 1 through 100; defaults to 25.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "uint32",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Non-negative zero-based page offset; defaults to 0.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "format": "uint64",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryPage"
+                }
+              }
+            },
+            "description": "One page of the owner's items."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A parameter is invalid, or a tenant is named."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No site owner session of this site, in its cookie."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The effective capability set or the service behind the route could not be read; retryable."
+          }
+        },
+        "security": [
+          {
+            "siteSessionCookie": []
+          }
+        ],
+        "summary": "Search the owner's knowledge from the site",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/library": {
+      "get": {
+        "description": "The same items, bounds and read state as `GET /v1/library/search`, for the user of the site owner session; that user is the only tenant, and a tenant parameter is refused. Capability `library.read`, for the site owner session of the site.",
+        "operationId": "readSiteLibrary",
+        "parameters": [
+          {
+            "description": "Optional search text, at most 512 Unicode scalar values.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional effective state: read or unread.",
+            "in": "query",
+            "name": "read_state",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size from 1 through 100; defaults to 25.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "uint32",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Non-negative zero-based page offset; defaults to 0.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "format": "uint64",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryPage"
+                }
+              }
+            },
+            "description": "One page of the owner's library."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A parameter is invalid, or a tenant is named."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No site owner session of this site, in its cookie."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The site's effective capability set lacks the route's capability (`edge.capability_not_granted`), or an unsafe request lacks `X-Ratatoskr-Site-Request: 1` or the `Origin` of the approved hostname."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The effective capability set or the service behind the route could not be read; retryable."
+          }
+        },
+        "security": [
+          {
+            "siteSessionCookie": []
+          }
+        ],
+        "summary": "Read the owner's library from the site",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/manifest": {
+      "get": {
+        "description": "Reads the active manifest of the site, the last valid submission, with its SHA-256. An approval names that digest. The sites service answers; Edge forwards the request after it checks the caller. Only a primary session whose user holds the live `platform.owner` grant may call this route (class `management`, ADR-0017).",
+        "operationId": "readSiteManifest",
+        "parameters": [
+          {
+            "description": "The site id: 3 to 40 lower-case ASCII letters, digits and `-`.",
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveSiteManifest"
+                }
+              }
+            },
+            "description": "The active manifest of the site."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The session is not a primary session whose user holds the live `platform.owner` grant."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The site has no active manifest."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The sites service could not be reached."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The sites service did not answer in time."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Read the active manifest of a site",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/manifest/approval": {
+      "delete": {
+        "description": "Withdraws the approval of the site. The site then serves nothing. Platform stores the state `withdrawn` and announces it to the sites service with the digest, the capabilities and the hostname of the approval it ends. A withdrawal of a withdrawn approval changes nothing and announces nothing. Only a primary session whose user holds the live `platform.owner` grant may call this route (class `management`, ADR-0017).",
+        "operationId": "withdrawSiteManifest",
+        "parameters": [
+          {
+            "description": "The site id: 3 to 40 lower-case ASCII letters, digits and `-`.",
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApproval"
+                }
+              }
+            },
+            "description": "The approval of the site, now withdrawn."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The session is not a primary session whose user holds the live `platform.owner` grant."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The site has no approval."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Withdraw the approval of a site",
+        "tags": [
+          "sites"
+        ]
+      },
+      "post": {
+        "description": "Approves the manifest that the sites service holds as the active manifest of the site. The body names the SHA-256 of the manifest bytes that the owner read; Edge reads the active manifest from the sites service and refuses a digest that is not the active one with `platform.site.manifest_digest_stale`. A hostname belongs to one approved site: an approval that would give a hostname to a second site is refused with `platform.site.hostname_taken`.\n\nPlatform stores the approval and announces it to the sites service in the same transaction. An approval of the digest that is approved already changes nothing and announces nothing. Only a primary session whose user holds the live `platform.owner` grant may call this route (class `management`, ADR-0017).",
+        "operationId": "approveSiteManifest",
+        "parameters": [
+          {
+            "description": "The site id: 3 to 40 lower-case ASCII letters, digits and `-`.",
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApproval"
+                }
+              }
+            },
+            "description": "The approval of the site."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The body is not one `manifest_sha256` of 64 lower-case hex digits."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The session is not a primary session whose user holds the live `platform.owner` grant."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The sites service holds no manifest for the site."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "`platform.site.manifest_digest_stale`: the digest is not the active manifest. `platform.site.hostname_taken`: another approved site has the hostname."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The sites service answered something that is not an active manifest."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The sites service could not be reached."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The sites service did not answer in time."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Approve the active manifest of a site",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/releases": {
+      "post": {
+        "description": "Accepts a request to build a release of the site durably and returns the operation of kind `sites.release.build` that tracks it; the sites service builds the release and reports the outcome on the operation. A build that makes no new release succeeds and names the current release.\n\nThe first release that holds a publication is always requested here, whatever the release mode of the publication. `Idempotency-Key` is required: the same key for the same site returns the ORIGINAL operation. Only a primary session whose user holds the live `platform.owner` grant may call this route (class `release`, ADR-0017).",
+        "operationId": "requestSiteReleaseBuild",
+        "parameters": [
+          {
+            "description": "The site id: 3 to 40 lower-case ASCII letters, digits and `-`.",
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "A client-chosen key, 1 to 255 characters, unique per distinct request. It is hashed before it is stored.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteReleaseBuildAccepted"
+                }
+              }
+            },
+            "description": "Accepted durably. The body carries the operation to poll."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No `Idempotency-Key`."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate here."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The session is not a primary session whose user holds the live `platform.owner` grant."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The site id is not a valid site id."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The key is in use for a different request, or an earlier attempt with it has not finished."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "A dependency did not answer in time. Nothing was written; retrying with the same key is safe."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Request a release build of a site",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/sessions": {
+      "post": {
+        "description": "The site's callback page redeems the code with its PKCE verifier, from the approved hostname. The answer sets the host-only cookie `__Host-ratatoskr-site` of a site owner session (`HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/`), which ends 12 hours after issue or 1 hour after its last use. Every invalid code is the same `401`. Class `sign-in` (ADR-0017).",
+        "operationId": "openSiteSession",
+        "parameters": [
+          {
+            "description": "The site id: 3 to 40 lower-case letters, digits and `-`.",
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSessionOpened"
+                }
+              }
+            },
+            "description": "The session is in the cookie."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The body is not a code and a verifier."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The code was not accepted."
+          }
+        },
+        "security": [],
+        "summary": "Redeem a sign-in code on the site",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/sites/{site}/sign-in-codes": {
+      "post": {
+        "description": "The owner's primary session approves a sign-in on an approved site: the body names the PKCE S256 challenge of the site's verifier and the path to return to. The answer carries a single-use code that expires after 60 seconds, and the address of the site's callback page with the code. The answer is not stored and carries `Cache-Control: no-store` and `Referrer-Policy: no-referrer`. Class `management` (ADR-0017).",
+        "operationId": "requestSiteSignInCode",
+        "parameters": [
+          {
+            "description": "The site id: 3 to 40 lower-case letters, digits and `-`.",
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignInCodeIssued"
+                }
+              }
+            },
+            "description": "The code and the callback address."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The body is not a challenge and a path."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "No credential, or one that does not authenticate."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not a primary session with the live `platform.owner` grant."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "`sites.site_not_found`: the site has no approved manifest."
+          }
+        },
+        "security": [
+          {
+            "sessionBearer": []
+          }
+        ],
+        "summary": "Approve a sign-in of the owner on one site",
+        "tags": [
+          "sites"
         ]
       }
     },
