@@ -21,10 +21,11 @@
  * Platform must publish it before the notes route is available.
  *
  * `sites.manage` gates the site registry, the manifest approval, the
- * publication editor and the release history of workspace change
- * add-site-publications. Platform 3a47f0f serves the site routes but
- * publishes no site capability, so the name is this client's proposal, and
- * Platform must publish it before the sites route is available.
+ * publication editor, the release history and the consent page of a site
+ * sign-in (workspace changes add-site-publications and
+ * add-site-owner-editing-and-live). Platform reports it to the owner where
+ * Edge routes the sites service (Platform 943bc91,
+ * crates/core/src/capability.rs).
  */
 export const KNOWN_CAPABILITIES = [
   "content.submit",
