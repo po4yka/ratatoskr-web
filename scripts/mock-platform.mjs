@@ -124,6 +124,32 @@ const blogManifest = {
   ],
 }
 
+const sessionList = {
+  sessions: [
+    {
+      session_id: "018f0000-0000-7000-8000-00000000a001",
+      kind: "site_owner",
+      site_id: "blog",
+      hostname: "blog.example.org",
+      device: null,
+      issued_at: now,
+      expires_at: now,
+      last_seen_at: now,
+    },
+    {
+      session_id: "018f0000-0000-7000-8000-00000000a002",
+      kind: "browser",
+      site_id: null,
+      hostname: null,
+      device: null,
+      issued_at: now,
+      expires_at: now,
+      last_seen_at: null,
+    },
+  ],
+  next_cursor: null,
+}
+
 function send(response, code, body) {
   response.writeHead(code, {
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
@@ -215,6 +241,7 @@ async function route(request, response) {
       "Owner access is required."
     )
   }
+  if (url.pathname === "/v1/sessions") return send(response, 200, sessionList)
   if (url.pathname.startsWith("/v1/sites") && !isOwner(request)) {
     return error(
       response,

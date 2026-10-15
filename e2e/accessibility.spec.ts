@@ -18,6 +18,7 @@ const routes = [
     path: "/sites/blog/sign-in?challenge=iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ&return=%2F",
     credential: "owner-credential",
   },
+  { name: "sessions", path: "/sessions", credential: "owner-credential" },
   { name: "login", path: "/login", credential: null },
   { name: "search", path: "/", credential: "owner-credential" },
   {

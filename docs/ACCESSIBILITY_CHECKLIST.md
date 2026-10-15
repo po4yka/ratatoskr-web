@@ -3,12 +3,12 @@
 Observed on 2026-08-27 with Playwright Chromium 151 and axe-core 4.13 through
 `npx playwright test e2e/accessibility.spec.ts e2e/keyboard-navigation.spec.ts`.
 This file records checks that were run. It does not stand in for assistive-technology testing.
-The `/sites/blog/sign-in` rows were observed on 2026-10-15 with Chromium 151 and the same suite.
+The `/sites/blog/sign-in` and `/sessions` rows were observed on 2026-10-15 with Chromium 151 and the same suite.
 
 ## Route matrix
 
 The automated matrix covers each route in light and dark themes at 320 by 720 and 1280 by 800 CSS
-pixels. All 36 combinations passed after the fixes below.
+pixels. All 40 combinations passed after the fixes below.
 
 | Surface                  | State exercised                         | Result     |
 | ------------------------ | --------------------------------------- | ---------- |
@@ -18,6 +18,7 @@ pixels. All 36 combinations passed after the fixes below.
 | `/ops/schedules`         | owner schedule status                   | 4/4 passed |
 | `/ops/audit`             | owner audit trail                       | 4/4 passed |
 | `/sites/blog/sign-in`    | owner consent to a site sign-in         | 4/4 passed |
+| `/sessions`              | site sessions grouped by site           | 4/4 passed |
 | `/login`                 | unauthenticated form                    | 4/4 passed |
 | `/`                      | authenticated search fixture            | 4/4 passed |
 | `/documents/document-ir` | authenticated reader fixture            | 4/4 passed |
@@ -59,7 +60,7 @@ Each combination asserts:
 | One named primary navigation and one main landmark.                                        | Passed                                                      | axe matrix and explicit landmark assertion                                                     |
 | Loading, error, empty, forbidden, degraded, and stale states remain text, not color alone. | Passed                                                      | component tests and axe matrix                                                                 |
 | Form control has an associated label and native required state.                            | Passed                                                      | login matrix                                                                                   |
-| Light and dark contrast has no serious/critical axe finding.                               | Passed                                                      | all 36 combinations                                                                            |
+| Light and dark contrast has no serious/critical axe finding.                               | Passed                                                      | all 40 combinations                                                                            |
 | Reduced-motion backstops remain present for declarative and vendored motion.               | Passed by existing automated coverage and source inspection | `src/components/animated-icon.test.tsx`; `src/test/design-libraries.test.tsx`; `src/index.css` |
 
 ## Not verified

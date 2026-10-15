@@ -30,6 +30,7 @@ export interface RouteModules {
   vault?: FeatureModuleLoader
   notes?: FeatureModuleLoader
   sites?: FeatureModuleLoader
+  sessions?: FeatureModuleLoader
   social?: FeatureModuleLoader
   aiArchive?: FeatureModuleLoader
   connections?: FeatureModuleLoader
@@ -61,6 +62,7 @@ const defaultGithub = () =>
 const defaultVault = () => import("@/features/github-vault/git-vault-page")
 const defaultNotes = () => import("@/features/notes/notes-page")
 const defaultSites = () => import("@/features/sites/sites-page")
+const defaultSessions = () => import("@/features/sessions/sessions-page")
 const defaultSocial = () =>
   import("@/features/social-ai-archive/social-posts-page")
 const defaultAiArchive = () =>
@@ -88,6 +90,7 @@ function resolveRouteModules(seams: RouterSeams): Required<RouteModules> {
     vault: seams.routeModules?.vault ?? defaultVault,
     notes: seams.routeModules?.notes ?? defaultNotes,
     sites: seams.routeModules?.sites ?? defaultSites,
+    sessions: seams.routeModules?.sessions ?? defaultSessions,
     social: seams.routeModules?.social ?? defaultSocial,
     aiArchive: seams.routeModules?.aiArchive ?? defaultAiArchive,
     connections: seams.routeModules?.connections ?? defaultConnections,
@@ -126,6 +129,7 @@ export function createAppRouter(
   const VaultRoute = lazy(modules.vault)
   const NotesRoute = lazy(modules.notes)
   const SitesRoute = lazy(modules.sites)
+  const SessionsRoute = lazy(modules.sessions)
   const SocialRoute = lazy(modules.social)
   const AiArchiveRoute = lazy(modules.aiArchive)
   const ConnectionsRoute = lazy(modules.connections)
@@ -312,6 +316,10 @@ export function createAppRouter(
               view={AuditAdminRoute}
             />
           ),
+        },
+        {
+          path: "sessions",
+          element: <FeatureRoute view={SessionsRoute} />,
         },
         {
           path: "documents/:documentId",

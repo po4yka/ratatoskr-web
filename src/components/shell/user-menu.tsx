@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router"
 import { useAuth } from "@/auth/auth-context"
 import {
   AlertDialog,
@@ -25,6 +26,7 @@ import {
  */
 export function UserMenu() {
   const { signOut } = useAuth()
+  const navigate = useNavigate()
   const [confirming, setConfirming] = useState(false)
 
   return (
@@ -39,6 +41,9 @@ export function UserMenu() {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setConfirming(true)}>
             Sign out…
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => void navigate("/sessions")}>
+            Sessions
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
