@@ -7,7 +7,7 @@
 
 ## 2. Fixes of the review of group 11
 
-- [ ] 2.1 RED: `src/features/sites/SiteSignInConsent.test.tsx` `pending_manifest_offers_no_sign_in`. Confirm that it fails on the assertion that no "Sign in to garden" button exists, because the page offers the sign-in while a new manifest waits for approval.
+- [x] 2.1 RED: `src/features/sites/SiteSignInConsent.test.tsx` `pending_manifest_offers_no_sign_in`. Confirm that it fails on the assertion that no "Sign in to garden" button exists, because the page offers the sign-in while a new manifest waits for approval.
 - [ ] 2.2 GREEN: when the active manifest is not the approved one, offer no sign-in, and link to the approval of the new manifest. Platform answers no approved hostname or capabilities on a read route, so the page cannot show them. Verify 2.1, and run the gate list of `DEVELOPMENT.md`.
 - [ ] 2.3 RED: `src/features/sites/site-sign-in.test.ts` "accepts only the callback page of the approved hostname" (a table: suffix host, userinfo, `http:`, port, trailing dot, other path), and `SiteSignInConsent.test.tsx` `refused_hostname_is_not_followed` and `callback_is_followed_in_its_parsed_form`. Confirm that the userinfo and path rows and the parsed-form case fail on their assertions, and that the refused-hostname case fails when the hostname check is deleted.
 - [ ] 2.4 GREEN: refuse a callback with a user name or a password, or with a path other than `/.ratatoskr/sign-in/`, and go to the parsed `href`. Verify 2.3, and run the gate list of `DEVELOPMENT.md`.

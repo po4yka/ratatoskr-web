@@ -79,4 +79,25 @@ describe("the consent page of a site sign-in", () => {
       "POST /v1/sites/drafts/sign-in-codes"
     )
   })
+
+  it("pending_manifest_offers_no_sign_in", async () => {
+    const calls = renderSites({
+      path: consentPath("garden"),
+      respond: signInRoutes,
+    })
+    await screen.findByRole("heading", { name: "Sign in to garden" })
+    await waitFor(() =>
+      expect(screen.queryByText("Loading the site")).not.toBeInTheDocument()
+    )
+
+    expect(
+      screen.queryByRole("button", { name: "Sign in to garden" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Approve the new manifest" })
+    ).toHaveAttribute("href", "/sites/garden")
+    expect(calls.map(routeOf)).not.toContain(
+      "POST /v1/sites/garden/sign-in-codes"
+    )
+  })
 })
