@@ -12,8 +12,15 @@ export interface NotesConnection {
   readonly connection_id: string
   readonly channel: string
   readonly vault_display_name: string
-  /** For example `connecting`, `active`, `failed` or `login_expired`. */
+  /** `connecting`, `active` or `login_expired`. */
   readonly state: string
+  /** The folders that are not indexed. */
+  readonly excluded_folders: readonly string[]
+  /** Status conditions, such as `notes.file.path_collision` with its paths. */
+  readonly conditions: readonly {
+    readonly code: string
+    readonly paths: readonly string[]
+  }[]
 }
 
 export interface SyncLogin {
@@ -50,31 +57,46 @@ export interface ConnectAccepted {
 }
 
 export interface NotesFile {
+  readonly file_id: string
   readonly path: string
+  /** The lowercase hex SHA-256 of the bytes. */
   readonly revision: string
+  readonly media_type: string
+  readonly length_bytes: number
 }
 
-export interface FilePage {
-  readonly files: readonly NotesFile[]
-  readonly next_cursor?: string | null
-}
-
-export interface FileText {
-  readonly path: string
-  readonly revision: string
-  readonly content: string
+/** The index of one Markdown note, as ratatoskr-notes builds it. */
+export interface NoteIndex {
+  readonly frontmatter: Readonly<Record<string, unknown>> | null
+  readonly tags: readonly string[]
 }
 
 export interface FileIndex {
   readonly path: string
-  readonly backlinks: readonly { readonly path: string }[]
+  readonly revision: string
+  /** `null` for a file that is not a Markdown note. */
+  readonly index: NoteIndex | null
+  /** Each link, embed and frontmatter link, with the file it resolves to. */
+  readonly links: readonly {
+    readonly link: string
+    readonly embed: boolean
+    readonly target: string | null
+  }[]
+  readonly backlinks: readonly {
+    readonly path: string
+    readonly count: number
+  }[]
 }
 
 const CONNECTIONS = "/v1/notes/connections"
 
+/** The routes match the file path with `{*path}`, so it goes as path segments. */
 function filePath(connectionId: string, route: "files" | "index") {
   return (path: string) =>
-    `${CONNECTIONS}/${encodeURIComponent(connectionId)}/${route}/${encodeURIComponent(path)}`
+    `${CONNECTIONS}/${encodeURIComponent(connectionId)}/${route}/${path
+      .split("/")
+      .map(encodeURIComponent)
+      .join("/")}`
 }
 
 function required<T>(value: T | undefined): T {
@@ -107,18 +129,25 @@ export function notesSource(gateway: Gateway) {
         method: "DELETE",
       })
     },
-    async files(connectionId: string, cursor?: string): Promise<FilePage> {
-      const page = await gateway.request<FilePage>({
+    async files(connectionId: string): Promise<readonly NotesFile[]> {
+      const page = await gateway.request<{ files: NotesFile[] }>({
         path: `${CONNECTIONS}/${encodeURIComponent(connectionId)}/files`,
-        ...(cursor === undefined ? {} : { query: { cursor } }),
       })
-      return required(page)
+      return required(page).files
     },
-    async file(connectionId: string, path: string): Promise<FileText> {
-      const text = await gateway.request<FileText>({
+    /** The text of the current revision, or `null` when it is not UTF-8. */
+    async file(connectionId: string, path: string): Promise<string | null> {
+      if (gateway.stream === undefined)
+        throw new Error("This gateway cannot read bytes.")
+      const body = await gateway.stream({
         path: filePath(connectionId, "files")(path),
       })
-      return required(text)
+      const bytes = await new Response(body).arrayBuffer()
+      try {
+        return new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+      } catch {
+        return null
+      }
     },
     async index(connectionId: string, path: string): Promise<FileIndex> {
       const index = await gateway.request<FileIndex>({
@@ -145,6 +174,9 @@ const MESSAGES: Readonly<Record<string, string>> = {
     "The Obsidian login expired. Disconnect the vault and connect it again.",
   "notes.request.invalid":
     "The server did not accept the form. Examine the fields and try again.",
+  "notes.file.not_found": "This file does not exist in the vault now.",
+  "notes.connection.cleanup_failed":
+    "The server could not remove the vault now. The vault is still connected. Try again later.",
   "notes.service.unavailable":
     "The notes service is not available now. Try again later.",
   "notes.sync.journal_unreadable":

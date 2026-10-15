@@ -1,18 +1,9 @@
 import { useState } from "react"
 import { Link, useSearchParams } from "react-router"
-import { Button } from "@/components/ui/button"
-import { Failure, FilePanel } from "./file-panel"
+import { FilePanel } from "./file-panel"
+import { Failure } from "./index-sections"
 import { fileLink, useRead } from "./notes-read"
-import {
-  describeNotesFailure,
-  type NotesFile,
-  type NotesSource,
-} from "./notes-source"
-
-interface FileList {
-  readonly files: readonly NotesFile[]
-  readonly cursor: string | null
-}
+import type { NotesSource } from "./notes-source"
 
 function FileListPanel({
   source,
@@ -22,38 +13,19 @@ function FileListPanel({
   readonly connectionId: string
 }) {
   const [load] = useState(() => () => source.files(connectionId))
-  const first = useRead(load, "The files of this vault could not load.")
-  const [more, setMore] = useState<FileList | null>(null)
-  const [moreFailed, setMoreFailed] = useState<string | null>(null)
-  if (first.kind === "loading") return <p role="status">Loading the files</p>
-  if (first.kind === "failed") return <Failure message={first.message} />
-  const list = more ?? {
-    files: first.value.files,
-    cursor: first.value.next_cursor ?? null,
-  }
-  if (list.files.length === 0)
+  const files = useRead(load, "The files of this vault could not load.")
+  if (files.kind === "loading") return <p role="status">Loading the files</p>
+  if (files.kind === "failed") return <Failure message={files.message} />
+  if (files.value.length === 0)
     return (
       <p className="text-body text-muted-foreground">
         This vault has no files yet.
       </p>
     )
-
-  async function showMore(cursor: string) {
-    try {
-      const page = await source.files(connectionId, cursor)
-      setMore({
-        files: [...list.files, ...page.files],
-        cursor: page.next_cursor ?? null,
-      })
-    } catch (failure) {
-      setMoreFailed(describeNotesFailure(failure, "More files could not load."))
-    }
-  }
-
   return (
-    <nav aria-label="Vault files" className="flex flex-col gap-2">
+    <nav aria-label="Vault files">
       <ul className="flex flex-col gap-1">
-        {list.files.map((file) => (
+        {files.value.map((file) => (
           <li key={file.path}>
             <Link
               className="text-body hover:underline"
@@ -64,16 +36,6 @@ function FileListPanel({
           </li>
         ))}
       </ul>
-      {list.cursor === null ? null : (
-        <Button
-          className="self-start"
-          onClick={() => void showMore(list.cursor ?? "")}
-          variant="outline"
-        >
-          Show more files
-        </Button>
-      )}
-      {moreFailed ? <Failure message={moreFailed} /> : null}
     </nav>
   )
 }

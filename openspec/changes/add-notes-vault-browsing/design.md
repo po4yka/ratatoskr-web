@@ -6,7 +6,8 @@ section 7 of the workspace lists `POST /v1/notes/connections` (202 with an opera
 Obsidian password, the MFA code and the end-to-end password, and D10 says that the operation kind is
 `notes.connection.connect` with the phases `login`, `setup`, `first_sync` and `indexing`. Its risk
 list says that the connect flow states that the server can read the whole vault before it asks for
-the end-to-end password. The read routes of its group 7 are not built yet.
+the end-to-end password. `ratatoskr-notes` serves the read routes of its group 7
+(`services/notes/src/api/read.rs`), and the shapes in D1 are read from those handlers.
 
 ## Decisions
 
@@ -17,7 +18,8 @@ shapes and the calls through the gateway. It is the only file that a later regen
 change. The shapes:
 
 - `GET /v1/notes/connections` answers `{ connections: [{ connection_id, channel,
-  vault_display_name, state }] }`.
+  vault_display_name, state, excluded_folders, conditions: [{ code, paths }] }] }`. The state is
+  `connecting`, `active` or `login_expired`.
 - `POST /v1/notes/connections` takes `{ channel: "sync", vault_key, vault_display_name,
   sync_login: { email, password, mfa_code?, e2e_password? } }`, the body that
   `ratatoskr-notes` reads (`services/notes/src/api.rs`, `ConnectRequest`, `deny_unknown_fields`).
@@ -26,11 +28,20 @@ change. The shapes:
   operation_id, kind, lane } }` (Platform `crates/public-api/src/notes.rs`). The request carries no
   `Idempotency-Key`: Edge takes none, because its ledger would keep a digest of the body.
 - `DELETE /v1/notes/connections/{id}` answers `204`.
-- `GET /v1/notes/connections/{id}/files` answers `{ files: [{ path, revision }], next_cursor }`.
-- `GET /v1/notes/connections/{id}/files/{path}` answers `{ path, revision, content }`.
-- `GET /v1/notes/connections/{id}/index/{path}` answers `{ path, revision, backlinks: [{ path }] }`.
+- `GET /v1/notes/connections/{id}/files` answers `{ files: [{ file_id, path, revision,
+  media_type, length_bytes }] }`. It has no cursor.
+- `GET /v1/notes/connections/{id}/files/{*path}` answers the bytes of the current revision, or of
+  `?revision=<sha256>`. The view reads them through the gateway stream and decodes them as UTF-8.
+  Bytes that are not UTF-8 are named as not text.
+- `GET /v1/notes/connections/{id}/index/{*path}` answers `{ path, revision, index, links: [{ link,
+  embed, target }], backlinks: [{ path, count }] }`. `index` is `null` for a file that is not a
+  Markdown note, and otherwise holds `frontmatter` and `tags` among other members. The view shows
+  the links, the tags, the frontmatter as properties, and the backlinks.
+- `PUT /v1/notes/connections/{id}/excluded-folders` sets the folders that are not indexed. The view
+  has no place for it yet, so it does not call it.
 
-A file path is one URL segment, encoded with `encodeURIComponent`.
+The routes match a file path with `{*path}`, so the path is sent as path segments, each encoded with
+`encodeURIComponent`.
 
 ### D2. The capability name is `notes.vaults`
 
@@ -61,7 +72,7 @@ text of its envelope.
 
 ## Risks / Trade-offs
 
-- [The read routes are not built] → The shapes in D1 are assumptions. The tests mock them, and the
-  coordinator checks them against `ratatoskr-notes` group 7.
+- [Shapes copied from the handlers] → The tests mock the shapes in D1. A change in a notes handler
+  that does not change the fixtures goes unseen until a contract brings the routes.
 - [Hand-written wire types] → `AGENTS.md` asks for generated types. The pinned contract has none
   for `/v1/notes`, so one module holds them until a contract change brings the routes.
