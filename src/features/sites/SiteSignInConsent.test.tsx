@@ -102,6 +102,35 @@ describe("the consent page of a site sign-in", () => {
     )
   })
 
+  it("unapproved_site_links_to_approval_when_the_manifest_fails", async () => {
+    renderSites({
+      path: consentPath("drafts"),
+      respond: (request) => {
+        if (request.path === "/v1/sites/drafts/manifest")
+          throw { kind: "terminal", status: 503 }
+        return signInRoutes(request)
+      },
+    })
+
+    expect(
+      await screen.findByRole("link", { name: "Approve the site" })
+    ).toHaveAttribute("href", "/sites/drafts")
+    expect(
+      screen.queryByRole("button", { name: "Sign in to drafts" })
+    ).not.toBeInTheDocument()
+  })
+})
+
+describe("the callback address of the consent page", () => {
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it("refused_hostname_is_not_followed", async () => {
     const leave = vi
       .spyOn(browserLocation, "replace")
