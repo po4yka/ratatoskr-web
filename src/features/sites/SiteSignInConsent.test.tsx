@@ -7,6 +7,7 @@ import {
   routeOf,
   signInCallback,
   signInRoutes,
+  signInRoutesTo,
 } from "./sites-fixtures"
 
 /** The S256 challenge of the verifier `verifier`: 43 base64url characters. */
@@ -99,5 +100,47 @@ describe("the consent page of a site sign-in", () => {
     expect(calls.map(routeOf)).not.toContain(
       "POST /v1/sites/garden/sign-in-codes"
     )
+  })
+
+  it("refused_hostname_is_not_followed", async () => {
+    const leave = vi
+      .spyOn(browserLocation, "replace")
+      .mockImplementation(() => undefined)
+    renderSites({
+      path: consentPath("blog"),
+      respond: signInRoutesTo(
+        "https://evil.example/.ratatoskr/sign-in/?code=code-1"
+      ),
+    })
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Sign in to blog" })
+    )
+
+    expect(
+      await screen.findByText(
+        "The server gave a sign-in address on another host. Ratatoskr did not go there."
+      )
+    ).toBeInTheDocument()
+    expect(leave).not.toHaveBeenCalled()
+  })
+
+  it("callback_is_followed_in_its_parsed_form", async () => {
+    const leave = vi
+      .spyOn(browserLocation, "replace")
+      .mockImplementation(() => undefined)
+    renderSites({
+      path: consentPath("blog"),
+      respond: signInRoutesTo(
+        "https://BLOG.example.org/.ratatoskr/sign-in/?code=code-1"
+      ),
+    })
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Sign in to blog" })
+    )
+
+    await waitFor(() => expect(leave).toHaveBeenCalledTimes(1))
+    expect(leave).toHaveBeenCalledWith(signInCallback)
   })
 })

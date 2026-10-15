@@ -138,15 +138,22 @@ export const signInCallback =
  * other site answers 404 `sites.site_not_found`.
  */
 export function signInRoutes(request: GatewayRequest): unknown {
-  if (request.path === "/v1/sites/blog/sign-in-codes")
-    return {
-      code: "code-1",
-      redirect_url: signInCallback,
-      expires_at: "2026-10-15T10:01:00Z",
-    }
-  if (request.path.endsWith("/sign-in-codes"))
-    throw { kind: "not-found", status: 404, code: "sites.site_not_found" }
-  return siteRoutes(request)
+  return signInRoutesTo(signInCallback)(request)
+}
+
+/** `signInRoutes`, with `redirectUrl` in the answer of the code of `blog`. */
+export function signInRoutesTo(redirectUrl: string) {
+  return (request: GatewayRequest): unknown => {
+    if (request.path === "/v1/sites/blog/sign-in-codes")
+      return {
+        code: "code-1",
+        redirect_url: redirectUrl,
+        expires_at: "2026-10-15T10:01:00Z",
+      }
+    if (request.path.endsWith("/sign-in-codes"))
+      throw { kind: "not-found", status: 404, code: "sites.site_not_found" }
+    return siteRoutes(request)
+  }
 }
 
 /** The stored publication `notes` of `blog`, as the sites schema holds it. */
