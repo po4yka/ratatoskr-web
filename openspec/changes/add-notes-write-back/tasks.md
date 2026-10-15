@@ -1,0 +1,7 @@
+## 1. Editor and conflicts (workspace OBS-024 tasks 13.1 to 13.4)
+
+- [x] 1.1 RED: `src/features/notes/editor.test.tsx` "uploads before it writes and sends the loaded base hash" and "write-mode switch sends PUT write-mode", `src/features/notes/conflict-view.test.tsx` "offers accept_merge only with a proposal" and "says that a side over the limit is too large to show", and `src/api/gateway/client.test.ts` "sends a bytes body unchanged as an octet stream". Confirm that they fail because the views do not exist and the gateway sends no octet-stream body.
+- [x] 1.2 GREEN: implement the editor, the write-mode switch, the conflict view and the bytes body of the gateway. Verify 1.1, and run the gate list of `DEVELOPMENT.md`.
+- [x] 1.3 RED: `src/features/notes/write-retry.test.tsx` "a save without an answer is sent again with the same key, and new content with a new key", "the base becomes the written content only when the write succeeds", "a write-mode change without an answer is sent again with the same key" and "a resolution without an answer is sent again with the same key". Confirm that they fail because each request draws a new key and the base moves on the `202`.
+- [x] 1.4 GREEN: hold one key per logical request, and move the base on the success of the write. Verify 1.3, and run the gate list of `DEVELOPMENT.md`.
+- [x] 1.5 State in `add-notes-vault-browsing` that a file has no editable field until the owner opens the editor. No test: specification text.

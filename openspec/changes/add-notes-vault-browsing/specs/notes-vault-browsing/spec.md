@@ -1,7 +1,7 @@
 ## Purpose
 
 Give the owner a capability-gated surface to connect an Obsidian vault, follow the connect
-operation, browse the vault files read-only with their backlinks, and disconnect the vault. The
+operation, browse the vault files with their backlinks, and disconnect the vault. The
 shared behaviour lives in the workspace store, specs `notes-vault-connections` and
 `notes-file-index` of change `add-notes-vault-connections`.
 
@@ -70,10 +70,11 @@ SHALL show one message for each terminal error code and warning of the operation
 - **WHEN** the snapshot is `failed` with a code of `ratatoskr-notes`, of Edge or `platform.operation.stale`, or `partially_succeeded` with `notes.sync.journal_unreadable`
 - **THEN** the view shows the message of that code, verified by `src/features/notes/connect-operation.test.tsx` "a failed connect operation names the reason of %s" and "a connect that ends with a warning names the warning"
 
-### Requirement: The vault is browsed read-only with backlinks
+### Requirement: The vault is browsed with backlinks
 
 The view SHALL list the connections with their channel and state, list the files of one connection,
-show the text of one file and the files that link to it, and offer no control that changes a file.
+show the text of one file and the files that link to it, and show no editable field until the owner
+opens the editor of change `add-notes-write-back`.
 A disconnect SHALL ask for a confirmation that names the vault.
 
 #### Scenario: The owner opens a file
