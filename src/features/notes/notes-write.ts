@@ -38,6 +38,8 @@ export type ConflictSide = "base" | "current" | "writer" | "merged"
 /** `GET /v1/notes/conflicts/{conflict_id}`. */
 export interface NotesConflict {
   readonly conflict_id: string
+  /** The write operation that raised the conflict. */
+  readonly operation_id?: string
   readonly connection_id: string
   readonly path: string
   readonly media_type: string
@@ -216,7 +218,7 @@ const MESSAGES: Readonly<Record<string, string>> = {
   "notes.sync.reconfigure_failed":
     "The sync client did not start again with the new write mode. Try again.",
   "notes.write.partially_applied":
-    "The vault took only a part of the change. Examine the files in Obsidian.",
+    "The vault applied only a part of the rename and its link updates. Resolve the conflict to finish the change.",
   "notes.conflict.not_found":
     "The server does not know this conflict. It can be resolved already.",
   "notes.connection.not_found": "The server does not know this vault.",
