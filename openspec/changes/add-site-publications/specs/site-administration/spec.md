@@ -72,3 +72,23 @@ release, and SHALL then send `POST /v1/sites/{site}/releases` with an `Idempoten
 
 - **WHEN** the owner opens a site that has no release
 - **THEN** no build request is sent until the owner selects "Build the first release", verified by `src/features/sites/ReleaseHistory.test.tsx` "first_release_is_requested_explicitly"
+
+### Requirement: The publication list shows the state of each publication
+
+The editor of a stored publication SHALL show its state, `active` or `suspended`, and for a
+suspended publication SHALL say how the owner makes it active again.
+
+#### Scenario: A publication whose vault was disconnected
+
+- **WHEN** the owner opens a site with a stored publication in the state `suspended`, and then one in the state `active`
+- **THEN** the first says that it is suspended and that a vault connection makes it active again, and the second says that it is active, verified by `src/features/sites/PublicationEditor.test.tsx` "shows_the_publication_state"
+
+### Requirement: A release of a site that is not approved cannot start
+
+When the approval state of the site is not `approved`, the release history SHALL say that the owner
+must approve the site first, and SHALL offer no build request.
+
+#### Scenario: The owner opens the releases of an unapproved site
+
+- **WHEN** the owner opens a site that is not approved and has no release
+- **THEN** the view says "Approve the site before the first release." and the build control is disabled, verified by `src/features/sites/ReleaseHistory.test.tsx` "unapproved_site_cannot_start_a_release"

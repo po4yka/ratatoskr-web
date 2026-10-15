@@ -114,3 +114,29 @@ succeeded write SHALL show the warning `notes.write.transformed`.
 
 - **WHEN** a write operation succeeds with the warning `notes.write.transformed`
 - **THEN** the progress says that the vault saved the file with other bytes, verified by `src/features/notes/write-progress.test.tsx` "names the warning notes.write.transformed of a succeeded write"
+
+### Requirement: A partly applied write group has its own sentence
+
+A write that fails with `notes.write.partially_applied` SHALL show a sentence that says that the
+vault applied only a part of the rename and its link updates, and SHALL link to its conflict. The
+conflict view of that write SHALL say the same, and not that the vault changed the file meanwhile.
+
+#### Scenario: A rename landed and a link update did not
+
+- **WHEN** a write operation fails with `notes.write.partially_applied` and a `conflict_id`
+- **THEN** the progress shows the sentence of that code and links to the conflict, verified by `src/features/notes/write-progress.test.tsx` "names the failure notes.write.partially_applied and links to its conflict"
+
+#### Scenario: The owner opens the conflict of a partly applied write
+
+- **WHEN** the owner opens a conflict whose operation failed with `notes.write.partially_applied`
+- **THEN** the view says that the vault applied only a part of the change, verified by `src/features/notes/conflict-view.test.tsx` "says that the vault applied only a part of the change"
+
+### Requirement: The conflict view lists the files of a write group
+
+When a conflict has `stale_paths`, the conflict view SHALL list each of those paths with a link to
+its file.
+
+#### Scenario: A conflict of a rename and its link updates
+
+- **WHEN** the owner opens a conflict with `stale_paths` that name two files
+- **THEN** the view lists both paths, each with a link to its file, verified by `src/features/notes/conflict-view.test.tsx` "lists the stale paths of a write group"
