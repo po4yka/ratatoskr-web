@@ -3,7 +3,11 @@ import { Link, useSearchParams } from "react-router"
 import type { components } from "@/api/generated/schema"
 import { Button } from "@/components/ui/button"
 import { browserLocation, isOnHostname, signInRequestOf } from "./site-sign-in"
-import { SiteDetails, Unapproved } from "./site-sign-in-details"
+import {
+  PendingManifest,
+  SiteDetails,
+  Unapproved,
+} from "./site-sign-in-details"
 import {
   describeSitesFailure,
   type ActiveSiteManifest,
@@ -72,6 +76,8 @@ function Confirmation({
   const [step, setStep] = useState<Step>({ kind: "idle" })
   if (site?.approval_state !== "approved" || step.kind === "unapproved")
     return <Unapproved siteId={siteId} />
+  if (site.approved_manifest_sha256 !== manifest.manifest_sha256)
+    return <PendingManifest siteId={siteId} />
 
   async function confirm() {
     if (request === null) return
@@ -83,7 +89,7 @@ function Confirmation({
 
   return (
     <>
-      <SiteDetails manifest={manifest} site={site} siteId={siteId} />
+      <SiteDetails manifest={manifest} siteId={siteId} />
       <div className="flex flex-wrap items-center gap-4">
         <Button
           disabled={request === null || step.kind === "pending"}

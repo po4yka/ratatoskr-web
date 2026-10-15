@@ -1,10 +1,6 @@
 import { Link } from "react-router"
 import { CapabilityGroup } from "./manifest-approval"
-import {
-  PUBLIC_CAPABILITIES,
-  type ActiveSiteManifest,
-  type SiteManifestState,
-} from "./sites-source"
+import { PUBLIC_CAPABILITIES, type ActiveSiteManifest } from "./sites-source"
 
 /** A site that is not approved gets no owner session. */
 export function Unapproved({ siteId }: { readonly siteId: string }) {
@@ -24,17 +20,38 @@ export function Unapproved({ siteId }: { readonly siteId: string }) {
   )
 }
 
+/**
+ * A new manifest waits for approval. Platform binds a sign-in to the
+ * approved manifest, whose hostname and capabilities no read route
+ * answers, so the page offers no sign-in until the owner approves it.
+ */
+export function PendingManifest({ siteId }: { readonly siteId: string }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-body" role="alert">
+        A new manifest of this site waits for your approval. Its hostname or its
+        capabilities can differ from the approved ones, so Ratatoskr does not
+        sign you in now. Approve the new manifest, then start the sign-in on the
+        site again.
+      </p>
+      <Link
+        className="inline-flex min-h-7 items-center self-start text-body font-medium underline"
+        to={`/sites/${encodeURIComponent(siteId)}`}
+      >
+        Approve the new manifest
+      </Link>
+    </div>
+  )
+}
+
 /** The site, its hostname and what an owner session of it can use. */
 export function SiteDetails({
   siteId,
-  site,
   manifest,
 }: {
   readonly siteId: string
-  readonly site: SiteManifestState | undefined
   readonly manifest: ActiveSiteManifest
 }) {
-  const changed = site?.approved_manifest_sha256 !== manifest.manifest_sha256
   return (
     <>
       <p className="text-body">
@@ -47,12 +64,6 @@ export function SiteDetails({
         <dt className="font-medium">Hostname</dt>
         <dd className="break-all">{manifest.hostname}</dd>
       </dl>
-      {changed ? (
-        <p className="text-body font-medium" role="note">
-          A new manifest of this site waits for your approval. The session can
-          use only the capabilities that you approved.
-        </p>
-      ) : null}
       <div className="flex flex-col gap-4">
         <CapabilityGroup
           id="sign-in-owner-capabilities"

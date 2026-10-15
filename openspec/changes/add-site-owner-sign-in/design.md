@@ -32,8 +32,9 @@ Platform checks both values again.
 
 The page reads `GET /v1/sites` and `GET /v1/sites/{site}/manifest`. It shows the site id, the
 hostname of the active manifest, and the capabilities of the manifest, the public ones apart from
-the owner ones. When the active manifest is not the approved one, the page says that the session
-can use only the capabilities that the owner approved.
+the owner ones. When the active manifest is not the approved one, the page offers no sign-in: Platform
+binds the code to the approved hostname, and no read route answers the approved hostname or
+capabilities. The page links to the approval of the new manifest instead.
 
 ### D3. A site that is not approved links to its approval
 
