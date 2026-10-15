@@ -81,6 +81,13 @@ export function hangingRevokeRoutes(request: GatewayRequest): unknown {
   return sessionRoutes(request)
 }
 
+/** `sessionRoutes`, except that the session of `garden` is not known. */
+export function missingSessionRoutes(request: GatewayRequest): unknown {
+  if (request.path === `/v1/sessions/${GARDEN}`)
+    throw { kind: "not-found", status: 404 }
+  return sessionRoutes(request)
+}
+
 /** `sessionRoutes`, with times in `garden` that are not times. */
 export function invalidTimeRoutes(request: GatewayRequest): unknown {
   if (request.path !== "/v1/sessions") return sessionRoutes(request)

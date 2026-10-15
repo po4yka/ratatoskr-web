@@ -5,6 +5,7 @@ import {
   GARDEN,
   hangingRevokeRoutes,
   invalidTimeRoutes,
+  missingSessionRoutes,
   pagedSessionRoutes,
   renderSessions,
 } from "./sessions-fixtures"
@@ -132,5 +133,67 @@ describe("the session list after a revocation", () => {
     expect(
       garden.getByText("Signed in at an unknown time. Last use: not yet.")
     ).toBeInTheDocument()
+  })
+})
+
+describe("two revocations and the end of a group", () => {
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+
+  async function endOne(siteId: string) {
+    const group = await siteGroup(siteId)
+    fireEvent.click(group.getByRole("button", { name: "End this session" }))
+    fireEvent.click(
+      await screen.findByRole("button", { name: "End the session" })
+    )
+  }
+
+  it("two_revocations_keep_their_own_pending", async () => {
+    renderSessions(hangingRevokeRoutes)
+    const blog = await siteGroup("blog")
+    fireEvent.click(
+      blog.getByRole("button", { name: "End all sessions of blog" })
+    )
+    fireEvent.click(
+      await screen.findByRole("button", { name: "End the sessions" })
+    )
+
+    await endOne("garden")
+
+    expect(await screen.findByText("The session ended.")).toBeInTheDocument()
+    expect(
+      blog.getByRole("button", { name: "End all sessions of blog" })
+    ).toBeDisabled()
+  })
+
+  it("focus_moves_to_the_outcome_when_a_group_ends", async () => {
+    renderSessions()
+
+    await endOne("garden")
+
+    const outcome = await screen.findByText("The session ended.")
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("region", { name: "Sessions of garden" })
+      ).not.toBeInTheDocument()
+    )
+    expect(outcome).toHaveFocus()
+  })
+
+  it("not_found_removes_the_session", async () => {
+    renderSessions(missingSessionRoutes)
+
+    await endOne("garden")
+
+    expect(
+      await screen.findByText(
+        "The server does not know this session. It can be ended already."
+      )
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("region", { name: "Sessions of garden" })
+    ).not.toBeInTheDocument()
   })
 })
