@@ -65,6 +65,18 @@ describe("issuing requests against the configured Edge API", () => {
     expect(payload).toEqual({ api_version: "1", capabilities: [] })
   })
 
+  it("sends a bytes body unchanged as an octet stream", async () => {
+    const script = scriptedFetch([() => jsonResponse(200, {})])
+    const gateway = createGateway(baseDeps(script.fetchImpl))
+    const bytes = new Uint8Array([0x23, 0x20, 0xc3, 0xa9])
+
+    await gateway.request({ path: "/v1/blobs/chunks/0", method: "PUT", bytes })
+
+    const headers = new Headers(script.inits[0].headers)
+    expect(headers.get("content-type")).toBe("application/octet-stream")
+    expect(script.inits[0].body).toBe(bytes)
+  })
+
   it("resolves undefined for an empty success body instead of failing to parse", async () => {
     const script = scriptedFetch([() => jsonResponse(202)])
     const gateway = createGateway(baseDeps(script.fetchImpl))
