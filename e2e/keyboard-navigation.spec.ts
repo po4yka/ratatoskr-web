@@ -46,6 +46,17 @@ test("skip link reaches the main landmark", async ({ page }) => {
     [credentialKey, "owner-credential"]
   )
   await page.goto("/ops")
+  await expect(
+    page.getByRole("heading", { name: /recent operations/i })
+  ).toBeFocused()
+  // Route entry focuses its heading. Start this separate keyboard-entry
+  // check at the document beginning, after that intentional focus settles.
+  await page.locator("body").evaluate((body) => {
+    body.tabIndex = -1
+    body.focus()
+    body.removeAttribute("tabindex")
+  })
+  await expect(page.locator("body")).toBeFocused()
   await page.keyboard.press("Tab")
   const skip = page.getByRole("link", { name: /skip to content/i })
   await expect(skip).toBeFocused()
