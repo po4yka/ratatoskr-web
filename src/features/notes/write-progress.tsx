@@ -14,6 +14,17 @@ const WAITING: Readonly<Record<string, string>> = {
   running: "The change waits for the vault.",
 }
 
+/**
+ * The stages of a running write that ratatoskr-notes reports: what the
+ * change waits for on its channel. Another stage shows the status line.
+ */
+const STAGES: Readonly<Record<string, string>> = {
+  awaiting_device:
+    "The change waits for the device of the vault. The device applies it when it connects.",
+  awaiting_obsidian:
+    "The change waits for the copy of the vault on the server and for Obsidian Sync.",
+}
+
 /** The conflict that a failed write raised: the error extension, or the result. */
 function conflictOf(snapshot: OperationSnapshot): string | null {
   for (const failure of snapshot.errors ?? [])
@@ -31,6 +42,11 @@ function Failures({ snapshot }: { readonly snapshot: OperationSnapshot }) {
       {snapshot.errors?.map((failure) => (
         <p className="text-body text-destructive" key={failure.code}>
           {describeWriteFailure(failure, failure.message)}
+        </p>
+      ))}
+      {snapshot.warnings?.map((warning) => (
+        <p className="text-body" key={warning.code}>
+          {describeWriteFailure(warning, warning.message)}
         </p>
       ))}
       {conflictId === null ? null : (
@@ -53,7 +69,8 @@ function statusLine(
   if (snapshot.status === "succeeded") return done
   if (snapshot.status === "failed") return "The change failed."
   if (snapshot.status === "cancelled") return "The change was cancelled."
-  return WAITING[snapshot.status] ?? snapshot.status
+  const waiting = snapshot.stage ? STAGES[snapshot.stage] : undefined
+  return waiting ?? WAITING[snapshot.status] ?? snapshot.status
 }
 
 /**

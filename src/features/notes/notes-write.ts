@@ -207,6 +207,14 @@ const MESSAGES: Readonly<Record<string, string>> = {
     "Too many changes wait for this vault. Try again later.",
   "notes.write.content_missing":
     "The server does not have the uploaded content. Save again.",
+  "notes.write.unsafe_path":
+    "A folder of this path is a symbolic link, or a file is where a folder must be. Ratatoskr did not write the change.",
+  "notes.write.unsupported":
+    "The file is not UTF-8 text, or its frontmatter has no end. Ratatoskr cannot change this file.",
+  "notes.write.transformed":
+    "The vault changed the file when it saved it, for example a plugin formatted it. The saved version is now the current one.",
+  "notes.sync.reconfigure_failed":
+    "The sync client did not start again with the new write mode. Try again.",
   "notes.write.partially_applied":
     "The vault took only a part of the change. Examine the files in Obsidian.",
   "notes.conflict.not_found":
