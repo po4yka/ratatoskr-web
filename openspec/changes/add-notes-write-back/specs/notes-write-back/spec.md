@@ -92,3 +92,25 @@ name a side whose text is over the limit as too large to show.
 
 - **WHEN** the owner opens a conflict whose current and writer texts are over the limit
 - **THEN** both sides say that the text is too large to show, and the view offers custom content, verified by `src/features/notes/conflict-view.test.tsx` "says that a side over the limit is too large to show"
+
+### Requirement: The progress of a write names what it waits for
+
+The progress of a running write SHALL name the stage `awaiting_device` and the stage
+`awaiting_obsidian` of `ratatoskr-notes`. A failed write SHALL have a sentence for
+`notes.write.unsafe_path`, `notes.write.unsupported` and `notes.sync.reconfigure_failed`, and a
+succeeded write SHALL show the warning `notes.write.transformed`.
+
+#### Scenario: A write waits for the device of its connection
+
+- **WHEN** a write operation runs with the stage `awaiting_device` or `awaiting_obsidian`
+- **THEN** the progress says what the write waits for, verified by `src/features/notes/write-progress.test.tsx` "names the stage %s of a running write"
+
+#### Scenario: A write fails on a code of the delivery
+
+- **WHEN** a write operation fails with `notes.write.unsafe_path`, `notes.write.unsupported` or `notes.sync.reconfigure_failed`
+- **THEN** the progress shows the sentence of that code, verified by `src/features/notes/write-progress.test.tsx` "names the failure %s of a write"
+
+#### Scenario: The vault changed the bytes of a write
+
+- **WHEN** a write operation succeeds with the warning `notes.write.transformed`
+- **THEN** the progress says that the vault saved the file with other bytes, verified by `src/features/notes/write-progress.test.tsx` "names the warning notes.write.transformed of a succeeded write"
