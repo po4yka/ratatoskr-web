@@ -6,6 +6,7 @@ import {
   releaseRoutes,
   renderSites,
   routeOf,
+  siteRoutes,
 } from "./sites-fixtures"
 
 const BUILD = "POST /v1/sites/blog/releases"
@@ -90,5 +91,23 @@ describe("the release history", () => {
     expect(key?.length).toBeGreaterThan(0)
     expect(callOf(calls, BUILD)?.body).toBeUndefined()
     expect(calls.filter((call) => routeOf(call) === BUILD)).toHaveLength(1)
+  })
+
+  it("unapproved_site_cannot_start_a_release", async () => {
+    const calls = renderSites({
+      path: "/sites/drafts",
+      respond: (request) =>
+        request.path === "/v1/sites/drafts/releases"
+          ? { current_release_id: null, releases: [], failed_builds: [] }
+          : siteRoutes(request),
+    })
+
+    expect(
+      await screen.findByText("Approve the site before the first release.")
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Build the first release" })
+    ).toBeDisabled()
+    expect(calls.map(routeOf)).not.toContain("POST /v1/sites/drafts/releases")
   })
 })
