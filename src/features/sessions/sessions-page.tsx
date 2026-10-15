@@ -49,12 +49,27 @@ function OtherSessions({
   )
 }
 
+/** One revocation: the group it belongs to, the call, and what it ends. */
+interface Ending {
+  readonly siteId: string
+  /** Sends the revocation and answers the sentence of its outcome. */
+  readonly run: () => Promise<string>
+  readonly ends: (session: SessionSummary) => boolean
+}
+
+function endedText(count: number, siteId: string): string {
+  return count === 1
+    ? `1 session of ${siteId} ended.`
+    : `${count} sessions of ${siteId} ended.`
+}
+
 /** `/sessions`: where the user is signed in, and the site sessions to end. */
 export default function SessionsPage() {
   const gateway = useGateway()
   const source = useMemo(() => sessionsSource(gateway), [gateway])
   const [loaded, setLoaded] = useState<Loaded>({ kind: "loading" })
   const [outcome, setOutcome] = useState<string | null>(null)
+  const [pendingSite, setPendingSite] = useState<string | null>(null)
   const load = useCallback(
     (cursor: string | null, before: readonly SessionSummary[]) =>
       source.page(cursor).then(
@@ -79,14 +94,24 @@ export default function SessionsPage() {
     void load(null, [])
   }, [load])
 
-  async function end(action: () => Promise<unknown>, done: string) {
+  /** Run one revocation, and remove what it ended from the loaded pages. */
+  async function end({ siteId, run, ends }: Ending) {
+    setPendingSite(siteId)
     try {
-      await action()
-      setOutcome(done)
+      setOutcome(await run())
+      setLoaded((current) =>
+        current.kind === "ready"
+          ? {
+              ...current,
+              sessions: current.sessions.filter((session) => !ends(session)),
+            }
+          : current
+      )
     } catch (failure) {
       setOutcome(describeSessionsFailure(failure, "The session did not end."))
+    } finally {
+      setPendingSite(null)
     }
-    await load(null, [])
   }
 
   const groups = loaded.kind === "ready" ? groupBySite(loaded.sessions) : null
@@ -118,17 +143,26 @@ export default function SessionsPage() {
                   group={group}
                   key={group.siteId}
                   onEndOne={(sessionId) =>
-                    void end(
-                      () => source.revoke(sessionId),
-                      "The session ended."
-                    )
+                    void end({
+                      siteId: group.siteId,
+                      run: async () => {
+                        await source.revoke(sessionId)
+                        return "The session ended."
+                      },
+                      ends: (session) => session.session_id === sessionId,
+                    })
                   }
                   onEndSite={(siteId) =>
-                    void end(
-                      () => source.revokeSite(siteId),
-                      `The sessions of ${siteId} ended.`
-                    )
+                    void end({
+                      siteId,
+                      run: async () =>
+                        endedText(await source.revokeSite(siteId), siteId),
+                      ends: (session) =>
+                        session.kind === "site_owner" &&
+                        session.site_id === siteId,
+                    })
                   }
+                  pending={pendingSite === group.siteId}
                 />
               ))
             )}

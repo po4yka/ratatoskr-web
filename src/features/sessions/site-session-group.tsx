@@ -25,15 +25,19 @@ export function When({
   readonly value: string | null | undefined
   readonly none: string
 }) {
-  if (value === null || value === undefined) return <>{none}</>
-  return <time dateTime={value}>{new Date(value).toLocaleString()}</time>
+  const time = new Date(value ?? "")
+  if (value === null || value === undefined || Number.isNaN(time.getTime()))
+    return <>{none}</>
+  return <time dateTime={value}>{time.toLocaleString()}</time>
 }
 
 function SessionItem({
   session,
+  pending,
   onEnd,
 }: {
   readonly session: SessionSummary
+  readonly pending: boolean
   readonly onEnd: () => void
 }) {
   return (
@@ -42,7 +46,7 @@ function SessionItem({
         Signed in <When none="at an unknown time" value={session.issued_at} />.
         Last use: <When none="not yet" value={session.last_seen_at} />.
       </p>
-      <Button onClick={onEnd} variant="outline">
+      <Button disabled={pending} onClick={onEnd} variant="outline">
         End this session
       </Button>
     </li>
@@ -96,10 +100,13 @@ function EndDialog({
 /** The `site_owner` sessions of one site, and the actions that end them. */
 export function SiteSessionGroup({
   group,
+  pending,
   onEndSite,
   onEndOne,
 }: {
   readonly group: SiteSessions
+  /** A revocation of this group runs: its actions wait for the answer. */
+  readonly pending: boolean
   readonly onEndSite: (siteId: string) => void
   readonly onEndOne: (sessionId: string) => void
 }) {
@@ -125,12 +132,14 @@ export function SiteSessionGroup({
             onEnd={() =>
               setEnding({ kind: "one", sessionId: session.session_id })
             }
+            pending={pending}
             session={session}
           />
         ))}
       </ul>
       <Button
         className="self-start"
+        disabled={pending}
         onClick={() => setEnding({ kind: "site" })}
         variant="outline"
       >
