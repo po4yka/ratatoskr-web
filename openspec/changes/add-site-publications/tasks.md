@@ -6,7 +6,7 @@
 - [x] 1.4 GREEN: add the publication editor. Verify that 1.3 passes.
 - [x] 1.5 RED: add `src/features/sites/ReleaseHistory.test.tsx` with `shows_current_release_and_build_failures` (including a `sites.slug_collision` failure) and `first_release_is_requested_explicitly`. Confirm that the text assertion of the first fails because the view does not exist.
 - [x] 1.6 GREEN: add the release history and the build request action. Verify that 1.5 passes and that `npm run build` passes.
-- [ ] 1.7 RED: `src/features/sites/PublicationEditor.test.tsx` "shows_the_publication_state". Confirm that it fails on the text assertion, because the editor does not show the `state` of a stored publication.
+- [x] 1.7 RED: `src/features/sites/PublicationEditor.test.tsx` "shows_the_publication_state". Confirm that it fails on the text assertion, because the editor does not show the `state` of a stored publication.
 - [ ] 1.8 GREEN: show the state `active` or `suspended` of a stored publication, and what the owner does to make a suspended publication active again. Verify 1.7, and run the gate list of `DEVELOPMENT.md`.
 - [ ] 1.9 RED: `src/features/sites/ReleaseHistory.test.tsx` "unapproved_site_cannot_start_a_release". Confirm that it fails on the text assertion, because the view offers the build of a site that is not approved and gives no hint.
 - [ ] 1.10 GREEN: when the site is not approved, say "Approve the site before the first release." (for a site that has releases, "Approve the site again before a new release."), and disable the build request. Verify 1.9, and run the gate list of `DEVELOPMENT.md`.

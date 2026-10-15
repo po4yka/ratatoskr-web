@@ -1,6 +1,17 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
-import { callOf, publicationRoutes, renderSites } from "./sites-fixtures"
+import {
+  callOf,
+  publicationRoutes,
+  publicationRoutesIn,
+  renderSites,
+} from "./sites-fixtures"
 
 const SAVE = "PUT /v1/sites/blog/publications/notes"
 
@@ -79,5 +90,29 @@ describe("the publication editor", () => {
     expect(callOf(calls, SAVE)?.body).toMatchObject({
       frontmatter_allow: ["summary", "series"],
     })
+  })
+
+  it("shows_the_publication_state", async () => {
+    renderSites({
+      path: "/sites/blog",
+      respond: publicationRoutesIn("suspended"),
+    })
+    const suspended = await editor()
+
+    expect(suspended.getByText("Suspended")).toBeInTheDocument()
+    expect(
+      suspended.getByText(
+        "The vault connection of this publication was removed. A new release fails until you select a vault connection and save the publication. The current release keeps its pages."
+      )
+    ).toBeInTheDocument()
+
+    cleanup()
+    renderSites({ path: "/sites/blog", respond: publicationRoutes })
+    const active = await editor()
+
+    expect(active.getByText("Active")).toBeInTheDocument()
+    expect(
+      active.queryByText(/vault connection of this publication was removed/)
+    ).not.toBeInTheDocument()
   })
 })

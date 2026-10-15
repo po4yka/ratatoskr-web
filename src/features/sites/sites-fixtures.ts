@@ -192,6 +192,17 @@ export function publicationRoutes(request: GatewayRequest): unknown {
   return siteRoutes(request)
 }
 
+/**
+ * `publicationRoutes`, with the stored publication `notes` in `state`:
+ * `active`, or `suspended` after its vault connection was removed.
+ */
+export function publicationRoutesIn(state: string) {
+  return (request: GatewayRequest): unknown =>
+    request.path === "/v1/sites/blog/publications"
+      ? { publications: [{ ...storedPublication, state }] }
+      : publicationRoutes(request)
+}
+
 /** The release history of `blog` that `GET /v1/sites/blog/releases` answers. */
 export interface ReleaseHistoryFixture {
   readonly current_release_id: string | null
