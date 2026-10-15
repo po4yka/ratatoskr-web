@@ -16,38 +16,49 @@ import { ResolutionForm } from "./resolution-form"
 /** The code of a write group that the vault applied only in part. */
 const PARTIALLY_APPLIED = "notes.write.partially_applied"
 
+/** What the operation of a conflict answered, for one operation id. */
+interface Reason {
+  readonly operationId: string
+  readonly partial: boolean
+}
+
 /**
- * Why the conflict exists. It reads the operation of the conflict once; a
- * group that the vault applied only in part has its own sentence, and any
- * other answer, or none, keeps the sentence of a stale base.
+ * Why the conflict exists. It reads the operation of the conflict, and
+ * shows nothing until that operation answers: a group that the vault
+ * applied only in part has its own sentence, and any other answer, a
+ * failed read or a conflict without an operation keep the sentence of a
+ * stale base. A reason of another operation is not shown.
  */
 function ConflictReason({ operationId }: { readonly operationId?: string }) {
   const gateway = useGateway()
-  const [partial, setPartial] = useState(false)
+  const [reason, setReason] = useState<Reason | null>(null)
   useEffect(() => {
     if (operationId === undefined) return
     let alive = true
+    const answer = (partial: boolean) =>
+      alive && setReason({ operationId, partial })
     gateway
       .request<OperationSnapshot>({
         path: `/v1/operations/${encodeURIComponent(operationId)}`,
       })
       .then(
         (snapshot) =>
-          alive &&
-          setPartial(
+          answer(
             snapshot?.errors?.some(
               (failure) => failure.code === PARTIALLY_APPLIED
             ) ?? false
           ),
-        () => undefined
+        () => answer(false)
       )
     return () => {
       alive = false
     }
   }, [gateway, operationId])
+  const known = operationId === undefined || reason?.operationId === operationId
+  if (!known) return null
   return (
     <p className="text-body text-muted-foreground">
-      {partial
+      {reason?.partial === true && operationId !== undefined
         ? describeWriteFailure({ code: PARTIALLY_APPLIED }, "")
         : "The vault changed this file after you opened it, so Ratatoskr did not write your version."}
     </p>

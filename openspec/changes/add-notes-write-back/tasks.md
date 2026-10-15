@@ -14,4 +14,4 @@
 - [x] 1.12 RED: `src/features/notes/conflict-view.test.tsx` "lists the stale paths of a write group". Confirm that it fails on the lookup of the list of the files of the change, because the view does not read `stale_paths`.
 - [x] 1.13 GREEN: list each path of `stale_paths`, with a link to the file, when the conflict has them. Verify 1.12, and run the gate list of `DEVELOPMENT.md`.
 - [x] 1.14 RED: `src/features/notes/conflict-view.test.tsx` "shows no reason until the operation answers". Confirm that it fails on the assertion that the sentence of a stale base is absent while the operation read waits.
-- [ ] 1.15 GREEN: show the reason of a conflict only after the operation answers, and read it again for another operation. Verify 1.14, and run the gate list of `DEVELOPMENT.md`.
+- [x] 1.15 GREEN: show the reason of a conflict only after the operation answers, and read it again for another operation. Verify 1.14, and run the gate list of `DEVELOPMENT.md`.
