@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link } from "react-router"
 import { ManifestApproval } from "./manifest-approval"
+import { PublicationsSection } from "./publications-section"
 import {
   describeSitesFailure,
   type ActiveSiteManifest,
@@ -69,12 +70,18 @@ export function SiteView({
         </p>
       ) : null}
       {state.kind === "ready" ? (
-        <ManifestApproval
-          manifest={state.manifest}
-          onChanged={reload}
-          site={state.site}
-          source={source}
-        />
+        <>
+          <ManifestApproval
+            manifest={state.manifest}
+            onChanged={reload}
+            site={state.site}
+            source={source}
+          />
+          <PublicationsSection
+            names={state.manifest.publications}
+            siteId={siteId}
+          />
+        </>
       ) : null}
     </section>
   )
