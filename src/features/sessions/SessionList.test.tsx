@@ -1,7 +1,13 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import { callOf, routeOf } from "@/features/sites/sites-fixtures"
-import { GARDEN, renderSessions } from "./sessions-fixtures"
+import {
+  GARDEN,
+  hangingRevokeRoutes,
+  invalidTimeRoutes,
+  pagedSessionRoutes,
+  renderSessions,
+} from "./sessions-fixtures"
 
 async function siteGroup(siteId: string) {
   return within(
@@ -58,5 +64,73 @@ describe("the session list", () => {
       expect(calls.map(routeOf)).toContain(`DELETE /v1/sessions/${GARDEN}`)
     )
     expect(calls.map(routeOf)).not.toContain("POST /v1/sessions/revoke-site")
+  })
+})
+
+describe("the session list after a revocation", () => {
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+
+  it("revoke_keeps_the_loaded_pages_and_counts", async () => {
+    const calls = renderSessions(pagedSessionRoutes)
+    const blog = await siteGroup("blog")
+    fireEvent.click(screen.getByRole("button", { name: "Load more sessions" }))
+    await siteGroup("orchard")
+
+    fireEvent.click(
+      blog.getByRole("button", { name: "End all sessions of blog" })
+    )
+    fireEvent.click(
+      await screen.findByRole("button", { name: "End the sessions" })
+    )
+
+    expect(
+      await screen.findByText("2 sessions of blog ended.")
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("region", { name: "Sessions of blog" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("region", { name: "Sessions of orchard" })
+    ).toBeInTheDocument()
+    expect(
+      calls.filter(
+        (call) => call.path === "/v1/sessions" && call.query === undefined
+      )
+    ).toHaveLength(1)
+  })
+
+  it("buttons_wait_while_a_revoke_runs", async () => {
+    const calls = renderSessions(hangingRevokeRoutes)
+    const blog = await siteGroup("blog")
+
+    fireEvent.click(
+      blog.getByRole("button", { name: "End all sessions of blog" })
+    )
+    fireEvent.click(
+      await screen.findByRole("button", { name: "End the sessions" })
+    )
+    await waitFor(() =>
+      expect(calls.map(routeOf)).toContain("POST /v1/sessions/revoke-site")
+    )
+
+    expect(
+      blog.getByRole("button", { name: "End all sessions of blog" })
+    ).toBeDisabled()
+    for (const button of blog.getAllByRole("button", {
+      name: "End this session",
+    }))
+      expect(button).toBeDisabled()
+  })
+
+  it("an_invalid_time_shows_the_absence", async () => {
+    renderSessions(invalidTimeRoutes)
+    const garden = await siteGroup("garden")
+
+    expect(
+      garden.getByText("Signed in at an unknown time. Last use: not yet.")
+    ).toBeInTheDocument()
   })
 })

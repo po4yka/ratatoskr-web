@@ -57,11 +57,51 @@ export function sessionRoutes(request: GatewayRequest): unknown {
   throw { kind: "not-found", status: 404 }
 }
 
+/** A site session of `orchard`: the one session of the second page. */
+export const ORCHARD = "018f0000-0000-7000-8000-00000000a005"
+
 /**
- * Mount the whole application at `/sessions` behind a gateway double. The
- * returned list records every request in order.
+ * `sessionRoutes` over two pages: the first page of `sessionList` points
+ * to `page-2`, which holds one session of `orchard`.
  */
-export function renderSessions(): GatewayRequest[] {
+export function pagedSessionRoutes(request: GatewayRequest): unknown {
+  if (request.path !== "/v1/sessions") return sessionRoutes(request)
+  if (request.query?.cursor === "page-2")
+    return {
+      sessions: [siteSession([ORCHARD, "orchard", "2026-10-14T09:00:00Z"])],
+      next_cursor: null,
+    }
+  return { ...sessionList, next_cursor: "page-2" }
+}
+
+/** `sessionRoutes`, except that a revocation of a site never answers. */
+export function hangingRevokeRoutes(request: GatewayRequest): unknown {
+  if (request.path === "/v1/sessions/revoke-site")
+    return new Promise(() => undefined)
+  return sessionRoutes(request)
+}
+
+/** `sessionRoutes`, with times in `garden` that are not times. */
+export function invalidTimeRoutes(request: GatewayRequest): unknown {
+  if (request.path !== "/v1/sessions") return sessionRoutes(request)
+  return {
+    sessions: [
+      {
+        ...siteSession([GARDEN, "garden", "not a time"]),
+        last_seen_at: "not a time",
+      },
+    ],
+    next_cursor: null,
+  }
+}
+
+/**
+ * Mount the whole application at `/sessions` behind a gateway double that
+ * answers with `respond`. The returned list records every request in order.
+ */
+export function renderSessions(
+  respond: (request: GatewayRequest) => unknown = sessionRoutes
+): GatewayRequest[] {
   window.history.replaceState(null, "", "/sessions")
   storeCustody("credential-1")
   const calls: GatewayRequest[] = []
@@ -74,7 +114,7 @@ export function renderSessions(): GatewayRequest[] {
         minimum_client_versions: { web: "0.0.1", mobile: "0.0.1" },
         services: [],
       }
-    return sessionRoutes(request)
+    return respond(request)
   })
   renderApp({ gateway })
   return calls
