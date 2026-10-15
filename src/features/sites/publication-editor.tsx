@@ -99,7 +99,6 @@ export function PublicationEditor({
     <form
       aria-labelledby={id("heading")}
       className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-subtle"
-      noValidate
       onSubmit={(event) => void submit(event)}
     >
       <h3 className="text-subheading font-semibold" id={id("heading")}>
@@ -113,6 +112,7 @@ export function PublicationEditor({
           className="h-9 rounded-lg border border-border bg-background px-3 text-body"
           id={id("vault")}
           onChange={(event) => set({ connection_id: event.target.value })}
+          required={true}
           value={draft.connection_id}
         >
           <option value="">Select a vault</option>
@@ -136,7 +136,8 @@ export function PublicationEditor({
         })}
         {radio("mode", {
           value: "all",
-          label: "All Markdown files in the included folders",
+          label:
+            "All Markdown files, in the included folders when you name some",
         })}
       </Choice>
       <Choice legend="Release mode">
@@ -165,8 +166,8 @@ export function PublicationEditor({
         </ul>
       </div>
       {list("frontmatter_allow", "More frontmatter fields")}
-      <Button disabled={pending} type="submit">
-        Save the publication
+      <Button className="self-start" disabled={pending} type="submit">
+        {pending ? "Saving the publication…" : "Save the publication"}
       </Button>
       <p aria-live="polite" className="text-body" role="status">
         {outcome}
