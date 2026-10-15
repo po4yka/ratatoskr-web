@@ -51,6 +51,12 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
     path: "/notes",
     requires: "notes.vaults",
   },
+  {
+    id: "sites",
+    label: "Sites",
+    path: "/sites",
+    requires: "sites.manage",
+  },
   { id: "social-x", label: "X", path: "/social/x", requires: "social.x" },
   {
     id: "instagram",

@@ -19,6 +19,12 @@
  * `notes.vaults` gates the Obsidian vault routes of workspace change
  * add-notes-vault-connections. The pinned contract does not list it yet, and
  * Platform must publish it before the notes route is available.
+ *
+ * `sites.manage` gates the site registry, the manifest approval, the
+ * publication editor and the release history of workspace change
+ * add-site-publications. Platform 3a47f0f serves the site routes but
+ * publishes no site capability, so the name is this client's proposal, and
+ * Platform must publish it before the sites route is available.
  */
 export const KNOWN_CAPABILITIES = [
   "content.submit",
@@ -30,6 +36,7 @@ export const KNOWN_CAPABILITIES = [
   "ai.archive.claude",
   "connections.providers",
   "notes.vaults",
+  "sites.manage",
   "social.instagram",
   "social.threads",
   "social.x",

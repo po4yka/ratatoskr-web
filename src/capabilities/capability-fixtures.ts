@@ -22,6 +22,7 @@ export const fullDeployment = documentOf([
   "ai.archive.claude",
   "connections.providers",
   "notes.vaults",
+  "sites.manage",
   "social.instagram",
   "social.threads",
   "social.x",
