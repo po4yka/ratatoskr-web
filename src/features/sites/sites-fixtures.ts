@@ -128,6 +128,27 @@ export function renderSites(options: {
   return calls
 }
 
+/** The callback page of `blog` with the code that the sign-in route issues. */
+export const signInCallback =
+  "https://blog.example.org/.ratatoskr/sign-in/?code=code-1"
+
+/**
+ * The site routes and `POST /v1/sites/{site}/sign-in-codes` of Platform
+ * e7a1488 (crates/public-api/src/sites.rs): `blog` gets a code, and every
+ * other site answers 404 `sites.site_not_found`.
+ */
+export function signInRoutes(request: GatewayRequest): unknown {
+  if (request.path === "/v1/sites/blog/sign-in-codes")
+    return {
+      code: "code-1",
+      redirect_url: signInCallback,
+      expires_at: "2026-10-15T10:01:00Z",
+    }
+  if (request.path.endsWith("/sign-in-codes"))
+    throw { kind: "not-found", status: 404, code: "sites.site_not_found" }
+  return siteRoutes(request)
+}
+
 /** The stored publication `notes` of `blog`, as the sites schema holds it. */
 export const storedPublication = {
   publication_id: "notes",

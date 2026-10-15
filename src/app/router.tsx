@@ -240,7 +240,7 @@ export function createAppRouter(
             ),
           })
         ),
-        ...["sites", "sites/:siteId"].map((path) => ({
+        ...["sites", "sites/:siteId", "sites/:siteId/sign-in"].map((path) => ({
           path,
           element: (
             <FeatureRoute
