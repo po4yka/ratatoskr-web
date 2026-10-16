@@ -27,23 +27,12 @@ export interface SiteManifestState {
 }
 
 /** `GET /v1/sites/{site}/manifest`: the active manifest of the site. */
-export interface ActiveSiteManifest {
-  readonly site_id: string
-  readonly manifest_sha256: string
-  readonly hostname: string
-  readonly publications: readonly string[]
-  readonly capabilities: readonly string[]
-}
+export type ActiveSiteManifest = Readonly<
+  components["schemas"]["ActiveSiteManifest"]
+>
 
 /** The answer of the approval and of the withdrawal. */
-export interface SiteApproval {
-  readonly site_id: string
-  readonly manifest_sha256: string
-  readonly capabilities: readonly string[]
-  readonly hostname: string
-  /** `approved` or `withdrawn`. */
-  readonly state: string
-}
+export type SiteApproval = Readonly<components["schemas"]["SiteApproval"]>
 
 /**
  * The capabilities that any visitor of a site can use (workspace spec

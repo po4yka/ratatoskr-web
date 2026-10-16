@@ -53,6 +53,10 @@ export function activeManifest(siteId: string) {
   return {
     site_id: siteId,
     manifest_sha256: site?.submitted_manifest_sha256 ?? digest("0"),
+    github_repository: {
+      repository: "owner/docs-site",
+      repository_id: "1420131953",
+    },
     hostname: `${siteId}.example.org`,
     publications: ["notes"],
     capabilities: ["pages.read", "search.publication", "draft.read"],

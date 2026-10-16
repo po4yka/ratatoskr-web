@@ -54,6 +54,37 @@ describe("the site registry", () => {
     })
   })
 
+  it("shows the approved repository name and immutable id", async () => {
+    renderSites({
+      path: "/sites/drafts",
+      respond: (request) =>
+        routeOf(request) === "GET /v1/sites/drafts/manifest"
+          ? {
+              ...activeManifest("drafts"),
+              github_repository: {
+                repository: "owner/docs-site",
+                repository_id: "1420131953",
+              },
+            }
+          : siteRoutes(request),
+    })
+    expect(await screen.findByText("owner/docs-site")).toBeInTheDocument()
+    expect(screen.getByText("1420131953")).toBeInTheDocument()
+  })
+
+  it("requires a repository binding before a new approval", async () => {
+    renderSites({
+      path: "/sites/drafts",
+      respond: (request) =>
+        routeOf(request) === "GET /v1/sites/drafts/manifest"
+          ? { ...activeManifest("drafts"), github_repository: null }
+          : siteRoutes(request),
+    })
+    expect(
+      await screen.findByRole("button", { name: "Approve this manifest" })
+    ).toBeDisabled()
+  })
+
   it("withdraw_calls_delete_approval", async () => {
     const calls = renderSites({ path: "/sites/blog", respond: siteRoutes })
     await waitFor(() =>

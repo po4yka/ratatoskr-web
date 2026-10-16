@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { ManifestDetails } from "./manifest-details"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -152,19 +153,12 @@ export function ManifestApproval({
       <p className="text-body">
         Approval: {APPROVAL_TEXT[site.approval_state]}. {manifestNote(site)}
       </p>
-      <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-body">
-        <dt className="font-medium">Hostname</dt>
-        <dd>{manifest.hostname}</dd>
-        <dt className="font-medium">Publications</dt>
-        <dd>{manifest.publications.join(", ")}</dd>
-        <dt className="font-medium">Digest</dt>
-        <dd className="font-mono break-all">{manifest.manifest_sha256}</dd>
-      </dl>
+      <ManifestDetails manifest={manifest} />
       <Capabilities names={manifest.capabilities} />
       <div className="flex flex-wrap gap-3">
         {current ? null : (
           <Button
-            disabled={pending}
+            disabled={pending || manifest.github_repository == null}
             onClick={() =>
               void run(
                 () => source.approve(manifest),
