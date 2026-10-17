@@ -2863,8 +2863,9 @@ export interface components {
          *     `.obsidian` in any ASCII case.
          *
          *     Not empty, at most 1024 UTF-8 bytes, segments separated by `/`, no leading or trailing
-         *     `/`, no empty, `.` or `..` segment, no backslash and no C0 or DEL control character, so a
-         *     path can never name a file outside the vault. `.obsidian/` is the vault configuration, and
+         *     `/`, no empty, `.` or `..` segment, no colon or backslash, and no C0 or DEL control
+         *     character. No segment ends in a dot or an ASCII space. These rules keep names portable
+         *     across the supported vault adapters. A path can never name a file outside the vault. `.obsidian/` is the vault configuration, and
          *     Ratatoskr never writes it; a case-insensitive file system maps `.OBSIDIAN/` to the same
          *     folder, so every case is refused. The pattern spells the first segment without
          *     look-ahead: any segment, except one that starts with `.o` and continues with exactly
